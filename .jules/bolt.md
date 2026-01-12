@@ -1,0 +1,3 @@
+## 2024-05-23 - IIFE in JSX Anti-Pattern
+**Learning:** Found a significant performance anti-pattern where complex logic (including pagination and slicing) was wrapped in an IIFE (`{(() => { ... })()}`) directly inside the JSX return. This forces all logic inside the IIFE to execute on every render and makes it impossible to use hooks like `useMemo` or `useCallback` to optimize the derived data.
+**Action:** Always hoist logic out of JSX. If conditional rendering requires complex logic, calculate variables in the component body first, or extract into a sub-component. Never put expensive calculations or IIFEs inside the `return` statement.

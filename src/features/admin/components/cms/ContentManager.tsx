@@ -1425,6 +1425,7 @@ function RowActions({
           variant="ghost"
           size="icon"
           className={compact ? 'bg-white/90 dark:bg-gray-900/90 shadow-sm h-8 w-8' : 'h-8 w-8'}
+          aria-label="More actions"
         >
           <MoreVertical className="w-4 h-4" />
         </Button>

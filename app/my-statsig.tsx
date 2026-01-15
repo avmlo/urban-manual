@@ -10,6 +10,12 @@ type MyStatsigProps = {
 };
 
 export default function MyStatsig({ children }: MyStatsigProps) {
+  const key = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
+
+  if (!key) {
+    return <>{children}</>;
+  }
+
   const id = typeof userID !== "undefined" ? userID : "a-user";
 
   const user = {
@@ -22,7 +28,7 @@ export default function MyStatsig({ children }: MyStatsigProps) {
 
   return (
     <StatsigProvider
-      sdkKey={process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY!}
+      sdkKey={key}
       user={user}
       options={{ logLevel: LogLevel.Debug }}
     >

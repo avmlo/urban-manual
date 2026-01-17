@@ -11,6 +11,7 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { createServiceClient } from "../utils/supabase.js";
+import { sanitizeForIlike } from "../utils/sanitize.js";
 
 export const tripTools: Tool[] = [
   {
@@ -649,16 +650,18 @@ export async function handleTripTool(
         const city = destinations[cityIndex];
 
         // Build query for recommendations
+        const safeCity = sanitizeForIlike(city);
         let query = supabase
           .from("destinations")
           .select("slug, name, city, category, micro_description, rating, image, latitude, longitude")
-          .ilike("city", `%${city}%`)
+          .ilike("city", `%${safeCity}%`)
           .order("rating", { ascending: false })
           .limit(itemsPerDay * 2);
 
         if (avoid && Array.isArray(avoid)) {
           for (const a of avoid as string[]) {
-            query = query.not("category", "ilike", `%${a}%`);
+            const safeAvoid = sanitizeForIlike(a);
+            query = query.not("category", "ilike", `%${safeAvoid}%`);
           }
         }
 
@@ -731,10 +734,11 @@ export async function handleTripTool(
       const prefs = preferences as Record<string, unknown> | undefined;
       const activityTypes = prefs?.activity_types as string[] | undefined;
 
+      const safeCity = sanitizeForIlike(city as string);
       let query = supabase
         .from("destinations")
         .select("slug, name, city, category, micro_description, rating, latitude, longitude")
-        .ilike("city", `%${city}%`)
+        .ilike("city", `%${safeCity}%`)
         .order("rating", { ascending: false })
         .limit(20);
 

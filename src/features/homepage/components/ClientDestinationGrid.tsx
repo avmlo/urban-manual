@@ -258,7 +258,7 @@ export function ClientDestinationGrid() {
             key={destination.slug}
             destination={destination}
             index={index}
-            onClick={() => openDestination(destination)}
+            onSelect={openDestination}
             showQuickActions={true}
             showBadges={true}
           />

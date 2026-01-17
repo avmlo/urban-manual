@@ -431,6 +431,19 @@ export default function HomepageClient({
     [user?.id]
   );
 
+  // Handle destination click with memoized callback
+  const handleDestinationClick = useCallback((destination: Destination, cardIndex?: number) => {
+    openIntelligentDrawer(destination);
+    openDrawer("destination");
+    // If cardIndex is provided, calculate absolute position for tracking
+    // Otherwise fallback to undefined position (or handle as needed)
+    const position = typeof cardIndex === 'number'
+      ? (currentPage - 1) * itemsPerPage + cardIndex
+      : undefined;
+
+    trackDestinationEngagement(destination, "grid", position);
+  }, [openIntelligentDrawer, openDrawer, trackDestinationEngagement, currentPage, itemsPerPage]);
+
   // Perform AI search
   const performAISearch = useCallback(
     async (query: string) => {
@@ -1234,15 +1247,7 @@ export default function HomepageClient({
                         destination={destination}
                         index={index}
                         isVisited={visitedSlugs.has(destination.slug)}
-                        onClick={() => {
-                          openIntelligentDrawer(destination);
-                          openDrawer("destination");
-                          trackDestinationEngagement(
-                            destination,
-                            "grid",
-                            (currentPage - 1) * itemsPerPage + index
-                          );
-                        }}
+                        onSelect={handleDestinationClick}
                       />
                     ))}
                 </div>

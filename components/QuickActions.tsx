@@ -6,6 +6,12 @@ import { useQuickSave } from '@/hooks/useQuickSave';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDrawer } from '@/contexts/DrawerContext';
 import { useDrawerStore } from '@/lib/stores/drawer-store';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/ui/tooltip';
 
 interface QuickActionsProps {
   destinationId?: number;
@@ -105,76 +111,96 @@ export const QuickActions = memo(function QuickActions({
   const iconSize = compact ? 'w-4 h-4' : 'w-[18px] h-[18px]';
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      {/* Save Button */}
-      <button
-        onClick={handleSave}
-        disabled={isSaving}
-        className={`
-          ${buttonBaseClass}
-          ${isSaved
-            ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
-            : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
-          }
-          shadow-md
-          disabled:opacity-50 disabled:cursor-not-allowed
-        `}
-        aria-label={isSaved ? `Remove ${destinationName} from saved` : `Save ${destinationName}`}
-        title={isSaved ? 'Saved' : 'Save'}
-      >
-        {isSaving ? (
-          <Loader2 className={`${iconSize} animate-spin`} />
-        ) : (
-          <Bookmark className={`${iconSize} ${isSaved ? 'fill-current' : ''}`} />
+    <TooltipProvider>
+      <div className={`flex items-center gap-2 ${className}`}>
+        {/* Save Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`
+                ${buttonBaseClass}
+                ${isSaved
+                  ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                  : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
+                }
+                shadow-md
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+              aria-label={isSaved ? `Remove ${destinationName} from saved` : `Save ${destinationName}`}
+            >
+              {isSaving ? (
+                <Loader2 className={`${iconSize} animate-spin`} />
+              ) : (
+                <Bookmark className={`${iconSize} ${isSaved ? 'fill-current' : ''}`} />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>{isSaved ? 'Saved' : 'Save'}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Visited Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleVisited}
+              disabled={isMarkingVisited}
+              className={`
+                ${buttonBaseClass}
+                ${isVisited
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
+                }
+                shadow-md
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+              aria-label={isVisited ? `Unmark ${destinationName} as visited` : `Mark ${destinationName} as visited`}
+            >
+              {isMarkingVisited ? (
+                <Loader2 className={`${iconSize} animate-spin`} />
+              ) : (
+                <Check className={`${iconSize} ${isVisited ? 'stroke-[3]' : ''}`} />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>{isVisited ? 'Visited' : 'Mark as visited'}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Add to Trip Button */}
+        {showAddToTrip && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleAddToTrip}
+                className={`
+                  ${buttonBaseClass}
+                  bg-white text-[var(--editorial-text-primary)]
+                  hover:bg-gray-50
+                  shadow-md
+                `}
+                aria-label={`Add ${destinationName} to trip`}
+              >
+                <Plus className={iconSize} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Add to trip</p>
+            </TooltipContent>
+          </Tooltip>
         )}
-      </button>
 
-      {/* Visited Button */}
-      <button
-        onClick={handleVisited}
-        disabled={isMarkingVisited}
-        className={`
-          ${buttonBaseClass}
-          ${isVisited
-            ? 'bg-emerald-500 text-white'
-            : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
-          }
-          shadow-md
-          disabled:opacity-50 disabled:cursor-not-allowed
-        `}
-        aria-label={isVisited ? `Unmark ${destinationName} as visited` : `Mark ${destinationName} as visited`}
-        title={isVisited ? 'Visited' : 'Mark as visited'}
-      >
-        {isMarkingVisited ? (
-          <Loader2 className={`${iconSize} animate-spin`} />
-        ) : (
-          <Check className={`${iconSize} ${isVisited ? 'stroke-[3]' : ''}`} />
+        {/* Login Toast */}
+        {showLoginToast && (
+          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full shadow-lg animate-fade-in">
+            Sign in to save places
+          </div>
         )}
-      </button>
-
-      {/* Add to Trip Button */}
-      {showAddToTrip && (
-        <button
-          onClick={handleAddToTrip}
-          className={`
-            ${buttonBaseClass}
-            bg-white text-[var(--editorial-text-primary)]
-            hover:bg-gray-50
-            shadow-md
-          `}
-          aria-label={`Add ${destinationName} to trip`}
-          title="Add to trip"
-        >
-          <Plus className={iconSize} />
-        </button>
-      )}
-
-      {/* Login Toast */}
-      {showLoginToast && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-sm rounded-full shadow-lg animate-fade-in">
-          Sign in to save places
-        </div>
-      )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 });

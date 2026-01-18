@@ -5,13 +5,20 @@ import Image from 'next/image';
 import { MapPin, Check } from 'lucide-react';
 import { Destination } from '@/types/destination';
 import { capitalizeCity } from '@/lib/utils';
-import { DestinationCardSkeleton } from '@/ui/DestinationCardSkeleton';
 import { DestinationBadges } from './DestinationBadges';
 import { QuickActions } from './QuickActions';
 
 interface DestinationCardProps {
   destination: Destination;
+  /**
+   * @deprecated Use onSelect instead for better performance with React.memo
+   */
   onClick?: () => void;
+  /**
+   * Callback when the card is selected.
+   * Passes the destination and index to avoid inline functions.
+   */
+  onSelect?: (destination: Destination, index?: number) => void;
   index?: number;
   isVisited?: boolean;
   showBadges?: boolean;
@@ -27,6 +34,7 @@ interface DestinationCardProps {
 export const DestinationCard = memo(function DestinationCard({
   destination,
   onClick,
+  onSelect,
   index = 0,
   isVisited = false,
   showBadges = true,
@@ -68,8 +76,13 @@ export const DestinationCard = memo(function DestinationCard({
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    // Simply call onClick - Drawer component handles scroll locking without layout shift
-    onClick?.();
+
+    if (onSelect) {
+      onSelect(destination, index);
+    } else {
+      // Fallback for legacy usage
+      onClick?.();
+    }
   };
 
   return (
@@ -244,47 +257,3 @@ export const DestinationCard = memo(function DestinationCard({
     </button>
   );
 });
-
-/**
- * Lazy-loaded version that shows skeleton until in viewport
- */
-export function LazyDestinationCard(props: DestinationCardProps) {
-  const [shouldRender, setShouldRender] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setShouldRender(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '100px', // Start loading 100px before entering viewport
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <div ref={cardRef}>
-      {shouldRender ? (
-        <DestinationCard {...props} />
-      ) : (
-        <DestinationCardSkeleton />
-      )}
-    </div>
-  );
-}
-

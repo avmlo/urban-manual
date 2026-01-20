@@ -252,6 +252,136 @@
   border: 1px solid var(--editorial-border-subtle);
 }
 
+/* ============================================
+   ADMIN CMS DESIGN SYSTEM
+   Professional-grade admin interface tokens
+   ============================================ */
+
+:root {
+  /* Admin Layout */
+  --admin-sidebar-width: 240px;
+  --admin-header-height: 64px;
+  --admin-spacing-section: 2rem;
+  --admin-spacing-card: 1.5rem;
+  --admin-radius-card: 12px;
+  --admin-radius-button: 8px;
+
+  /* Admin Status Colors - Light Mode */
+  --admin-status-success: #22c55e;
+  --admin-status-success-bg: #f0fdf4;
+  --admin-status-success-border: #bbf7d0;
+
+  --admin-status-warning: #f59e0b;
+  --admin-status-warning-bg: #fffbeb;
+  --admin-status-warning-border: #fde68a;
+
+  --admin-status-error: #ef4444;
+  --admin-status-error-bg: #fef2f2;
+  --admin-status-error-border: #fecaca;
+
+  --admin-status-info: #3b82f6;
+  --admin-status-info-bg: #eff6ff;
+  --admin-status-info-border: #bfdbfe;
+
+  --admin-status-draft: #64748b;
+  --admin-status-draft-bg: #f8fafc;
+  --admin-status-draft-border: #cbd5e1;
+
+  /* Admin Background Levels */
+  --admin-bg-base: #ffffff;
+  --admin-bg-elevated: #f9fafb;
+  --admin-bg-overlay: #ffffff;
+
+  /* Admin Borders */
+  --admin-border: #e5e7eb;
+  --admin-border-hover: #d1d5db;
+
+  /* Admin Text */
+  --admin-text-primary: #111827;
+  --admin-text-secondary: #6b7280;
+  --admin-text-tertiary: #9ca3af;
+}
+
+.dark {
+  /* Admin Status Colors - Dark Mode */
+  --admin-status-success: #22c55e;
+  --admin-status-success-bg: #14532d;
+  --admin-status-success-border: #166534;
+
+  --admin-status-warning: #f59e0b;
+  --admin-status-warning-bg: #451a03;
+  --admin-status-warning-border: #78350f;
+
+  --admin-status-error: #ef4444;
+  --admin-status-error-bg: #450a0a;
+  --admin-status-error-border: #7f1d1d;
+
+  --admin-status-info: #3b82f6;
+  --admin-status-info-bg: #172554;
+  --admin-status-info-border: #1e3a8a;
+
+  --admin-status-draft: #64748b;
+  --admin-status-draft-bg: #1e293b;
+  --admin-status-draft-border: #334155;
+
+  /* Admin Background Levels */
+  --admin-bg-base: #111827;
+  --admin-bg-elevated: #1f2937;
+  --admin-bg-overlay: #1f2937;
+
+  /* Admin Borders */
+  --admin-border: #374151;
+  --admin-border-hover: #4b5563;
+
+  /* Admin Text */
+  --admin-text-primary: #f9fafb;
+  --admin-text-secondary: #d1d5db;
+  --admin-text-tertiary: #9ca3af;
+}
+
+/* Admin Status Badge Components */
+.admin-badge-success {
+  background-color: var(--admin-status-success-bg);
+  color: var(--admin-status-success);
+  border: 1px solid var(--admin-status-success-border);
+}
+
+.admin-badge-warning {
+  background-color: var(--admin-status-warning-bg);
+  color: var(--admin-status-warning);
+  border: 1px solid var(--admin-status-warning-border);
+}
+
+.admin-badge-error {
+  background-color: var(--admin-status-error-bg);
+  color: var(--admin-status-error);
+  border: 1px solid var(--admin-status-error-border);
+}
+
+.admin-badge-info {
+  background-color: var(--admin-status-info-bg);
+  color: var(--admin-status-info);
+  border: 1px solid var(--admin-status-info-border);
+}
+
+.admin-badge-draft {
+  background-color: var(--admin-status-draft-bg);
+  color: var(--admin-status-draft);
+  border: 1px solid var(--admin-status-draft-border);
+}
+
+/* Admin Card Component */
+.admin-card {
+  background-color: var(--admin-bg-elevated);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-card);
+  padding: var(--admin-spacing-card);
+}
+
+.admin-card:hover {
+  border-color: var(--admin-border-hover);
+}
+
 @import "tailwindcss";
 
 /* Configure dark mode to use class selector (for next-themes compatibility) */

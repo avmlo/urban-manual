@@ -82,4 +82,9 @@ export interface Destination {
   resy_url?: string | null;
   booking_url?: string | null;
   reservation_phone?: string | null;
+  // Draft/Publish workflow fields
+  status?: 'draft' | 'published' | 'archived';
+  published_at?: string | null;
+  scheduled_publish_at?: string | null;
+  last_published_by?: string | null;
 }

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { embedText } from '@/lib/llm';
-import { withErrorHandling } from '@/lib/errors';
+import { withErrorHandling, createUnauthorizedError } from '@/lib/errors';
+import { isCronAuthorized } from '@/lib/security/cron';
+import {
+  adminRatelimit,
+  memoryAdminRatelimit,
+  enforceRateLimit,
+} from '@/lib/rate-limit';
 
 function buildEmbeddingText(d: any): string {
   const parts: string[] = [];
@@ -20,6 +26,40 @@ function buildEmbeddingText(d: any): string {
 }
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
+  // 1. Authorization Check
+  let isAuthorized = false;
+  let userId = null;
+
+  // Check if it's a valid cron/machine request
+  if (isCronAuthorized(request)) {
+    isAuthorized = true;
+  } else {
+    // Check if it's an admin user
+    const authClient = await createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (user && user.app_metadata?.role === 'admin') {
+      isAuthorized = true;
+      userId = user.id;
+    }
+  }
+
+  if (!isAuthorized) {
+    throw createUnauthorizedError('Unauthorized: Admin or Cron secret required');
+  }
+
+  // 2. Rate Limiting
+  const rateLimitResponse = await enforceRateLimit({
+    request,
+    userId, // Will use IP if null (for cron jobs)
+    message: 'Too many embedding refresh requests',
+    limiter: adminRatelimit,
+    memoryLimiter: memoryAdminRatelimit,
+  });
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const supabase = createServiceRoleClient();
   if (!supabase) {
     throw new Error('Service role not configured');
@@ -87,5 +127,3 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     total: count ?? null,
   });
 });
-
-

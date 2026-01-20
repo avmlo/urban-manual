@@ -3,12 +3,13 @@ import { Buffer } from 'buffer';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { sendPrivacyEmail } from '@/lib/utils/privacy-email';
 import { withErrorHandling, createSuccessResponse, createUnauthorizedError } from '@/lib/errors';
+import { isCronAuthorized } from '@/lib/security/cron';
 
 const EXPORT_BATCH_SIZE = 5;
 const DELETION_BATCH_SIZE = 3;
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
-  if (!isAuthorized(request)) {
+  if (!isCronAuthorized(request)) {
     throw createUnauthorizedError();
   }
 
@@ -23,20 +24,6 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
   return createSuccessResponse({ ...results });
 });
-
-function isAuthorized(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  const vercelCronHeader = request.headers.get('x-vercel-cron');
-
-  if (cronSecret) {
-    if (authHeader === `Bearer ${cronSecret}`) {
-      return true;
-    }
-  }
-
-  return vercelCronHeader === '1';
-}
 
 async function processExportRequests(client: ReturnType<typeof createServiceRoleClient>) {
   const { data: pending } = await client

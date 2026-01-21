@@ -69,6 +69,14 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // Step 2: Query vector database for semantic matches
   const vectorIndex = getVectorIndex();
+
+  if (!vectorIndex) {
+    return NextResponse.json<ConciergeResponse>({
+      explanation: "Vector search is currently unavailable. Please try again later.",
+      destinations: [],
+    });
+  }
+
   const vectorResults = await vectorIndex.query({
     vector: embeddingResult.embedding,
     topK: limit * 2, // Get more results for filtering

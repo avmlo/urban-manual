@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getTrendingBadge, formatBestTimeText, type PeakTimeRecommendation, type TrendingDestination } from '@/lib/ml/forecasting';
+import { fetchTrendingData } from '@/lib/api/trending';
 
 interface DestinationBadgesProps {
   destinationId: number;
@@ -17,17 +18,19 @@ export function DestinationBadges({ destinationId, compact = false, showTiming =
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch trending status
-        const trendingRes = await fetch(
-          `/api/ml/forecast/trending?top_n=100&forecast_days=7`,
-          { signal: AbortSignal.timeout(3000) }
-        );
-
-        if (trendingRes.ok) {
-          const data = await trendingRes.json();
-          const found = data.trending?.find((t: TrendingDestination) => t.destination_id === destinationId);
-          if (found) {
-            setTrendingData(found);
+        // Fetch trending status using the cached/deduplicated function
+        try {
+          const data = await fetchTrendingData();
+          if (data && data.trending) {
+            const found = data.trending.find((t: TrendingDestination) => t.destination_id === destinationId);
+            if (found) {
+              setTrendingData(found);
+            }
+          }
+        } catch {
+          // Ignore trending fetch errors
+          if (process.env.NODE_ENV === 'development') {
+             // console.debug('Trending fetch failed');
           }
         }
 
@@ -69,7 +72,7 @@ export function DestinationBadges({ destinationId, compact = false, showTiming =
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Silently fail - badges are optional enhancements
         if (process.env.NODE_ENV === 'development') {
           console.debug('ML forecasting unavailable for destination', destinationId);

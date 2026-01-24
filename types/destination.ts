@@ -82,4 +82,28 @@ export interface Destination {
   resy_url?: string | null;
   booking_url?: string | null;
   reservation_phone?: string | null;
+  // Publishing workflow fields (Migration 600)
+  status?: 'draft' | 'published' | 'archived' | 'scheduled';
+  published_at?: string | null;
+  scheduled_publish_at?: string | null;
+  last_published_by?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  // SEO fields (Migration 603)
+  meta_title?: string | null;
+  meta_description?: string | null;
+  og_image?: string | null;
+  og_title?: string | null;
+  og_description?: string | null;
+  canonical_url?: string | null;
+  noindex?: boolean;
+  nofollow?: boolean;
+  structured_data?: Record<string, unknown> | null;
+  seo_keywords?: string[] | null;
+  seo_score?: number | null;
+  last_seo_audit_at?: string | null;
+  // Custom fields (Migration 606)
+  custom_fields?: Record<string, unknown> | null;
 }

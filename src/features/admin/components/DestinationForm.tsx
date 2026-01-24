@@ -71,6 +71,10 @@ export function DestinationForm({
     crown: destination?.crown || false,
     michelin_stars: destination?.michelin_stars || null,
     parent_destination_id: destination?.parent_destination_id || null,
+    // Location groups (multi-location POIs)
+    location_group_id: destination?.location_group_id || null,
+    is_primary_location: destination?.is_primary_location || false,
+    location_identifier: destination?.location_identifier || '',
     // Location
     latitude: destination?.latitude || null,
     longitude: destination?.longitude || null,
@@ -139,6 +143,9 @@ export function DestinationForm({
         crown: destination.crown || false,
         michelin_stars: destination.michelin_stars || null,
         parent_destination_id: destination.parent_destination_id || null,
+        location_group_id: destination.location_group_id || null,
+        is_primary_location: destination.is_primary_location || false,
+        location_identifier: destination.location_identifier || '',
         latitude: destination.latitude || null,
         longitude: destination.longitude || null,
         formatted_address: destination.formatted_address || '',
@@ -191,7 +198,8 @@ export function DestinationForm({
       setFormData({
         slug: '', name: '', city: '', country: '', neighborhood: '', category: '',
         brand: '', micro_description: '', tags: [], crown: false, michelin_stars: null,
-        parent_destination_id: null, latitude: null, longitude: null, formatted_address: '',
+        parent_destination_id: null, location_group_id: null, is_primary_location: false,
+        location_identifier: '', latitude: null, longitude: null, formatted_address: '',
         image: '', description: '', content: '', editorial_summary: '', architect: '',
         interior_designer: '', design_firm: '', architectural_style: '', design_period: '',
         construction_year: null, architectural_significance: '', design_story: '',
@@ -827,6 +835,69 @@ export function DestinationForm({
                 </a>
               </div>
             )}
+
+            {/* Multi-Location Settings */}
+            <div className="pt-5 border-t border-gray-200 dark:border-gray-800">
+              <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Multi-Location Settings</h3>
+              <p className="text-xs text-gray-500 mb-4">For POIs with multiple locations in the same city (e.g., Blue Bottle Coffee in SF)</p>
+
+              <div className="space-y-4">
+                {/* Location Identifier */}
+                <div>
+                  <label className={labelClasses}>Location Identifier</label>
+                  <input
+                    type="text"
+                    value={formData.location_identifier}
+                    onChange={(e) => setFormData({ ...formData, location_identifier: e.target.value })}
+                    placeholder="e.g., Ferry Building, Hayes Valley, Downtown"
+                    className={inputClasses}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Distinguishes this location from others in the group</p>
+                </div>
+
+                {/* Location Group ID */}
+                <div>
+                  <label className={labelClasses}>Location Group ID</label>
+                  <input
+                    type="number"
+                    value={formData.location_group_id || ''}
+                    onChange={(e) => setFormData({ ...formData, location_group_id: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="e.g., 123"
+                    className={inputClasses}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Same ID for all locations of this POI in the city</p>
+                </div>
+
+                {/* Primary Location Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, is_primary_location: !formData.is_primary_location })}
+                  className={cn(
+                    "w-full flex items-center justify-between p-3 rounded-lg border transition-colors",
+                    formData.is_primary_location
+                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                      : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className={cn("h-4 w-4", formData.is_primary_location ? "text-blue-500" : "text-gray-500")} />
+                    <div className="text-left">
+                      <span className="text-sm font-medium">Primary/Flagship Location</span>
+                      <p className="text-xs text-gray-500">Shown in city guides & search results</p>
+                    </div>
+                  </div>
+                  <div className={cn(
+                    "w-10 h-6 rounded-full relative transition-colors",
+                    formData.is_primary_location ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"
+                  )}>
+                    <div className={cn(
+                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
+                      formData.is_primary_location ? "translate-x-5" : "translate-x-1"
+                    )} />
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

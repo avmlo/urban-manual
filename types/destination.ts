@@ -42,6 +42,11 @@ export interface Destination {
   // Nested destinations support
   parent_destination_id?: number | null; // ID of parent destination (e.g., hotel containing this bar)
   nested_destinations?: Destination[]; // Array of nested destinations (populated by queries)
+  // Multi-location support (multiple branches in same city)
+  location_group_id?: number | null; // Groups multiple locations of same POI in same city (e.g., Blue Bottle in SF)
+  is_primary_location?: boolean; // Primary/flagship location shown in city guides
+  location_identifier?: string | null; // Distinguishes locations ("Ferry Building", "Hayes Valley", "Downtown")
+  location_count?: number; // Number of locations in group (populated by queries)
   // Enrichment fields
   place_id?: string | null;
   rating?: number | null;

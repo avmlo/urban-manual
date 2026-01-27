@@ -6,6 +6,7 @@ import { InstantGridSkeleton } from './InstantGridSkeleton';
 import { DestinationCard } from '@/components/DestinationCard';
 import { SmartEmptyState } from '@/components/SmartEmptyState';
 import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { Destination } from '@/types/destination';
 
 /**
  * Client Destination Grid with Pagination
@@ -107,6 +108,11 @@ export function ClientDestinationGrid() {
     touchStartX.current = null;
     touchEndX.current = null;
   }, [goToNextPage, goToPrevPage]);
+
+  // Memoize destination selection handler to prevent re-renders of DestinationCard
+  const handleDestinationSelect = useCallback((destination: Destination) => {
+    openDestination(destination);
+  }, [openDestination]);
 
   // Show skeleton while loading
   if (isLoading) {
@@ -258,7 +264,7 @@ export function ClientDestinationGrid() {
             key={destination.slug}
             destination={destination}
             index={index}
-            onClick={() => openDestination(destination)}
+            onSelect={handleDestinationSelect}
             showQuickActions={true}
             showBadges={true}
           />

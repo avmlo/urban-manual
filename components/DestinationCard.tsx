@@ -37,7 +37,7 @@ export const DestinationCard = memo(function DestinationCard({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const cardRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Intersection Observer for progressive loading
   useEffect(() => {
@@ -73,26 +73,32 @@ export const DestinationCard = memo(function DestinationCard({
   };
 
   return (
-    <button
+    <div
       ref={cardRef}
-      onClick={handleClick}
-      type="button"
       className={`
         group relative w-full flex flex-col transition-all duration-300 ease-out
-        cursor-pointer text-left focus-ring
+        cursor-pointer text-left
         hover:scale-[1.01]
         active:scale-[0.98]
         ${className}
       `}
-      aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
     >
+      {/* Main Action Button - Stretched Link */}
+      <button
+        type="button"
+        onClick={handleClick}
+        className="absolute inset-0 z-0 w-full h-full focus:outline-none focus:ring-2 ring-offset-2 ring-[var(--editorial-text-primary)] rounded-2xl opacity-0 focus:opacity-100 transition-opacity duration-200"
+        aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
+      />
+
         {/* Image Container with Progressive Loading - 16:9 ratio */}
         <div
           className={`
-            relative aspect-video overflow-hidden rounded-2xl
+            relative z-10 aspect-video overflow-hidden rounded-2xl
             bg-[var(--editorial-border)]
             transition-all duration-300 ease-out
             mb-3
+            pointer-events-none
             ${isLoaded ? 'opacity-100' : 'opacity-0'}
           `}
         >
@@ -140,13 +146,13 @@ export const DestinationCard = memo(function DestinationCard({
           `}
         />
 
-        {/* Quick Actions - Top Right on Hover */}
+        {/* Quick Actions - Top Right on Hover/Focus */}
         {showQuickActions && destination.slug && (
           <div
             className={`
-              absolute top-2 right-2 z-20
-              opacity-0 group-hover:opacity-100
-              translate-y-1 group-hover:translate-y-0
+              absolute top-2 right-2 z-20 pointer-events-auto
+              opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+              translate-y-1 group-hover:translate-y-0 group-focus-within:translate-y-0
               transition-all duration-200
             `}
           >
@@ -199,7 +205,7 @@ export const DestinationCard = memo(function DestinationCard({
       </div>
 
       {/* Info Section */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pointer-events-none">
         <div>
         <h3
           className={`
@@ -230,18 +236,7 @@ export const DestinationCard = memo(function DestinationCard({
         )}
         </div>
       </div>
-
-      {/* Focus Ring for Accessibility */}
-      <div
-        className={`
-          absolute inset-0
-          ring-2 ring-offset-2 ring-[var(--editorial-text-primary)]
-          opacity-0 focus-within:opacity-100
-          transition-opacity duration-200
-          pointer-events-none
-        `}
-      />
-    </button>
+    </div>
   );
 });
 
@@ -287,4 +282,3 @@ export function LazyDestinationCard(props: DestinationCardProps) {
     </div>
   );
 }
-

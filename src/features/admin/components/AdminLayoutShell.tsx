@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminNav } from './AdminNav';
+import { AdminToastProvider } from './AdminToast';
+import { AdminBreadcrumb } from './AdminBreadcrumb';
 
 export default function AdminLayoutShell({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -55,8 +57,13 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
           <AdminNav />
         </div>
 
+        {/* Breadcrumb */}
+        <AdminBreadcrumb />
+
         {/* Content */}
-        {children}
+        <AdminToastProvider>
+          {children}
+        </AdminToastProvider>
       </div>
     </main>
   );

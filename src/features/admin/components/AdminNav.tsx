@@ -2,7 +2,24 @@
 
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, LayoutDashboard, MapPin, Building2, Globe, Map, BarChart3, Sparkles, Compass } from 'lucide-react';
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  MapPin,
+  Building2,
+  Globe,
+  Map,
+  BarChart3,
+  Sparkles,
+  Compass,
+  FileText,
+  Image,
+  Search,
+  Users,
+  Settings,
+  Layers,
+} from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/admin', label: 'Overview', value: 'overview', icon: LayoutDashboard },
@@ -12,8 +29,14 @@ const NAV_LINKS = [
   { href: '/admin/cities', label: 'Cities', value: 'cities', icon: MapPin },
   { href: '/admin/countries', label: 'Countries', value: 'countries', icon: Globe },
   { href: '/admin/neighborhoods', label: 'Neighborhoods', value: 'neighborhoods', icon: Map },
+  { href: '/admin/categories', label: 'Categories', value: 'categories', icon: Layers },
+  { href: '/admin/content', label: 'CMS', value: 'content', icon: FileText },
+  { href: '/admin/media', label: 'Media', value: 'media', icon: Image },
   { href: '/admin/analytics', label: 'Analytics', value: 'analytics', icon: BarChart3 },
+  { href: '/admin/searches', label: 'Searches', value: 'searches', icon: Search },
   { href: '/admin/enrich', label: 'Enrich', value: 'enrich', icon: Sparkles },
+  { href: '/admin/users', label: 'Users', value: 'users', icon: Users },
+  { href: '/admin/settings', label: 'Settings', value: 'settings', icon: Settings },
 ];
 
 function getActiveValue(pathname: string) {
@@ -41,6 +64,8 @@ export function AdminNav() {
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="flex items-center justify-between w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm font-medium text-gray-900 dark:text-white"
+          aria-expanded={mobileMenuOpen}
+          aria-label="Toggle admin navigation"
         >
           <span className="flex items-center gap-2">
             {activeLink && <activeLink.icon className="w-4 h-4" />}
@@ -54,7 +79,7 @@ export function AdminNav() {
         </button>
 
         {mobileMenuOpen && (
-          <div className="mt-2 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <div className="mt-2 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg max-h-[60vh] overflow-y-auto">
             {NAV_LINKS.map((link) => {
               const Icon = link.icon;
               const isActive = activeValue === link.value;

@@ -32,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/dialog';
+import { useConfirmDialog } from '@/components/ConfirmDialog';
 
 interface MediaItem {
   id: string;
@@ -61,6 +62,7 @@ export function MediaLibrary() {
   const [totalCount, setTotalCount] = useState(0);
   const [storageUsed, setStorageUsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const { confirm: showConfirm, Dialog: ConfirmDialogComponent } = useConfirmDialog();
 
   const ITEMS_PER_PAGE = viewMode === 'grid' ? 24 : 20;
 
@@ -173,8 +175,6 @@ export function MediaLibrary() {
   };
 
   const handleDelete = async (item: MediaItem) => {
-    if (!confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
-
     setDeleting(prev => new Set(prev).add(item.id));
     setError(null);
     try {
@@ -209,8 +209,6 @@ export function MediaLibrary() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selectedItems.size} items? This cannot be undone.`)) return;
-
     const itemsToDelete = media.filter(m => selectedItems.has(m.id));
     const paths = itemsToDelete.map(m => m.path);
 
@@ -346,7 +344,13 @@ export function MediaLibrary() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleBulkDelete}
+            onClick={() => showConfirm({
+              title: `Delete ${selectedItems.size} items?`,
+              message: 'This action cannot be undone. The files will be permanently removed.',
+              type: 'danger',
+              confirmText: 'Delete',
+              onConfirm: handleBulkDelete,
+            })}
             className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10"
           >
             <Trash2 className="w-3 h-3 mr-1" />
@@ -525,6 +529,9 @@ export function MediaLibrary() {
         </div>
       )}
 
+      {/* Delete Confirmation */}
+      <ConfirmDialogComponent />
+
       {/* Media Preview Modal */}
       <Dialog open={!!selectedMedia} onOpenChange={(open) => !open && setSelectedMedia(null)}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
@@ -578,7 +585,13 @@ export function MediaLibrary() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDelete(selectedMedia)}
+                    onClick={() => showConfirm({
+                      title: `Delete "${selectedMedia.name}"?`,
+                      message: 'This action cannot be undone. The file will be permanently removed.',
+                      type: 'danger',
+                      confirmText: 'Delete',
+                      onConfirm: () => handleDelete(selectedMedia),
+                    })}
                     disabled={deleting.has(selectedMedia.id)}
                     className="ml-auto text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg"
                   >

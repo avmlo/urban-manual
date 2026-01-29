@@ -74,6 +74,7 @@ export function DashboardOverview() {
           { count: addedThisWeek },
           { data: recentDests },
           { data: allDests },
+          { count: totalUsers },
         ] = await Promise.all([
           supabase.from('destinations').select('*', { count: 'exact', head: true }),
           supabase.from('destinations').select('*', { count: 'exact', head: true }).not('last_enriched_at', 'is', null),
@@ -87,6 +88,7 @@ export function DashboardOverview() {
           supabase.from('destinations').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
           supabase.from('destinations').select('name, city, category, slug').order('created_at', { ascending: false }).limit(8),
           supabase.from('destinations').select('city'),
+          supabase.from('user_preferences').select('*', { count: 'exact', head: true }),
         ]);
 
         const cityCount: Record<string, number> = {};
@@ -108,8 +110,8 @@ export function DashboardOverview() {
           crownPicks: crownCount || 0,
           totalSaves: totalSaves || 0,
           totalVisits: totalVisits || 0,
-          activeUsers: Math.floor(Math.random() * 200) + 50,
-          recentSearches: Math.floor(Math.random() * 1000) + 200,
+          activeUsers: totalUsers || 0,
+          recentSearches: 0,
           recentDestinations: recentDests || [],
           topCities,
           systemHealth: [
@@ -257,14 +259,14 @@ export function DashboardOverview() {
             loading={loading}
           />
           <DefinitionItem
-            icon={<Search className="w-4 h-4 text-gray-400" />}
-            term="Recent Searches"
-            value={stats?.recentSearches || 0}
+            icon={<Globe className="w-4 h-4 text-gray-400" />}
+            term="Added This Week"
+            value={stats?.addedThisWeek || 0}
             loading={loading}
           />
           <DefinitionItem
             icon={<Users className="w-4 h-4 text-gray-400" />}
-            term="Active Users"
+            term="Users"
             value={stats?.activeUsers || 0}
             loading={loading}
           />

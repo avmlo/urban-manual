@@ -6,14 +6,8 @@ import {
   Menu,
   X,
   LayoutDashboard,
-  MapPin,
-  Building2,
-  Globe,
-  Map,
   BarChart3,
   Sparkles,
-  Compass,
-  Search,
   Users,
   Settings,
   Layers,
@@ -21,22 +15,23 @@ import {
 
 const NAV_LINKS = [
   { href: '/admin', label: 'Overview', value: 'overview', icon: LayoutDashboard },
-  { href: '/admin/destinations', label: 'Destinations', value: 'destinations', icon: MapPin },
-  { href: '/admin/brands', label: 'Brands', value: 'brands', icon: Building2 },
-  { href: '/admin/architects', label: 'Architects', value: 'architects', icon: Compass },
-  { href: '/admin/cities', label: 'Cities', value: 'cities', icon: MapPin },
-  { href: '/admin/countries', label: 'Countries', value: 'countries', icon: Globe },
-  { href: '/admin/neighborhoods', label: 'Neighborhoods', value: 'neighborhoods', icon: Map },
-  { href: '/admin/categories', label: 'Categories', value: 'categories', icon: Layers },
+  { href: '/admin/destinations', label: 'CMS', value: 'cms', icon: Layers },
   { href: '/admin/analytics', label: 'Analytics', value: 'analytics', icon: BarChart3 },
-  { href: '/admin/searches', label: 'Searches', value: 'searches', icon: Search },
   { href: '/admin/enrich', label: 'Enrich', value: 'enrich', icon: Sparkles },
   { href: '/admin/users', label: 'Users', value: 'users', icon: Users },
   { href: '/admin/settings', label: 'Settings', value: 'settings', icon: Settings },
 ];
 
+// CMS routes that should highlight the "CMS" tab
+const CMS_ROUTES = [
+  '/admin/destinations', '/admin/cities', '/admin/countries',
+  '/admin/neighborhoods', '/admin/brands', '/admin/architects', '/admin/categories',
+];
+
 function getActiveValue(pathname: string) {
   if (pathname === '/admin') return 'overview';
+  // Any CMS route highlights the CMS tab
+  if (CMS_ROUTES.some(route => pathname.startsWith(route))) return 'cms';
   const match = NAV_LINKS.find(link => link.href !== '/admin' && pathname.startsWith(link.href));
   return match?.value || 'overview';
 }

@@ -80,13 +80,13 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
         {/* Content - CMS pages get a sidebar */}
         <AdminToastProvider>
           {isCmsPage ? (
-            <div className="flex -mx-4 sm:-mx-6 md:-mx-10" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            <div className="flex gap-0" style={{ minHeight: 'calc(100vh - 280px)' }}>
               {/* Collections Sidebar - hidden on mobile */}
               <div className="hidden md:block flex-shrink-0">
                 <CmsCollectionsSidebar />
               </div>
               {/* Main Content */}
-              <div className="flex-1 min-w-0 overflow-hidden px-4 sm:px-6 md:px-8 py-6">
+              <div className="flex-1 min-w-0">
                 {children}
               </div>
             </div>

@@ -52,16 +52,8 @@ export function CmsCollectionsSidebar() {
   );
 
   return (
-    <div className="w-52 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 flex flex-col">
-      {/* Header */}
-      <div className="px-5 pt-1 pb-3">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-          Collections
-        </span>
-      </div>
-
-      {/* Collection List */}
-      <nav className="flex-1 overflow-y-auto px-2">
+    <nav className="w-48 flex-shrink-0 pr-6 border-r border-gray-100 dark:border-gray-800/60 mr-8 pt-1">
+      <div className="space-y-0.5">
         {COLLECTIONS.map((col) => {
           const Icon = col.icon;
           const isActive = activeCollection?.id === col.id;
@@ -69,25 +61,25 @@ export function CmsCollectionsSidebar() {
             <button
               key={col.id}
               onClick={() => router.push(col.href)}
-              className={`w-full flex items-center justify-between px-3 py-2 text-[13px] rounded-md transition-colors ${
+              className={`w-full flex items-center justify-between py-1.5 text-[13px] transition-colors ${
                 isActive
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
+                  ? 'text-black dark:text-white font-medium'
+                  : 'text-black/30 dark:text-gray-500 hover:text-black/60 dark:hover:text-gray-300'
               }`}
             >
-              <span className="flex items-center gap-2.5 min-w-0">
-                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'opacity-70' : 'opacity-40'}`} />
+              <span className="flex items-center gap-2 min-w-0">
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{col.label}</span>
               </span>
               {counts[col.id] !== undefined && (
-                <span className={`text-xs tabular-nums ${isActive ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                <span className="text-[11px] tabular-nums opacity-60">
                   {counts[col.id]}
                 </span>
               )}
             </button>
           );
         })}
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 }

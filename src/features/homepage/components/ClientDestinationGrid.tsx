@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useHomepageData } from './HomepageDataProvider';
 import { InstantGridSkeleton } from './InstantGridSkeleton';
 import { DestinationCard } from '@/components/DestinationCard';
+import { Destination } from '@/types/destination';
 import { SmartEmptyState } from '@/components/SmartEmptyState';
 import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -39,6 +40,11 @@ export function ClientDestinationGrid() {
   } = useHomepageData();
 
   const hasFilters = selectedCity || selectedCategory || searchTerm || michelinOnly || crownOnly;
+
+  // Stable callback for card selection to prevent re-renders
+  const handleSelect = useCallback((destination: Destination) => {
+    openDestination(destination);
+  }, [openDestination]);
 
   // Reference for swipe detection
   const containerRef = useRef<HTMLDivElement>(null);
@@ -258,7 +264,7 @@ export function ClientDestinationGrid() {
             key={destination.slug}
             destination={destination}
             index={index}
-            onClick={() => openDestination(destination)}
+            onSelect={handleSelect}
             showQuickActions={true}
             showBadges={true}
           />

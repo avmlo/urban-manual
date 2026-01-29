@@ -189,7 +189,7 @@ const WhyThisContent = memo(function WhyThisContent({
           <Lightbulb className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
             Why we recommended this
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">

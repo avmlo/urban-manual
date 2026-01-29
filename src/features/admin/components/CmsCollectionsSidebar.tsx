@@ -52,16 +52,16 @@ export function CmsCollectionsSidebar() {
   );
 
   return (
-    <div className="w-56 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col">
+    <div className="w-52 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 flex flex-col">
       {/* Header */}
-      <div className="h-12 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
-        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+      <div className="px-5 pt-1 pb-3">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
           Collections
         </span>
       </div>
 
       {/* Collection List */}
-      <nav className="flex-1 overflow-y-auto py-1">
+      <nav className="flex-1 overflow-y-auto px-2">
         {COLLECTIONS.map((col) => {
           const Icon = col.icon;
           const isActive = activeCollection?.id === col.id;
@@ -69,14 +69,14 @@ export function CmsCollectionsSidebar() {
             <button
               key={col.id}
               onClick={() => router.push(col.href)}
-              className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 text-[13px] rounded-md transition-colors ${
                 isActive
-                  ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <span className="flex items-center gap-2.5 min-w-0">
-                <Icon className="w-4 h-4 flex-shrink-0 opacity-60" />
+                <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'opacity-70' : 'opacity-40'}`} />
                 <span className="truncate">{col.label}</span>
               </span>
               {counts[col.id] !== undefined && (

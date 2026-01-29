@@ -138,7 +138,7 @@ export default function AdminDestinationsPage() {
           />
           {/* Drawer Panel */}
           <div
-            className={`fixed right-0 top-0 h-full w-full sm:w-[520px] lg:w-[560px] bg-white dark:bg-gray-950 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
+            className={`fixed right-3 top-3 bottom-3 w-[calc(100%-1.5rem)] sm:w-[520px] lg:w-[560px] bg-white dark:bg-gray-950 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden ${
               showCreateModal ? 'translate-x-0' : 'translate-x-full'
             }`}
           >

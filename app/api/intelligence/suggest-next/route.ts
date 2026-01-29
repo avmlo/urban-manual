@@ -6,6 +6,7 @@ import {
   memorySearchRatelimit,
   enforceRateLimit,
 } from '@/lib/rate-limit';
+import { sanitizeForIlike } from '@/lib/sanitize';
 
 /**
  * POST /api/intelligence/suggest-next
@@ -37,6 +38,11 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     throw createValidationError('City is required');
   }
 
+  // Validate currentItems
+  if (!Array.isArray(currentItems) || currentItems.some(item => typeof item !== 'string')) {
+    throw createValidationError('currentItems must be an array of strings');
+  }
+
   const supabase = createServiceRoleClient();
 
   // Get categories of current items to balance
@@ -57,8 +63,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   let query = supabase
     .from('destinations')
     .select('*')
-    .ilike('city', `%${city}%`)
-    .not('slug', 'in', `(${currentItems.map((s: string) => `"${s}"`).join(',')})`)
+    .ilike('city', `%${sanitizeForIlike(city)}%`)
+    .not('slug', 'in', currentItems)
     .order('rating', { ascending: false })
     .limit(10);
 
@@ -79,9 +85,11 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   if (!hasFoodSpot && (timeOfDay === 'morning' || timeOfDay === 'evening')) {
     // Prioritize food
-    query = query.or(
-      preferredCategories.map(cat => `category.ilike.%${cat}%`).join(',')
-    );
+    if (Array.isArray(preferredCategories)) {
+      query = query.or(
+        preferredCategories.map(cat => `category.ilike.%${cat}%`).join(',')
+      );
+    }
   }
 
   const { data: suggestions, error } = await query;
@@ -104,7 +112,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
     // Bonus for matching time of day
     const destCategory = dest.category?.toLowerCase() || '';
-    if (preferredCategories.some(pref => destCategory.includes(pref))) {
+    if (Array.isArray(preferredCategories) && preferredCategories.some(pref => destCategory.includes(pref))) {
       score += 20;
     }
 

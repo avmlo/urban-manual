@@ -6,6 +6,11 @@ import { useQuickSave } from '@/hooks/useQuickSave';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDrawer } from '@/contexts/DrawerContext';
 import { useDrawerStore } from '@/lib/stores/drawer-store';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/ui/tooltip";
 
 interface QuickActionsProps {
   destinationId?: number;
@@ -107,66 +112,84 @@ export const QuickActions = memo(function QuickActions({
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       {/* Save Button */}
-      <button
-        onClick={handleSave}
-        disabled={isSaving}
-        className={`
-          ${buttonBaseClass}
-          ${isSaved
-            ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
-            : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
-          }
-          shadow-md
-          disabled:opacity-50 disabled:cursor-not-allowed
-        `}
-        aria-label={isSaved ? `Remove ${destinationName} from saved` : `Save ${destinationName}`}
-        title={isSaved ? 'Saved' : 'Save'}
-      >
-        {isSaving ? (
-          <Loader2 className={`${iconSize} animate-spin`} />
-        ) : (
-          <Bookmark className={`${iconSize} ${isSaved ? 'fill-current' : ''}`} />
-        )}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`
+              ${buttonBaseClass}
+              ${isSaved
+                ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
+              }
+              shadow-md
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+            aria-label={isSaved ? `Remove ${destinationName} from saved` : `Save ${destinationName}`}
+          >
+            {isSaving ? (
+              <Loader2 className={`${iconSize} animate-spin`} />
+            ) : (
+              <Bookmark className={`${iconSize} ${isSaved ? 'fill-current' : ''}`} />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{isSaved ? 'Saved' : 'Save'}</p>
+        </TooltipContent>
+      </Tooltip>
 
       {/* Visited Button */}
-      <button
-        onClick={handleVisited}
-        disabled={isMarkingVisited}
-        className={`
-          ${buttonBaseClass}
-          ${isVisited
-            ? 'bg-emerald-500 text-white'
-            : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
-          }
-          shadow-md
-          disabled:opacity-50 disabled:cursor-not-allowed
-        `}
-        aria-label={isVisited ? `Unmark ${destinationName} as visited` : `Mark ${destinationName} as visited`}
-        title={isVisited ? 'Visited' : 'Mark as visited'}
-      >
-        {isMarkingVisited ? (
-          <Loader2 className={`${iconSize} animate-spin`} />
-        ) : (
-          <Check className={`${iconSize} ${isVisited ? 'stroke-[3]' : ''}`} />
-        )}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={handleVisited}
+            disabled={isMarkingVisited}
+            className={`
+              ${buttonBaseClass}
+              ${isVisited
+                ? 'bg-emerald-500 text-white'
+                : 'bg-white text-[var(--editorial-text-primary)] hover:bg-gray-50'
+              }
+              shadow-md
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+            aria-label={isVisited ? `Unmark ${destinationName} as visited` : `Mark ${destinationName} as visited`}
+          >
+            {isMarkingVisited ? (
+              <Loader2 className={`${iconSize} animate-spin`} />
+            ) : (
+              <Check className={`${iconSize} ${isVisited ? 'stroke-[3]' : ''}`} />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{isVisited ? 'Visited' : 'Mark as visited'}</p>
+        </TooltipContent>
+      </Tooltip>
 
       {/* Add to Trip Button */}
       {showAddToTrip && (
-        <button
-          onClick={handleAddToTrip}
-          className={`
-            ${buttonBaseClass}
-            bg-white text-[var(--editorial-text-primary)]
-            hover:bg-gray-50
-            shadow-md
-          `}
-          aria-label={`Add ${destinationName} to trip`}
-          title="Add to trip"
-        >
-          <Plus className={iconSize} />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleAddToTrip}
+              className={`
+                ${buttonBaseClass}
+                bg-white text-[var(--editorial-text-primary)]
+                hover:bg-gray-50
+                shadow-md
+              `}
+              aria-label={`Add ${destinationName} to trip`}
+            >
+              <Plus className={iconSize} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add to trip</p>
+          </TooltipContent>
+        </Tooltip>
       )}
 
       {/* Login Toast */}

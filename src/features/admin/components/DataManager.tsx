@@ -437,116 +437,57 @@ export function DataManager({ type }: DataManagerProps) {
   const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-medium text-black dark:text-white">{config.plural}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
             {items.length.toLocaleString()} {type}
             {syncResult && (
-              <span className="block sm:inline sm:ml-2 text-green-600 dark:text-green-400 text-xs mt-1 sm:mt-0">
+              <span className="ml-2 text-green-600 dark:text-green-400">
                 (+{syncResult.inserted} new, {syncResult.existing} existing)
               </span>
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Column Toggle */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="rounded-lg flex-1 sm:flex-none">
-                <Settings2 className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Columns</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[150px]">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem
-                checked={visibleColumns.name}
-                onCheckedChange={(checked) => setVisibleColumns({ ...visibleColumns, name: !!checked })}
-              >
-                Name
-              </DropdownMenuCheckboxItem>
-              {type === 'brands' && (
-                <DropdownMenuCheckboxItem
-                  checked={visibleColumns.category}
-                  onCheckedChange={(checked) => setVisibleColumns({ ...visibleColumns, category: !!checked })}
-                >
-                  Category
-                </DropdownMenuCheckboxItem>
-              )}
-              {(type === 'cities' || type === 'neighborhoods') && (
-                <DropdownMenuCheckboxItem
-                  checked={visibleColumns.location}
-                  onCheckedChange={(checked) => setVisibleColumns({ ...visibleColumns, location: !!checked })}
-                >
-                  Location
-                </DropdownMenuCheckboxItem>
-              )}
-              {type === 'countries' && (
-                <DropdownMenuCheckboxItem
-                  checked={visibleColumns.code}
-                  onCheckedChange={(checked) => setVisibleColumns({ ...visibleColumns, code: !!checked })}
-                >
-                  Code
-                </DropdownMenuCheckboxItem>
-              )}
-              {type === 'architects' && (
-                <DropdownMenuCheckboxItem
-                  checked={visibleColumns.nationality}
-                  onCheckedChange={(checked) => setVisibleColumns({ ...visibleColumns, nationality: !!checked })}
-                >
-                  Nationality
-                </DropdownMenuCheckboxItem>
-              )}
-              <DropdownMenuCheckboxItem
-                checked={visibleColumns.slug}
-                onCheckedChange={(checked) => setVisibleColumns({ ...visibleColumns, slug: !!checked })}
-              >
-                Slug
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            variant="outline"
+        <div className="flex items-center gap-3">
+          <button
             onClick={handleSync}
             disabled={syncing}
-            className="rounded-lg flex-1 sm:flex-none"
+            className="inline-flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
             title={`Sync ${type} from existing destinations`}
           >
-            <RefreshCw className={cn("w-4 h-4 sm:mr-2", syncing && "animate-spin")} />
+            <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
             <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync'}</span>
-          </Button>
-          <Button onClick={openCreateDrawer} className="rounded-lg flex-1 sm:flex-none">
-            <Plus className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Add New</span>
-          </Button>
+          </button>
+          <button
+            onClick={openCreateDrawer}
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-black dark:text-white hover:opacity-60 transition-opacity"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add New
+          </button>
         </div>
       </div>
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <div>
-            <p className="font-medium">Database Error</p>
-            <p className="text-sm">{error}</p>
-          </div>
+        <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-xs">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
       {/* Search */}
-      <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className="pb-2">
+        <div className="relative max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
           <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Search ${type}...`}
-            className="pl-10"
+            className="pl-9 h-8 text-xs rounded-lg border-transparent bg-gray-50 dark:bg-gray-900/50 focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white dark:focus:bg-gray-900"
           />
         </div>
       </div>
@@ -598,11 +539,11 @@ export function DataManager({ type }: DataManagerProps) {
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
         </div>
       ) : (
-        <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[400px]">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-              <tr>
-                <th className="w-12 px-4 py-3">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-gray-800/50">
+                <th className="w-8 pl-0 pr-2 py-2">
                   <Checkbox
                     checked={filteredItems.length > 0 && selectedItems.size === filteredItems.length}
                     onCheckedChange={toggleSelectAll}
@@ -610,49 +551,49 @@ export function DataManager({ type }: DataManagerProps) {
                   />
                 </th>
                 {visibleColumns.name && (
-                  <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2">
                     {config.singular}
                   </th>
                 )}
                 {type === 'brands' && visibleColumns.category && (
-                  <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Category
                   </th>
                 )}
                 {(type === 'cities' || type === 'neighborhoods') && visibleColumns.location && (
-                  <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Location
                   </th>
                 )}
                 {type === 'countries' && visibleColumns.code && (
-                  <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Code
                   </th>
                 )}
                 {type === 'architects' && visibleColumns.nationality && (
-                  <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Nationality
                   </th>
                 )}
                 {visibleColumns.slug && (
-                  <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-3 hidden md:table-cell">
+                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden md:table-cell">
                     Slug
                   </th>
                 )}
-                <th className="w-10"></th>
+                <th className="w-8"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-800/30">
               {filteredItems.map((item) => (
                 <tr
                   key={item.id}
                   className={cn(
-                    "hover:bg-gray-50 dark:hover:bg-gray-900/50 cursor-pointer",
-                    selectedItems.has(item.id) && "bg-blue-50 dark:bg-blue-900/20"
+                    "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-900/20",
+                    selectedItems.has(item.id) && "bg-gray-50 dark:bg-gray-900/50"
                   )}
                   onClick={() => openEditDrawer(item)}
                 >
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="pl-0 pr-2 py-2" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedItems.has(item.id)}
                       onCheckedChange={() => toggleSelect(item.id)}
@@ -660,34 +601,34 @@ export function DataManager({ type }: DataManagerProps) {
                     />
                   </td>
                   {visibleColumns.name && (
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-2.5">
                         {('logo_url' in item && item.logo_url) || ('image_url' in item && item.image_url) ? (
                           <img
                             src={('logo_url' in item ? item.logo_url : (item as City | Country | Neighborhood).image_url) || ''}
                             alt={item.name}
-                            className="w-10 h-10 rounded-lg object-cover bg-gray-100 dark:bg-gray-800"
+                            className="w-8 h-8 rounded-lg object-cover bg-gray-100 dark:bg-gray-800"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                             {type === 'countries' && 'flag_emoji' in item && item.flag_emoji ? (
-                              <span className="text-xl">{item.flag_emoji}</span>
+                              <span className="text-sm">{item.flag_emoji}</span>
                             ) : (
-                              <Icon className="h-5 w-5 text-gray-400" />
+                              <Icon className="h-3 w-3 text-gray-300 dark:text-gray-600" />
                             )}
                           </div>
                         )}
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                        <div className="min-w-0">
+                          <div className="text-[13px] text-gray-900 dark:text-white truncate">{item.name}</div>
                           {'website' in item && item.website && (
                             <a
                               href={item.website}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                              className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-0.5 transition-colors"
                             >
-                              Website <ExternalLink className="h-3 w-3" />
+                              Website <ExternalLink className="h-2.5 w-2.5" />
                             </a>
                           )}
                         </div>
@@ -695,62 +636,62 @@ export function DataManager({ type }: DataManagerProps) {
                     </td>
                   )}
                   {type === 'brands' && visibleColumns.category && (
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-2 py-2 hidden sm:table-cell">
+                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
                         {'category' in item ? item.category || '—' : '—'}
                       </span>
                     </td>
                   )}
                   {(type === 'cities' || type === 'neighborhoods') && visibleColumns.location && (
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-2 py-2 hidden sm:table-cell">
+                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
                         {'city' in item && item.city ? `${item.city}, ` : ''}
                         {'country' in item ? item.country || '—' : '—'}
                       </span>
                     </td>
                   )}
                   {type === 'countries' && visibleColumns.code && (
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-2 py-2 hidden sm:table-cell">
+                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
                         {'code' in item ? item.code || '—' : '—'}
                       </span>
                     </td>
                   )}
                   {type === 'architects' && visibleColumns.nationality && (
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-2 py-2 hidden sm:table-cell">
+                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
                         {'nationality' in item ? item.nationality || '—' : '—'}
                       </span>
                     </td>
                   )}
                   {visibleColumns.slug && (
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <code className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                    <td className="px-2 py-2 hidden md:table-cell">
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500">
                         {item.slug}
-                      </code>
+                      </span>
                     </td>
                   )}
-                  <td className="px-2 py-3">
+                  <td className="px-2 py-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                        <button className="p-1 rounded-md text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors">
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDrawer(item); }}>
-                          <Pencil className="h-4 w-4 mr-2" />
+                          <Pencil className="h-3.5 w-3.5 mr-2" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openMergeModal(item); }}>
-                          <Merge className="h-4 w-4 mr-2" />
+                          <Merge className="h-3.5 w-3.5 mr-2" />
                           Merge Into...
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                           className="text-red-600 focus:text-red-600"
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2 className="h-3.5 w-3.5 mr-2" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -761,7 +702,7 @@ export function DataManager({ type }: DataManagerProps) {
 
               {filteredItems.length === 0 && !error && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={4} className="px-2 py-12 text-center text-[13px] text-gray-400">
                     No {type} found. {searchQuery ? 'Try a different search.' : `Add your first ${config.singular.toLowerCase()}!`}
                   </td>
                 </tr>

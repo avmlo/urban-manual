@@ -2,13 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Layers,
-  Plus,
-  Edit3,
   Search,
   ChevronUp,
   ChevronDown,
-  MoreVertical,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -98,167 +94,119 @@ export default function CategoriesPage() {
   const totalDestinations = categories.reduce((sum, c) => sum + c.count, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Categories</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {categories.length} categories across {totalDestinations} destinations
-          </p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium transition-colors hover:opacity-90">
-          <Plus className="w-4 h-4" />
-          Add Category
-        </button>
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
+          {categories.length} categories · {totalDestinations} destinations
+        </p>
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search categories..."
-          className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600"
-        />
-      </div>
-
-      {/* Category Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {loading ? (
-          Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
-          ))
-        ) : filteredCategories.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-gray-500">
-            No categories found
-          </div>
-        ) : (
-          filteredCategories.map((category) => (
-            <div
-              key={category.name}
-              className="group relative p-5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-gray-300 dark:hover:border-gray-700 transition-all"
-            >
-              {/* Color indicator */}
-              <div
-                className="absolute top-3 right-3 w-3 h-3 rounded-full"
-                style={{ backgroundColor: category.color }}
-              />
-
-              <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: `${category.color}20` }}
-                >
-                  <Layers className="w-5 h-5" style={{ color: category.color }} />
-                </div>
-              </div>
-
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white capitalize mb-1">
-                {category.name}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {category.count} destinations
-              </p>
-
-              {/* Progress bar */}
-              <div className="mt-4 h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${(category.count / (filteredCategories[0]?.count || 1)) * 100}%`,
-                    backgroundColor: category.color,
-                  }}
-                />
-              </div>
-
-              {/* Actions on hover */}
-              <div className="absolute top-3 right-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                  <Edit3 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Category Table */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">All Categories</h3>
+      <div className="pb-2">
+        <div className="relative max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search categories..."
+            className="w-full pl-9 pr-3 py-1.5 h-8 text-xs rounded-lg border-transparent bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white dark:focus:bg-gray-900 border transition-colors"
+          />
         </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100 dark:border-gray-800/50">
-              <th className="px-4 py-3 text-left">
+              <th className="text-left px-2 py-2">
                 <button
                   onClick={() => handleSort('name')}
-                  className="flex items-center gap-1 text-xs uppercase tracking-wider text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium"
+                  className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-medium transition-colors ${
+                    sortField === 'name'
+                      ? 'text-black/60 dark:text-gray-300'
+                      : 'text-black/25 dark:text-gray-600 hover:text-black/50 dark:hover:text-gray-400'
+                  }`}
                 >
                   Category
                   {sortField === 'name' && (
-                    sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                    sortOrder === 'asc' ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />
                   )}
                 </button>
               </th>
-              <th className="px-4 py-3 text-left">
+              <th className="text-left px-2 py-2">
                 <button
                   onClick={() => handleSort('count')}
-                  className="flex items-center gap-1 text-xs uppercase tracking-wider text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium"
+                  className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-medium transition-colors ${
+                    sortField === 'count'
+                      ? 'text-black/60 dark:text-gray-300'
+                      : 'text-black/25 dark:text-gray-600 hover:text-black/50 dark:hover:text-gray-400'
+                  }`}
                 >
                   Destinations
                   {sortField === 'count' && (
-                    sortOrder === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                    sortOrder === 'asc' ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />
                   )}
                 </button>
               </th>
-              <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-gray-500 font-medium">
-                % of Total
+              <th className="text-left px-2 py-2">
+                <span className="text-[11px] uppercase tracking-wider text-black/25 dark:text-gray-600 font-medium">
+                  % of Total
+                </span>
               </th>
-              <th className="w-12 px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
-            {filteredCategories.map((category) => (
-              <tr key={category.name} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: category.color }}
-                    />
-                    <span className="text-sm text-gray-900 dark:text-white capitalize">{category.name}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">{category.count}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full max-w-[100px]">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${(category.count / totalDestinations) * 100}%`,
-                          backgroundColor: category.color,
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {((category.count / totalDestinations) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <button className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-800/30">
+            {loading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <tr key={i}>
+                  <td className="px-2 py-2"><div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" /></td>
+                  <td className="px-2 py-2"><div className="h-4 w-10 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" /></td>
+                  <td className="px-2 py-2"><div className="h-1 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" /></td>
+                </tr>
+              ))
+            ) : filteredCategories.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-2 py-12 text-center text-[13px] text-gray-400">
+                  No categories found
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredCategories.map((category) => (
+                <tr key={category.name} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/20 transition-colors">
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <span className="text-[13px] text-gray-900 dark:text-white capitalize">{category.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-2 py-2">
+                    <span className="text-[13px] text-gray-400 dark:text-gray-500 tabular-nums">{category.count}</span>
+                  </td>
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1 bg-gray-100 dark:bg-gray-800 rounded-full max-w-[80px]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${(category.count / totalDestinations) * 100}%`,
+                            backgroundColor: category.color,
+                          }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-gray-400 tabular-nums">
+                        {((category.count / totalDestinations) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

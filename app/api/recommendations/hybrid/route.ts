@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/supabase/server';
 import { withErrorHandling } from '@/lib/errors';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
@@ -15,17 +15,20 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
  */
 export const POST = withErrorHandling(async (request: NextRequest) => {
   try {
-    const body = await request.json();
-    const { user_id, limit = 20, exclude_visited = true, exclude_saved = true } = body;
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user_id) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'user_id is required' },
-        { status: 400 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
-    const supabase = createServiceRoleClient();
+    const body = await request.json();
+    const { limit = 20, exclude_visited = true, exclude_saved = true } = body;
+    const user_id = user.id;
+
     const results: Array<{
       destination_id: number;
       slug: string;

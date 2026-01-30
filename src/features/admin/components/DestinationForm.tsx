@@ -135,7 +135,7 @@ export function DestinationForm({
       return;
     }
     if (destination && onFormChange) {
-      onFormChange(formData);
+      onFormChange(formData as unknown as Partial<Destination>);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);

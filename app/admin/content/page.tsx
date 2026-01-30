@@ -1,18 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  FileText,
   MapPin,
-  Globe,
   Image,
-  Settings,
   ArrowRight,
   Plus,
   Layout,
-  Palette,
+  Globe,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,74 +24,80 @@ interface ContentSection {
 }
 
 export default function CMSPage() {
+  const [stats, setStats] = useState<{ destinations: number; cities: number; categories: number }>({
+    destinations: 0,
+    cities: 0,
+    categories: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [{ count: destCount }, { data: allDests }] = await Promise.all([
+          supabase.from('destinations').select('*', { count: 'exact', head: true }),
+          supabase.from('destinations').select('city, category'),
+        ]);
+
+        const cities = new Set(allDests?.map(d => d.city).filter(Boolean));
+        const categories = new Set(allDests?.map(d => d.category).filter(Boolean));
+
+        setStats({
+          destinations: destCount || 0,
+          cities: cities.size,
+          categories: categories.size,
+        });
+      } catch {
+        // Keep defaults
+      }
+    };
+    fetchStats();
+  }, []);
+
   const sections: ContentSection[] = [
     {
       title: 'Destinations',
       description: 'Manage travel destinations, add new places, edit details',
       icon: <MapPin className="w-5 h-5" />,
       href: '/admin/destinations',
-      count: 897,
-      color: 'indigo',
+      count: stats.destinations,
+      color: 'gray',
     },
     {
       title: 'Media Library',
       description: 'Upload and manage images, photos, and media files',
       icon: <Image className="w-5 h-5" />,
       href: '/admin/media',
-      color: 'purple',
+      color: 'gray',
     },
     {
       title: 'Categories',
       description: 'Manage destination categories and tags',
       icon: <Layout className="w-5 h-5" />,
       href: '/admin/categories',
-      color: 'amber',
+      color: 'gray',
     },
     {
       title: 'Homepage',
       description: 'Configure homepage layout, featured content, hero section',
       icon: <Globe className="w-5 h-5" />,
       href: '/admin/settings',
-      color: 'emerald',
+      color: 'gray',
     },
   ];
-
-  const colorClasses: Record<string, { bg: string; border: string; icon: string }> = {
-    indigo: {
-      bg: 'bg-indigo-500/10',
-      border: 'border-indigo-500/20 hover:border-indigo-500/40',
-      icon: 'text-indigo-400',
-    },
-    purple: {
-      bg: 'bg-purple-500/10',
-      border: 'border-purple-500/20 hover:border-purple-500/40',
-      icon: 'text-purple-400',
-    },
-    amber: {
-      bg: 'bg-amber-500/10',
-      border: 'border-amber-500/20 hover:border-amber-500/40',
-      icon: 'text-amber-400',
-    },
-    emerald: {
-      bg: 'bg-emerald-500/10',
-      border: 'border-emerald-500/20 hover:border-emerald-500/40',
-      icon: 'text-emerald-400',
-    },
-  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Content Management</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Content Management</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage all content across Urban Manual
           </p>
         </div>
         <Link
           href="/admin/destinations"
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium transition-colors hover:opacity-90"
         >
           <Plus className="w-4 h-4" />
           Add Content
@@ -102,99 +106,66 @@ export default function CMSPage() {
 
       {/* Content Sections Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {sections.map((section) => {
-          const colors = colorClasses[section.color];
-          return (
-            <Link
-              key={section.title}
-              href={section.href}
-              className={`
-                group relative p-6 rounded-xl border bg-gray-900/50 transition-all
-                ${colors.border}
-              `}
-            >
-              <div className={`absolute inset-0 ${colors.bg} opacity-0 group-hover:opacity-100 rounded-xl transition-opacity`} />
-
-              <div className="relative">
-                <div className="flex items-start justify-between">
-                  <div className={`p-3 rounded-xl ${colors.bg} ${colors.icon}`}>
-                    {section.icon}
-                  </div>
-                  {section.count !== undefined && (
-                    <span className="text-sm font-semibold text-gray-400">
-                      {section.count.toLocaleString()} items
-                    </span>
-                  )}
+        {sections.map((section) => (
+          <Link
+            key={section.title}
+            href={section.href}
+            className="group relative p-6 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+          >
+            <div className="relative">
+              <div className="flex items-start justify-between">
+                <div className="p-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  {section.icon}
                 </div>
-
-                <h3 className="mt-4 text-lg font-semibold text-white group-hover:text-white">
-                  {section.title}
-                </h3>
-                <p className="mt-1 text-sm text-gray-400 group-hover:text-gray-300">
-                  {section.description}
-                </p>
-
-                <div className="mt-4 flex items-center gap-1 text-sm font-medium text-gray-500 group-hover:text-indigo-400 transition-colors">
-                  Manage
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
+                {section.count !== undefined && section.count > 0 && (
+                  <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                    {section.count.toLocaleString()} items
+                  </span>
+                )}
               </div>
-            </Link>
-          );
-        })}
+
+              <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
+                {section.title}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                {section.description}
+              </p>
+
+              <div className="mt-4 flex items-center gap-1 text-sm font-medium text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                Manage
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
 
       {/* Quick Stats */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-        <h3 className="text-sm font-medium text-white mb-4">Content Overview</h3>
+      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 p-6">
+        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Content Overview</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-gray-800/50 rounded-lg">
-            <p className="text-2xl font-bold text-white">897</p>
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {stats.destinations.toLocaleString()}
+            </p>
             <p className="text-xs text-gray-500 mt-1">Destinations</p>
           </div>
-          <div className="text-center p-4 bg-gray-800/50 rounded-lg">
-            <p className="text-2xl font-bold text-white">2.4K</p>
-            <p className="text-xs text-gray-500 mt-1">Images</p>
-          </div>
-          <div className="text-center p-4 bg-gray-800/50 rounded-lg">
-            <p className="text-2xl font-bold text-white">48</p>
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {stats.cities}
+            </p>
             <p className="text-xs text-gray-500 mt-1">Cities</p>
           </div>
-          <div className="text-center p-4 bg-gray-800/50 rounded-lg">
-            <p className="text-2xl font-bold text-white">12</p>
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {stats.categories}
+            </p>
             <p className="text-xs text-gray-500 mt-1">Categories</p>
           </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-6">
-        <h3 className="text-sm font-medium text-white mb-4">Recent Changes</h3>
-        <div className="space-y-3">
-          {[
-            { action: 'Created', item: 'Sketch - London', user: 'admin', time: '2 hours ago' },
-            { action: 'Updated', item: 'Chiltern Firehouse', user: 'admin', time: '5 hours ago' },
-            { action: 'Created', item: 'Tokyobike - Tokyo', user: 'admin', time: '1 day ago' },
-            { action: 'Deleted', item: 'Test Destination', user: 'admin', time: '2 days ago' },
-          ].map((activity, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0"
-            >
-              <div className="flex items-center gap-3">
-                <span className={`
-                  text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded
-                  ${activity.action === 'Created' ? 'bg-emerald-500/10 text-emerald-400' :
-                    activity.action === 'Updated' ? 'bg-indigo-500/10 text-indigo-400' :
-                    'bg-rose-500/10 text-rose-400'}
-                `}>
-                  {activity.action}
-                </span>
-                <span className="text-sm text-white">{activity.item}</span>
-              </div>
-              <span className="text-xs text-gray-500">{activity.time}</span>
-            </div>
-          ))}
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">4</p>
+            <p className="text-xs text-gray-500 mt-1">Content Types</p>
+          </div>
         </div>
       </div>
     </div>

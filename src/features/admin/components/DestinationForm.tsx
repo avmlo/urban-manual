@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   Loader2, X, Upload, Link2, Search, MapPin, Star, Crown, ChevronDown, ImageIcon,
@@ -25,6 +25,8 @@ interface DestinationFormProps {
   onCancel: () => void;
   isSaving: boolean;
   toast: Toast;
+  /** Called on every form field change with the full current form data (for autosave) */
+  onFormChange?: (data: Partial<Destination>) => void;
 }
 
 type TabId = 'details' | 'location' | 'media' | 'content' | 'architecture' | 'booking' | 'data';
@@ -55,6 +57,7 @@ export function DestinationForm({
   onCancel,
   isSaving,
   toast,
+  onFormChange,
 }: DestinationFormProps) {
   const [activeTab, setActiveTab] = useState<TabId>('details');
   const [formData, setFormData] = useState({
@@ -122,6 +125,20 @@ export function DestinationForm({
   const [isLoadingDropdowns, setIsLoadingDropdowns] = useState(true);
   const [tagInput, setTagInput] = useState('');
   const [isEnriching, setIsEnriching] = useState(false);
+  const formInitializedRef = useRef(false);
+
+  // Notify parent of form changes (for autosave)
+  useEffect(() => {
+    // Skip the initial render and destination-reset renders
+    if (!formInitializedRef.current) {
+      formInitializedRef.current = true;
+      return;
+    }
+    if (destination && onFormChange) {
+      onFormChange(formData as unknown as Partial<Destination>);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]);
 
   // Update form when destination changes
   useEffect(() => {

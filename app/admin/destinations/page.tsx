@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { X, ChevronLeft } from "lucide-react";
+import { X, ChevronLeft, Check, Loader2, Cloud } from "lucide-react";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
 import { ContentManager } from '@/features/admin/components/cms';
@@ -11,6 +11,8 @@ import { DestinationForm } from '@/features/admin/components/DestinationForm';
 import type { Destination } from '@/types/destination';
 
 export const dynamic = 'force-dynamic';
+
+type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function AdminDestinationsPage() {
   const toast = useToast();
@@ -20,6 +22,10 @@ export default function AdminDestinationsPage() {
   const [editingDestination, setEditingDestination] = useState<Destination | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDataRef = useRef<Partial<Destination> | null>(null);
+  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-open editor when slug query parameter is present
   useEffect(() => {
@@ -107,13 +113,90 @@ export default function AdminDestinationsPage() {
     }
   };
 
+  // Autosave: debounced save for editing existing destinations
+  const performAutosave = useCallback(async (data: Partial<Destination>) => {
+    if (!editingDestination) return;
+    setSaveState('saving');
+    try {
+      if (data.name) {
+        const nameLower = data.name.toLowerCase();
+        if (nameLower.startsWith('apple') || nameLower.startsWith('aesop') || nameLower.startsWith('aēsop')) {
+          data.category = 'Shopping';
+        }
+      }
+      if (data.michelin_stars && data.michelin_stars > 0) {
+        data.category = 'Restaurant';
+      }
+
+      const supabase = createClient({ skipValidation: true });
+      const { error } = await supabase
+        .from('destinations')
+        .update(data)
+        .eq('slug', editingDestination.slug);
+      if (error) throw error;
+
+      setSaveState('saved');
+      setRefreshKey(prev => prev + 1);
+      // Reset to idle after showing "saved" for 2s
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+      savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
+    } catch {
+      setSaveState('error');
+    }
+  }, [editingDestination]);
+
+  const handleAutosaveChange = useCallback((data: Partial<Destination>) => {
+    if (!editingDestination) return;
+    pendingDataRef.current = data;
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      if (pendingDataRef.current) {
+        performAutosave(pendingDataRef.current);
+        pendingDataRef.current = null;
+      }
+    }, 1500);
+  }, [editingDestination, performAutosave]);
+
+  // Keyboard shortcut: Escape to close drawer
+  useEffect(() => {
+    if (!showCreateModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowCreateModal(false);
+        setEditingDestination(null);
+      }
+      // Cmd+S / Ctrl+S to force-save pending changes
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (pendingDataRef.current && editingDestination) {
+          if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+          performAutosave(pendingDataRef.current);
+          pendingDataRef.current = null;
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showCreateModal, editingDestination, performAutosave]);
+
+  // Cleanup timers
+  useEffect(() => {
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+    };
+  }, []);
+
   const handleEditDestination = (destination: Destination) => {
     setEditingDestination(destination);
+    setSaveState('idle');
     setShowCreateModal(true);
   };
 
   const handleCreateNew = () => {
     setEditingDestination(null);
+    setSaveState('idle');
     setShowCreateModal(true);
   };
 
@@ -138,7 +221,7 @@ export default function AdminDestinationsPage() {
           />
           {/* Drawer Panel */}
           <div
-            className={`fixed right-0 top-0 h-full w-full sm:w-[520px] lg:w-[560px] bg-white dark:bg-gray-950 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
+            className={`fixed right-3 top-3 bottom-3 w-[calc(100%-1.5rem)] sm:w-[520px] lg:w-[560px] bg-white dark:bg-gray-950 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden ${
               showCreateModal ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
@@ -158,15 +241,43 @@ export default function AdminDestinationsPage() {
                   {editingDestination ? editingDestination.name || 'Edit Destination' : 'New Destination'}
                 </h2>
               </div>
+              <div className="flex items-center gap-3">
+                {/* Save state indicator */}
+                {editingDestination && (
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    {saveState === 'saving' && (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
+                        <span className="text-gray-400">Saving…</span>
+                      </>
+                    )}
+                    {saveState === 'saved' && (
+                      <>
+                        <Check className="w-3 h-3 text-green-500" />
+                        <span className="text-green-600 dark:text-green-400">Saved</span>
+                      </>
+                    )}
+                    {saveState === 'error' && (
+                      <span className="text-red-500">Save failed</span>
+                    )}
+                    {saveState === 'idle' && (
+                      <>
+                        <Cloud className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <span className="text-gray-300 dark:text-gray-600">⌘S</span>
+                      </>
+                    )}
+                  </div>
+                )}
               <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setEditingDestination(null);
-                }}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
-              >
-                <X className="h-5 w-5" />
-              </button>
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setEditingDestination(null);
+                  }}
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
             {/* Form (fills remaining space) */}
             <div className="flex-1 overflow-hidden">
@@ -179,6 +290,7 @@ export default function AdminDestinationsPage() {
                   setEditingDestination(null);
                 }}
                 isSaving={isSaving}
+                onFormChange={editingDestination ? handleAutosaveChange : undefined}
               />
             </div>
           </div>

@@ -539,33 +539,35 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-medium text-black dark:text-white">Content</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
             {totalCount.toLocaleString()} destinations
           </p>
         </div>
-        <Button onClick={onCreateNew} className="rounded-lg w-full sm:w-auto">
-          <Plus className="w-4 h-4 mr-2" />
+        <button
+          onClick={onCreateNew}
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-black dark:text-white hover:opacity-60 transition-opacity"
+        >
+          <Plus className="w-3.5 h-3.5" />
           Add New
-        </Button>
+        </button>
       </div>
 
       {/* Toolbar */}
-      <div className="pb-4 space-y-3">
+      <div className="pb-2 space-y-3">
         {/* Search + View Toggle */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
             <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
-              className="pl-9 h-8 text-xs rounded-lg border-gray-200 dark:border-gray-800 bg-transparent"
+              className="pl-9 h-8 text-xs rounded-lg border-transparent bg-gray-50 dark:bg-gray-900/50 focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white dark:focus:bg-gray-900"
             />
           </div>
 
@@ -1037,14 +1039,9 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4" role="navigation" aria-label="Pagination">
           <div className="flex items-center gap-3 order-2 sm:order-1">
-            <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
               {((page - 1) * itemsPerPage) + 1}–{Math.min(page * itemsPerPage, totalCount)} of {totalCount.toLocaleString()}
             </p>
-            <span className="hidden lg:flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-600">
-              <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">←</kbd>
-              <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">→</kbd>
-              <span>to navigate</span>
-            </span>
           </div>
           <div className="flex items-center gap-0.5 order-1 sm:order-2">
             <button
@@ -1075,10 +1072,10 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                     onClick={() => setPage(pageNum)}
                     aria-label={`Go to page ${pageNum}`}
                     aria-current={page === pageNum ? 'page' : undefined}
-                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white focus-visible:outline-none ${
+                    className={`w-7 h-7 rounded-md text-[11px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white focus-visible:outline-none ${
                       page === pageNum
                         ? 'bg-black text-white dark:bg-white dark:text-black'
-                        : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        : 'text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`}
                   >
                     {pageNum}
@@ -1134,14 +1131,14 @@ function TableView({
   const SortButton = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <button
       onClick={() => handleSort(field)}
-      className={`flex items-center gap-1.5 text-xs uppercase tracking-wide font-medium transition-colors ${
+      className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-medium transition-colors ${
         sortField === field
-          ? 'text-black dark:text-white'
-          : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+          ? 'text-black/60 dark:text-gray-300'
+          : 'text-black/25 dark:text-gray-600 hover:text-black/50 dark:hover:text-gray-400'
       }`}
     >
       {children}
-      <ArrowUpDown className={`w-3 h-3 ${sortField === field ? 'opacity-100' : 'opacity-0'} ${sortOrder === 'desc' ? 'rotate-180' : ''} transition-all`} />
+      <ArrowUpDown className={`w-2.5 h-2.5 ${sortField === field ? 'opacity-100' : 'opacity-0'} ${sortOrder === 'desc' ? 'rotate-180' : ''} transition-all`} />
     </button>
   );
 
@@ -1149,44 +1146,39 @@ function TableView({
   const renderCell = (columnId: ColumnId, dest: Destination) => {
     switch (columnId) {
       case 'city':
-        return <span className="text-sm text-gray-500 dark:text-gray-400">{dest.city || '—'}</span>;
+        return <span className="text-[13px] text-gray-400 dark:text-gray-500">{dest.city || '—'}</span>;
       case 'neighborhood':
-        return <span className="text-sm text-gray-500 dark:text-gray-400">{dest.neighborhood || '—'}</span>;
+        return <span className="text-[13px] text-gray-400 dark:text-gray-500">{dest.neighborhood || '—'}</span>;
       case 'category':
-        return <span className="text-xs text-gray-500 dark:text-gray-400 capitalize px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">{dest.category}</span>;
+        return <span className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">{dest.category}</span>;
       case 'status':
         return (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {dest.last_enriched_at && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
-                <Check className="w-3 h-3" />
-                Enriched
-              </span>
+              <Check className="w-3 h-3 text-green-500 dark:text-green-400" />
             )}
             {dest.image && (
-              <span className="inline-flex items-center text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-1 rounded">
-                <ImageIcon className="w-3 h-3" />
-              </span>
+              <ImageIcon className="w-3 h-3 text-gray-300 dark:text-gray-600" />
             )}
           </div>
         );
       case 'rating':
         return dest.rating ? (
-          <span className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+          <span className="inline-flex items-center gap-1 text-[13px] text-gray-400 dark:text-gray-500">
             <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
             {dest.rating.toFixed(1)}
           </span>
         ) : (
-          <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
+          <span className="text-[13px] text-gray-300 dark:text-gray-600">—</span>
         );
       case 'address':
         return (
-          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px] block">
+          <span className="text-[11px] text-gray-400 dark:text-gray-500 truncate max-w-[200px] block">
             {dest.formatted_address || '—'}
           </span>
         );
       case 'brand':
-        return <span className="text-sm text-gray-500 dark:text-gray-400">{dest.brand || '—'}</span>;
+        return <span className="text-[13px] text-gray-400 dark:text-gray-500">{dest.brand || '—'}</span>;
       default:
         return null;
     }
@@ -1201,86 +1193,86 @@ function TableView({
       return <SortButton field={column.sortField}>{column.label}</SortButton>;
     }
     return (
-      <span className="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 font-medium">
+      <span className="text-[11px] uppercase tracking-wider text-black/25 dark:text-gray-600 font-medium">
         {column.label}
       </span>
     );
   };
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800/50">
+    <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-100 dark:border-gray-800/50 bg-gray-50/50 dark:bg-gray-900/30">
-            <th className="w-10 px-4 py-3 text-left">
+          <tr className="border-b border-gray-100 dark:border-gray-800/50">
+            <th className="w-8 pl-0 pr-2 py-2 text-left">
               <Checkbox
                 checked={selectedItems.size === destinations.length && destinations.length > 0}
                 onCheckedChange={toggleSelectAll}
               />
             </th>
-            <th className="px-4 py-3 text-left">
+            <th className="px-2 py-2 text-left">
               <SortButton field="name">Name</SortButton>
             </th>
             {TABLE_COLUMNS.filter(col => visibleColumns.has(col.id)).map(column => (
-              <th key={column.id} className="px-4 py-3 text-left">
+              <th key={column.id} className="px-2 py-2 text-left">
                 {renderHeader(column.id)}
               </th>
             ))}
-            <th className="w-10 px-4 py-3" />
+            <th className="w-8 px-2 py-2" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50 bg-white dark:bg-transparent">
+        <tbody className="divide-y divide-gray-50 dark:divide-gray-800/30">
           {destinations.map((dest) => (
             <tr
               key={dest.id}
               className={`group transition-colors ${
                 selectedItems.has(dest.id!)
                   ? 'bg-gray-50 dark:bg-gray-900/50'
-                  : 'hover:bg-gray-50/50 dark:hover:bg-gray-900/30'
+                  : 'hover:bg-gray-50/50 dark:hover:bg-gray-900/20'
               }`}
             >
-              <td className="px-4 py-3">
+              <td className="pl-0 pr-2 py-2">
                 <Checkbox
                   checked={selectedItems.has(dest.id!)}
                   onCheckedChange={() => toggleSelect(dest.id!)}
                 />
               </td>
-              <td className="px-4 py-3">
+              <td className="px-2 py-2">
                 <button
                   onClick={() => onEdit?.(dest)}
-                  className="flex items-center gap-3 text-left group/cell"
+                  className="flex items-center gap-2.5 text-left group/cell"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden flex-shrink-0 ring-1 ring-gray-200/50 dark:ring-gray-700/50">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden flex-shrink-0">
                     {dest.image ? (
                       <img src={dest.image} alt={dest.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                        <ImageIcon className="w-3 h-3 text-gray-300 dark:text-gray-600" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white truncate group-hover/cell:text-gray-600 dark:group-hover/cell:text-gray-300 transition-colors">{dest.name}</span>
-                      {dest.crown && <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />}
+                      <span className="text-[13px] text-gray-900 dark:text-white truncate group-hover/cell:opacity-60 transition-opacity">{dest.name}</span>
+                      {dest.crown && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
                       {dest.michelin_stars && dest.michelin_stars > 0 && (
                         <div className="flex items-center gap-0.5">
                           {Array.from({ length: dest.michelin_stars }).map((_, i) => (
-                            <img key={i} src="/michelin-star.svg" alt="Michelin" className="w-3 h-3" />
+                            <img key={i} src="/michelin-star.svg" alt="Michelin" className="w-2.5 h-2.5" />
                           ))}
                         </div>
                       )}
                     </div>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 truncate block">{dest.slug}</span>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500 truncate block">{dest.slug}</span>
                   </div>
                 </button>
               </td>
               {TABLE_COLUMNS.filter(col => visibleColumns.has(col.id)).map(column => (
-                <td key={column.id} className="px-4 py-3">
+                <td key={column.id} className="px-2 py-2">
                   {renderCell(column.id, dest)}
                 </td>
               ))}
-              <td className="px-4 py-3">
+              <td className="px-2 py-2">
                 <RowActions
                   destination={dest}
                   isActive={activeDropdown === dest.id}

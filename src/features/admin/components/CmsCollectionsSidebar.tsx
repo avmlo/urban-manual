@@ -64,7 +64,7 @@ export function CmsCollectionsSidebar() {
               className={`w-full flex items-center justify-between py-1.5 text-[13px] transition-colors ${
                 isActive
                   ? 'text-black dark:text-white font-medium'
-                  : 'text-black/30 dark:text-gray-500 hover:text-black/60 dark:hover:text-gray-300'
+                  : 'text-black/30 dark:text-gray-500 hover:text-black dark:hover:text-white'
               }`}
             >
               <span className="flex items-center gap-2 min-w-0">

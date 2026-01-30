@@ -548,6 +548,8 @@ interface EnrichedData {
   design_firm_obj?: { id: string; name: string; slug: string };
   movement_obj?: { id: string; name: string; slug: string };
   architectural_style?: string;
+  description?: string;
+  content?: string;
 }
 
 /**
@@ -677,6 +679,8 @@ const DestinationContent = memo(function DestinationContent({
             opening_hours_json,
             utc_offset,
             architectural_style,
+            description,
+            content,
             architect:architects!architect_id(id, name, slug, image_url),
             design_firm:design_firms(id, name, slug),
             interior_designer:architects!interior_designer_id(id, name, slug),
@@ -695,6 +699,8 @@ const DestinationContent = memo(function DestinationContent({
             price_level: data.price_level,
             utc_offset: data.utc_offset,
             architectural_style: data.architectural_style,
+            description: data.description || undefined,
+            content: data.content || undefined,
           };
 
           // Parse opening hours
@@ -1115,7 +1121,8 @@ const DestinationContent = memo(function DestinationContent({
   const renderSection = (key: SectionKey): React.ReactNode => {
     switch (key) {
       case 'description':
-        const description = destination.micro_description || destination.description || '';
+        // Use enriched description if available (lazy loaded), fallback to props
+        const description = destination.micro_description || enrichedData?.description || destination.description || '';
         const isLong = description.length > 300;
         const displayText = isLong && !showFullDescription
           ? description.slice(0, 280) + '...'
@@ -1817,12 +1824,12 @@ const DestinationContent = memo(function DestinationContent({
         {activeTab === 'overview' && (
           <div>
             {/* Description */}
-            {(destination.micro_description || destination.description) && (
+            {(destination.micro_description || enrichedData?.description || destination.description) && (
               <p
                 className="text-sm leading-[1.75] text-[var(--editorial-text-secondary)] mb-6"
                 style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
               >
-                {destination.micro_description || destination.description}
+                {destination.micro_description || enrichedData?.description || destination.description}
               </p>
             )}
 

@@ -47,8 +47,6 @@ export const fetchInitialDestinations = unstable_cache(
           neighborhood,
           category,
           micro_description,
-          description,
-          content,
           image,
           image_thumbnail,
           michelin_stars,
@@ -56,7 +54,6 @@ export const fetchInitialDestinations = unstable_cache(
           rating,
           price_level,
           tags,
-          opening_hours_json,
           latitude,
           longitude
         `)

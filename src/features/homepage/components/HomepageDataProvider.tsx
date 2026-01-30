@@ -162,7 +162,7 @@ function HomepageDataProviderInner({
         .from('destinations')
         .select(`
           id, slug, name, city, country, neighborhood, category,
-          micro_description, description, image, image_thumbnail,
+          micro_description, image, image_thumbnail,
           michelin_stars, crown, rating, price_level, tags,
           latitude, longitude
         `)

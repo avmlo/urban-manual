@@ -156,6 +156,36 @@ export function DataManager({ type }: DataManagerProps) {
     slug: true,
   });
 
+  // Inline editing state
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [inlineEditField, setInlineEditField] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState<string>('');
+
+  const startInlineEdit = (item: DataItem, field: string, currentValue: string) => {
+    setInlineEditId(item.id);
+    setInlineEditField(field);
+    setInlineEditValue(currentValue || '');
+  };
+
+  const commitInlineEdit = async () => {
+    if (!inlineEditId || !inlineEditField) return;
+    try {
+      await apiRequest('PUT', { type, id: inlineEditId, data: { [inlineEditField]: inlineEditValue || null } });
+      await fetchData();
+    } catch (err) {
+      console.error('Inline edit failed:', err);
+    }
+    setInlineEditId(null);
+    setInlineEditField(null);
+    setInlineEditValue('');
+  };
+
+  const cancelInlineEdit = () => {
+    setInlineEditId(null);
+    setInlineEditField(null);
+    setInlineEditValue('');
+  };
+
   // Bulk selection state
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
@@ -636,10 +666,35 @@ export function DataManager({ type }: DataManagerProps) {
                     </td>
                   )}
                   {type === 'brands' && visibleColumns.category && (
-                    <td className="px-2 py-2 hidden sm:table-cell">
-                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
-                        {'category' in item ? item.category || '—' : '—'}
-                      </span>
+                    <td className="px-2 py-2 hidden sm:table-cell" onClick={(e) => e.stopPropagation()}>
+                      {inlineEditId === item.id && inlineEditField === 'category' ? (
+                        <select
+                          autoFocus
+                          value={inlineEditValue}
+                          onChange={(e) => {
+                            setInlineEditValue(e.target.value);
+                            // Auto-commit on selection
+                            setInlineEditId(null);
+                            setInlineEditField(null);
+                            apiRequest('PUT', { type, id: item.id, data: { category: e.target.value || null } }).then(() => fetchData());
+                          }}
+                          onBlur={cancelInlineEdit}
+                          className="text-[13px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                        >
+                          <option value="">—</option>
+                          {BRAND_CATEGORIES.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <button
+                          onClick={() => startInlineEdit(item, 'category', 'category' in item ? (item.category || '') : '')}
+                          className="text-[13px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                          title="Click to edit"
+                        >
+                          {'category' in item ? item.category || '—' : '—'}
+                        </button>
+                      )}
                     </td>
                   )}
                   {(type === 'cities' || type === 'neighborhoods') && visibleColumns.location && (
@@ -658,10 +713,29 @@ export function DataManager({ type }: DataManagerProps) {
                     </td>
                   )}
                   {type === 'architects' && visibleColumns.nationality && (
-                    <td className="px-2 py-2 hidden sm:table-cell">
-                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
-                        {'nationality' in item ? item.nationality || '—' : '—'}
-                      </span>
+                    <td className="px-2 py-2 hidden sm:table-cell" onClick={(e) => e.stopPropagation()}>
+                      {inlineEditId === item.id && inlineEditField === 'nationality' ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={inlineEditValue}
+                          onChange={(e) => setInlineEditValue(e.target.value)}
+                          onBlur={commitInlineEdit}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') commitInlineEdit();
+                            if (e.key === 'Escape') cancelInlineEdit();
+                          }}
+                          className="text-[13px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5 w-24 outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => startInlineEdit(item, 'nationality', 'nationality' in item ? (item.nationality || '') : '')}
+                          className="text-[13px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                          title="Click to edit"
+                        >
+                          {'nationality' in item ? item.nationality || '—' : '—'}
+                        </button>
+                      )}
                     </td>
                   )}
                   {visibleColumns.slug && (

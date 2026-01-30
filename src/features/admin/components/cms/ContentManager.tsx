@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useKeyboardShortcuts, formatShortcut, type Shortcut } from '@/domain/hooks/useKeyboardShortcuts';
 import {
   Search,
@@ -103,7 +104,34 @@ const ITEMS_PER_PAGE_OPTIONS = [12, 24, 48, 96];
 const DEFAULT_ITEMS_PER_PAGE = 24;
 
 // Column configuration for table view
-type ColumnId = 'city' | 'neighborhood' | 'category' | 'status' | 'rating' | 'address' | 'brand';
+type ColumnId = 'city' | 'neighborhood' | 'category' | 'completeness' | 'status' | 'rating' | 'address' | 'brand';
+
+/** Compute a 0–100 completeness score for a destination based on key fields */
+function getCompletenessScore(dest: Destination): number {
+  const fields: { key: keyof Destination; weight: number }[] = [
+    { key: 'image', weight: 20 },
+    { key: 'description', weight: 15 },
+    { key: 'micro_description', weight: 10 },
+    { key: 'content', weight: 10 },
+    { key: 'neighborhood', weight: 5 },
+    { key: 'country', weight: 5 },
+    { key: 'formatted_address', weight: 5 },
+    { key: 'latitude', weight: 5 },
+    { key: 'website', weight: 5 },
+    { key: 'phone_number', weight: 5 },
+    { key: 'rating', weight: 5 },
+    { key: 'tags', weight: 5 },
+    { key: 'last_enriched_at', weight: 5 },
+  ];
+  let score = 0;
+  for (const { key, weight } of fields) {
+    const val = dest[key];
+    if (val !== null && val !== undefined && val !== '' && !(Array.isArray(val) && val.length === 0)) {
+      score += weight;
+    }
+  }
+  return score;
+}
 
 interface ColumnConfig {
   id: ColumnId;
@@ -116,6 +144,7 @@ const TABLE_COLUMNS: ColumnConfig[] = [
   { id: 'city', label: 'City', sortable: true, sortField: 'city' },
   { id: 'neighborhood', label: 'Neighborhood' },
   { id: 'category', label: 'Category', sortable: true, sortField: 'category' },
+  { id: 'completeness', label: 'Complete' },
   { id: 'status', label: 'Status' },
   { id: 'rating', label: 'Rating' },
   { id: 'address', label: 'Address' },
@@ -136,29 +165,62 @@ const getSortLabel = (field: SortField, order: SortOrder): string => {
 };
 
 export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger }: ContentManagerProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const isInitialMount = useRef(true);
+
+  // Read initial state from URL params
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedCity, setSelectedCity] = useState<string>('');
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams?.get('category') || '');
+  const [selectedCity, setSelectedCity] = useState<string>(searchParams?.get('city') || '');
+  const [sortField, setSortField] = useState<SortField>((searchParams?.get('sort') as SortField) || 'name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>((searchParams?.get('order') as SortOrder) || 'asc');
+  const [page, setPage] = useState(Number(searchParams?.get('page')) || 1);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
-  const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>((searchParams?.get('view') as ViewMode) || 'table');
+  const [showFilters, setShowFilters] = useState(
+    !!(searchParams?.get('category') || searchParams?.get('city') || searchParams?.get('enriched') || searchParams?.get('crown') || searchParams?.get('michelin') || searchParams?.get('missing'))
+  );
   const [cities, setCities] = useState<string[]>([]);
   const [citySearchQuery, setCitySearchQuery] = useState('');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
-  // New filter states
-  const [enrichedFilter, setEnrichedFilter] = useState<EnrichedFilter>('all');
-  const [crownOnly, setCrownOnly] = useState(false);
-  const [michelinOnly, setMichelinOnly] = useState(false);
-  const [missingDataFilter, setMissingDataFilter] = useState<MissingDataFilter>('all');
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
+  // Filter states
+  const [enrichedFilter, setEnrichedFilter] = useState<EnrichedFilter>((searchParams?.get('enriched') as EnrichedFilter) || 'all');
+  const [crownOnly, setCrownOnly] = useState(searchParams?.get('crown') === 'true');
+  const [michelinOnly, setMichelinOnly] = useState(searchParams?.get('michelin') === 'true');
+  const [missingDataFilter, setMissingDataFilter] = useState<MissingDataFilter>((searchParams?.get('missing') as MissingDataFilter) || 'all');
+  const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams?.get('per_page')) || DEFAULT_ITEMS_PER_PAGE);
+
+  // Sync state to URL params (debounced)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('q', searchQuery);
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (selectedCity) params.set('city', selectedCity);
+    if (sortField !== 'name') params.set('sort', sortField);
+    if (sortOrder !== 'asc') params.set('order', sortOrder);
+    if (page > 1) params.set('page', String(page));
+    if (viewMode !== 'table') params.set('view', viewMode);
+    if (enrichedFilter !== 'all') params.set('enriched', enrichedFilter);
+    if (crownOnly) params.set('crown', 'true');
+    if (michelinOnly) params.set('michelin', 'true');
+    if (missingDataFilter !== 'all') params.set('missing', missingDataFilter);
+    if (itemsPerPage !== DEFAULT_ITEMS_PER_PAGE) params.set('per_page', String(itemsPerPage));
+
+    const qs = params.toString();
+    const newUrl = qs ? `${pathname}?${qs}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [searchQuery, selectedCategory, selectedCity, sortField, sortOrder, page, viewMode, enrichedFilter, crownOnly, michelinOnly, missingDataFilter, itemsPerPage, pathname, router]);
   // Bulk action states
   const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState<string>('');
@@ -1151,6 +1213,18 @@ function TableView({
         return <span className="text-[13px] text-gray-400 dark:text-gray-500">{dest.neighborhood || '—'}</span>;
       case 'category':
         return <span className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">{dest.category}</span>;
+      case 'completeness': {
+        const score = getCompletenessScore(dest);
+        const color = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600';
+        return (
+          <div className="flex items-center gap-1.5">
+            <div className="w-12 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+              <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${score}%` }} />
+            </div>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">{score}%</span>
+          </div>
+        );
+      }
       case 'status':
         return (
           <div className="flex items-center gap-1">

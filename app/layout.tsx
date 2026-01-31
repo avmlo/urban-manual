@@ -118,19 +118,10 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Playfair+Display:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        {/* Code font & Christmas font - deferred to avoid blocking LCP */}
-        <link
-          rel="preload"
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Gaegu:wght@300;400;700&display=swap"
-          as="style"
-          /* @ts-ignore */
-          fetchPriority="low"
-        />
+        {/* Code font & Christmas font - lower priority, display=swap ensures non-blocking */}
         <link
           href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Gaegu:wght@300;400;700&display=swap"
           rel="stylesheet"
-          media="print"
-          onLoad="this.media='all'"
         />
         
         {/* DNS Prefetch for additional domains */}

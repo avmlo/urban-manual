@@ -4,7 +4,7 @@ import { generateHomeBreadcrumb } from '@/lib/metadata';
 import { HomepageDataProvider } from '@/features/homepage/components/HomepageDataProvider';
 import { HomepageContent } from '@/features/homepage/components/HomepageContent';
 import { AISearchChatWrapper } from '@/features/homepage/components/AISearchChatWrapper';
-import InteractiveHero from '@/features/homepage/components/InteractiveHero';
+import IndexHero from '@/features/homepage/components/IndexHero';
 import NavigationBar from '@/features/homepage/components/NavigationBar';
 
 /**
@@ -16,11 +16,11 @@ import NavigationBar from '@/features/homepage/components/NavigationBar';
  * 3. If empty, client-side fetch kicks in automatically
  * 4. Users always see content - either from SSR or client fetch
  *
- * Apple Design System:
- * - Clean, spacious layouts with generous whitespace
- * - SF Pro-inspired typography with tight letter-spacing
- * - Subtle, refined interactions
- * - Monochromatic palette with minimal accents
+ * DS+R-inspired Index Design:
+ * - Centered search with two-column category grid
+ * - Monospace typography with uppercase tracking
+ * - Horizontal divider navigation bar
+ * - 3-column overlay card grid
  */
 
 // ISR: Revalidate in background every 5 minutes
@@ -76,19 +76,17 @@ export default async function HomePage() {
             Discover the World's Best Hotels, Restaurants & Travel Destinations - The Urban Manual
           </h1>
 
-          {/* Hero Section - Full width layout */}
-          <section className="min-h-[50vh] flex flex-col pl-6 md:pl-10 pr-0 py-10 pb-6 md:pb-10">
-            <div className="w-full flex md:justify-start flex-1 items-center">
-              <InteractiveHero />
-            </div>
+          {/* Hero Section - Centered search + category grid */}
+          <section>
+            <IndexHero />
           </section>
 
-          {/* Content Section - Full width */}
-          <div className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
-            {/* Navigation bar */}
+          {/* Content Section */}
+          <div className="w-full px-4 sm:px-6 md:px-10">
+            {/* Navigation divider bar */}
             <NavigationBar />
 
-            {/* Grid or Map view - switches based on viewMode */}
+            {/* Grid or Map view */}
             <HomepageContent />
           </div>
         </main>

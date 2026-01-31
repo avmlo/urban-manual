@@ -2,17 +2,17 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Globe, Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { useHomepageData } from './HomepageDataProvider';
-import { SearchFiltersComponent, SearchFilters } from '@/src/features/search/SearchFilters';
 
 /**
- * Navigation Bar Component - Apple Design System
+ * Navigation Bar Component - DS+R-inspired horizontal divider
  *
- * Clean, minimal navigation with action buttons and inline filters.
+ * Sticky bar with left navigation links, center filter count, and right view/sort options.
+ * Acts as a visual separator between the hero and the content grid.
  */
 export default function NavigationBar() {
   const router = useRouter();
@@ -23,17 +23,13 @@ export default function NavigationBar() {
     searchTerm,
     clearFilters,
     filteredDestinations,
-    cities,
-    categories,
     michelinOnly,
     crownOnly,
     setMichelinOnly,
-    setCrownOnly,
-    setSelectedCity,
-    setSelectedCategory,
+    viewMode,
+    setViewMode,
   } = useHomepageData();
   const [creatingTrip, setCreatingTrip] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState<SearchFilters>({});
 
   const hasFilters = selectedCity || selectedCategory || searchTerm || michelinOnly || crownOnly;
 
@@ -68,90 +64,96 @@ export default function NavigationBar() {
     }
   }, [user, router]);
 
-  // Handle filter changes from SearchFiltersComponent
-  const handleFiltersChange = useCallback((newFilters: SearchFilters) => {
-    setAdvancedFilters(newFilters);
-
-    // Sync with context
-    if (newFilters.michelin !== undefined) {
-      setMichelinOnly(!!newFilters.michelin);
-    }
-    if (newFilters.city !== undefined) {
-      setSelectedCity(newFilters.city || '');
-    }
-    if (newFilters.category !== undefined) {
-      setSelectedCategory(newFilters.category || '');
-    }
-  }, [setMichelinOnly, setSelectedCity, setSelectedCategory]);
-
   return (
-    <div className="mb-6">
-      <div className="flex justify-between items-center">
-        {/* Left side - Results count and clear filters */}
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-[var(--editorial-text-secondary)]">
-            {filteredDestinations.length} destinations
-          </p>
+    <div className="border-t border-[var(--editorial-text-primary)] py-4 mb-8 sticky top-0 z-30 bg-[var(--editorial-bg)]">
+      <div className="flex items-start justify-between gap-4">
+        {/* Left - Navigation Links */}
+        <div className="flex flex-col gap-1">
+          <Link
+            href="/cities"
+            className="text-xs md:text-sm font-mono uppercase tracking-[0.1em]
+                       text-[var(--editorial-text-primary)] hover:opacity-60 transition-opacity font-semibold"
+          >
+            Destinations
+          </Link>
+          <button
+            onClick={handleCreateTrip}
+            disabled={creatingTrip}
+            className="text-left text-xs md:text-sm font-mono uppercase tracking-[0.1em]
+                       text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+          >
+            {creatingTrip ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Creating...
+              </span>
+            ) : (
+              'Trips'
+            )}
+          </button>
+          <Link
+            href="/about"
+            className="text-xs md:text-sm font-mono uppercase tracking-[0.1em]
+                       text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+          >
+            About
+          </Link>
+          <Link
+            href="/chat"
+            className="text-xs md:text-sm font-mono uppercase tracking-[0.1em]
+                       text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+          >
+            AI Guide
+          </Link>
+        </div>
+
+        {/* Center - Filter Status */}
+        <div className="flex items-center gap-3 pt-0.5">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={michelinOnly}
+              onChange={(e) => setMichelinOnly(e.target.checked)}
+              className="w-4 h-4 rounded border-[var(--editorial-text-secondary)]
+                         accent-[var(--editorial-text-primary)]"
+            />
+            <span className="text-xs md:text-sm font-mono uppercase tracking-[0.1em] text-[var(--editorial-text-secondary)]">
+              Michelin Only ({filteredDestinations.filter(d => d.michelin_stars && d.michelin_stars > 0).length})
+            </span>
+          </label>
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 text-xs text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+              className="text-xs font-mono uppercase tracking-[0.1em]
+                         text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors
+                         underline underline-offset-2"
             >
-              <X className="h-3 w-3" />
               Clear
             </button>
           )}
         </div>
 
-        {/* Right side - Actions */}
-        <div className="flex items-center gap-3">
-          {/* Create Trip */}
+        {/* Right - View/Sort Options */}
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-xs md:text-sm font-mono text-[var(--editorial-text-secondary)]">
+            {filteredDestinations.length} places
+          </span>
           <button
-            onClick={handleCreateTrip}
-            disabled={creatingTrip}
-            className="flex h-10 flex-shrink-0 items-center justify-center gap-2 rounded-lg
-                       bg-[var(--editorial-accent)] px-4 text-sm font-medium
-                       text-white
-                       disabled:opacity-50 hover:bg-[var(--editorial-accent-hover)]
-                       active:scale-[0.98] transition-all duration-200"
+            onClick={() => setViewMode('grid')}
+            className={`text-xs md:text-sm font-mono uppercase tracking-[0.1em] transition-opacity
+                       ${viewMode === 'grid' ? 'text-[var(--editorial-text-primary)] font-semibold' : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'}`}
           >
-            {creatingTrip ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">
-              {creatingTrip ? 'Creating...' : 'Create Trip'}
-            </span>
+            Grid
           </button>
-
-          {/* Filters */}
-          <SearchFiltersComponent
-            filters={advancedFilters}
-            onFiltersChange={handleFiltersChange}
-            availableCities={cities}
-            availableCategories={categories}
-            fullWidthPanel={true}
-            useFunnelIcon={true}
-          />
-
-          {/* Discover by Cities */}
-          <Link
-            href="/cities"
-            className="hidden sm:flex h-10 flex-shrink-0 items-center justify-center gap-2 rounded-lg
-                       border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)]
-                       px-4 text-sm font-medium text-[var(--editorial-text-primary)]
-                       hover:bg-[var(--editorial-border-subtle)]
-                       active:scale-[0.98] transition-all duration-200"
+          <button
+            onClick={() => setViewMode('map')}
+            className={`text-xs md:text-sm font-mono uppercase tracking-[0.1em] transition-opacity
+                       ${viewMode === 'map' ? 'text-[var(--editorial-text-primary)] font-semibold' : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'}`}
           >
-            <Globe className="h-4 w-4" />
-            <span>Discover by Cities</span>
-          </Link>
+            Map
+          </button>
         </div>
       </div>
-
-      {/* Inline filter slot for SearchFiltersComponent */}
-      <div id="search-filters-inline-slot" />
     </div>
   );
 }

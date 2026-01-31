@@ -94,12 +94,20 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     };
   });
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     origin: { lat, lng },
     radiusKm,
     maxWalkingMinutes,
     results,
     count: results.length,
   });
+
+  // Nearby destinations are geo-stable; cache for 5 minutes
+  response.headers.set(
+    'Cache-Control',
+    'public, s-maxage=300, stale-while-revalidate=600'
+  );
+
+  return response;
 });
 

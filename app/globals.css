@@ -294,11 +294,11 @@
   animation: saveGlow 0.6s ease-out;
 }
 
-/* Slide up animation for modals */
+/* Slide up animation for modals - canonical definition */
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(100%);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -310,15 +310,13 @@
   animation: slideUp 0.3s ease-out;
 }
 
-/* Fade in animation */
+/* Fade in animation - canonical definition */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -978,14 +976,8 @@
     animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Grid item stagger delays */
+  /* Grid item stagger delays (extends the base stagger-1..6 above) */
   .stagger-0 { animation-delay: 0ms; }
-  .stagger-1 { animation-delay: 50ms; }
-  .stagger-2 { animation-delay: 100ms; }
-  .stagger-3 { animation-delay: 150ms; }
-  .stagger-4 { animation-delay: 200ms; }
-  .stagger-5 { animation-delay: 250ms; }
-  .stagger-6 { animation-delay: 300ms; }
   .stagger-7 { animation-delay: 350ms; }
   .stagger-8 { animation-delay: 400ms; }
   .stagger-9 { animation-delay: 450ms; }
@@ -1003,25 +995,7 @@
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* fadeIn and slideUp defined above - not duplicated here */
 
 @keyframes slideInFromRight {
   from {
@@ -1374,12 +1348,7 @@ html {
   20%, 40%, 60%, 80% { transform: translateX(4px); }
 }
 
-/* Shimmer effect for loading states */
-@keyframes shimmer {
-  100% {
-    transform: translateX(100%);
-  }
-}
+/* shimmer keyframe defined above in @keyframes shimmer block */
 
 /* Gentle bounce for success states */
 @keyframes gentleBounce {
@@ -1448,24 +1417,7 @@ html {
   transform: scale(0.98);
 }
 
-/* Card hover effect */
-.card-hover {
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-}
-
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.dark .card-hover:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* Page transition */
-.page-transition {
-  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* card-hover and page-transition defined in @layer utilities above */
 
 /* ============================================
    CHRISTMAS THEME STYLES

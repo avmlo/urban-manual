@@ -103,30 +103,34 @@ export default function RootLayout({
         )}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Critical fonts - Inter for body text (preloaded for faster LCP) */}
+        {/* Critical fonts - Inter for body text (single request with all needed weights) */}
         <link
           rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
           as="style"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
         {/* Non-critical fonts - loaded after initial render with display=swap for non-blocking */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;700&family=Instrument+Serif:ital@0;1&family=Playfair+Display:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Playfair+Display:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        {/* Code font - only needed in admin/code sections */}
+        {/* Code font & Christmas font - deferred to avoid blocking LCP */}
         <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
+          rel="preload"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Gaegu:wght@300;400;700&display=swap"
+          as="style"
+          /* @ts-ignore */
+          fetchPriority="low"
         />
-        {/* Gaegu font for Christmas theme */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Gaegu:wght@300;400;700&display=swap"
           rel="stylesheet"
+          media="print"
+          onLoad="this.media='all'"
         />
         
         {/* DNS Prefetch for additional domains */}

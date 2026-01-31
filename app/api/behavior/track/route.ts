@@ -57,26 +57,27 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     // Use authenticated user ID if available, otherwise use provided ID
     const userId = authenticatedUserId || payload.user_id;
 
-    // Process events in batches
-    const processedEvents = [];
-    const errors = [];
+    // Process events in parallel for better throughput
+    const results = await Promise.allSettled(
+      events.map(event => processEvent(supabase, userId, event))
+    );
 
-    for (const event of events) {
-      try {
-        const processed = await processEvent(supabase, userId, event);
-        if (processed) {
-          processedEvents.push(processed);
-        }
-      } catch (error: any) {
+    const processedEvents: any[] = [];
+    const errors: any[] = [];
+
+    results.forEach((result, idx) => {
+      if (result.status === 'fulfilled' && result.value) {
+        processedEvents.push(result.value);
+      } else if (result.status === 'rejected') {
         errors.push({
-          event_type: event.event_type,
-          error: error.message,
+          event_type: events[idx].event_type,
+          error: result.reason?.message || 'Unknown error',
         });
       }
-    }
+    });
 
-    // Also store raw events for algorithm training (separate table)
-    await storeRawEvents(supabase, userId, events);
+    // Store raw events in parallel with response (fire-and-forget)
+    storeRawEvents(supabase, userId, events).catch(() => {});
 
     return NextResponse.json({
       success: true,

@@ -1341,7 +1341,7 @@ export function TripBuilderProvider({ children }: { children: React.ReactNode })
     return !dayData.isOverstuffed && dayData.items.length < 8;
   }, [activeTrip]);
 
-  const value: TripBuilderContextType = {
+  const value: TripBuilderContextType = useMemo(() => ({
     activeTrip,
     savedTrips,
     isPanelOpen,
@@ -1376,7 +1376,14 @@ export function TripBuilderProvider({ children }: { children: React.ReactNode })
     totalItems,
     tripDuration,
     canAddMore,
-  };
+  }), [
+    activeTrip, savedTrips, isPanelOpen, isBuilding, isLoadingTrips, isSuggestingNext,
+    startTrip, addToTrip, removeFromTrip, moveItem, updateItemTime, updateItemNotes,
+    addDay, removeDay, updateTripDetails, clearTrip, saveTrip, loadTrip,
+    refreshSavedTrips, switchToTrip, reorderItems, openPanel, closePanel, togglePanel,
+    generateItinerary, optimizeDay, suggestNextItem, moveItemToDay, autoScheduleDay,
+    getDayInsights, getTripHealth, totalItems, tripDuration, canAddMore,
+  ]);
 
   return (
     <TripBuilderContext.Provider value={value}>

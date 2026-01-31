@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { withErrorHandling } from '@/lib/errors';
 
+// Only select fields needed for destination cards
+const CARD_FIELDS = 'id, slug, name, city, country, category, micro_description, image, image_thumbnail, latitude, longitude, michelin_stars, rating, crown, neighborhood, tags';
+
 export const GET = withErrorHandling(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,10 +15,10 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
     }
 
-    // Get the destination
+    // Get the destination (only fields needed for matching)
     const { data: destination, error: destError } = await supabase
       .from('destinations')
-      .select('*')
+      .select('slug, city, category, michelin_stars, rating, crown')
       .eq('slug', slug)
       .single();
 
@@ -25,64 +28,77 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
     const dest = destination as any;
 
-    // Build query for related destinations
-    const query = supabase
-      .from('destinations')
-      .select('*')
-      .neq('slug', slug)
-      .limit(limit);
+    // Run all three queries in parallel instead of sequentially
+    const [sameCityCategoryResult, sameCityResult, sameCategoryResult] = await Promise.all([
+      // 1. Same city + same category (highest priority)
+      (dest.city && dest.category)
+        ? supabase
+            .from('destinations')
+            .select(CARD_FIELDS)
+            .eq('city', dest.city)
+            .eq('category', dest.category)
+            .neq('slug', slug)
+            .limit(limit)
+        : Promise.resolve({ data: null }),
 
-    // Score-based selection: same city, same category, shared tags, nearby cities
+      // 2. Same city, different category
+      dest.city
+        ? supabase
+            .from('destinations')
+            .select(CARD_FIELDS)
+            .eq('city', dest.city)
+            .neq('category', dest.category || '')
+            .neq('slug', slug)
+            .limit(limit)
+        : Promise.resolve({ data: null }),
+
+      // 3. Same category, different city
+      dest.category
+        ? supabase
+            .from('destinations')
+            .select(CARD_FIELDS)
+            .eq('category', dest.category)
+            .neq('city', dest.city || '')
+            .neq('slug', slug)
+            .limit(limit)
+        : Promise.resolve({ data: null }),
+    ]);
+
+    // Score and deduplicate results
+    const seenSlugs = new Set<string>([slug]);
     const related: any[] = [];
-    
-    // 1. Same city + same category (highest priority)
-    if (dest.city && dest.category) {
-      const { data: sameCityCategory } = await supabase
-        .from('destinations')
-        .select('*')
-        .eq('city', dest.city)
-        .eq('category', dest.category)
-        .neq('slug', slug)
-        .limit(limit);
-      
-      if (sameCityCategory) {
-        related.push(...(sameCityCategory as any[]).map((d: any) => ({ ...d, _score: 10 })));
+
+    // Process same city + same category (score: 10)
+    if (sameCityCategoryResult.data) {
+      for (const d of sameCityCategoryResult.data as any[]) {
+        if (!seenSlugs.has(d.slug)) {
+          seenSlugs.add(d.slug);
+          related.push({ ...d, _score: 10 });
+        }
       }
     }
 
-    // 2. Same city, different category
-    if (dest.city && related.length < limit) {
-      const { data: sameCity } = await supabase
-        .from('destinations')
-        .select('*')
-        .eq('city', dest.city)
-        .neq('category', dest.category || '')
-        .neq('slug', slug)
-        .not('slug', 'in', `(${related.map((r: any) => r.slug).join(',') || 'none'})`)
-        .limit(limit - related.length);
-      
-      if (sameCity) {
-        related.push(...(sameCity as any[]).map((d: any) => ({ ...d, _score: 7 })));
+    // Process same city, different category (score: 7)
+    if (sameCityResult.data) {
+      for (const d of sameCityResult.data as any[]) {
+        if (!seenSlugs.has(d.slug)) {
+          seenSlugs.add(d.slug);
+          related.push({ ...d, _score: 7 });
+        }
       }
     }
 
-    // 3. Same category, different city
-    if (dest.category && related.length < limit) {
-      const { data: sameCategory } = await supabase
-        .from('destinations')
-        .select('*')
-        .eq('category', dest.category)
-        .neq('city', dest.city || '')
-        .neq('slug', slug)
-        .not('slug', 'in', `(${related.map((r: any) => r.slug).join(',') || 'none'})`)
-        .limit(limit - related.length);
-      
-      if (sameCategory) {
-        related.push(...(sameCategory as any[]).map((d: any) => ({ ...d, _score: 5 })));
+    // Process same category, different city (score: 5)
+    if (sameCategoryResult.data) {
+      for (const d of sameCategoryResult.data as any[]) {
+        if (!seenSlugs.has(d.slug)) {
+          seenSlugs.add(d.slug);
+          related.push({ ...d, _score: 5 });
+        }
       }
     }
 
-    // 4. Boost Michelin-starred places
+    // Boost Michelin-starred places
     const boosted = related.map((d: any) => {
       let score = d._score || 3;
       if (d.michelin_stars && d.michelin_stars > 0) score += 2;
@@ -97,10 +113,18 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       .slice(0, limit)
       .map(({ _score, ...rest }: any) => rest);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       related: final,
       count: final.length,
     });
+
+    // Cache related destinations for 10 minutes, stale-while-revalidate for 30 min
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=600, stale-while-revalidate=1800'
+    );
+
+    return response;
   } catch (error: any) {
     console.error('Error fetching related destinations:', error);
     return NextResponse.json(
@@ -109,4 +133,3 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     );
   }
 });
-

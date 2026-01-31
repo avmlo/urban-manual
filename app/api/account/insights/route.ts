@@ -124,7 +124,7 @@ export const GET = withAuth(async (_request: NextRequest, { user }: AuthContext)
     .slice(0, 10)
     .map(([tag, count]) => ({ tag, count }));
 
-  return createSuccessResponse({
+  const response = createSuccessResponse({
     upcomingPeakWindows: upcomingPeakWindows.slice(0, 5),
     visitedByCategory,
     savedByCategory,
@@ -137,4 +137,9 @@ export const GET = withAuth(async (_request: NextRequest, { user }: AuthContext)
       citiesSaved: savedCities.length,
     },
   });
+
+  // User insights don't change frequently; cache privately for 10 minutes
+  response.headers.set('Cache-Control', 'private, max-age=600, stale-while-revalidate=1200');
+
+  return response;
 });

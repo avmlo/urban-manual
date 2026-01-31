@@ -57,8 +57,6 @@ export function AppleMapView() {
     if (!mapContainerRef.current || !window.mapkit) return;
 
     try {
-      console.log('[AppleMapView] Creating map...');
-
       // Create initial center (Asia-Pacific as default view)
       const center = new window.mapkit.Coordinate(25.0330, 121.5654); // Taipei
       const span = new window.mapkit.CoordinateSpan(80, 120); // Wide view covering Asia
@@ -79,35 +77,12 @@ export function AppleMapView() {
       });
 
       mapRef.current = map;
-      console.log('[AppleMapView] Map created successfully');
 
-      // Listen for map errors and configuration events
-      map.addEventListener('configuration-change', (event) => {
-        console.log('[AppleMapView] Configuration change event:', event);
-      });
-
-      // Trigger resize and check dimensions after creation
+      // Trigger resize and re-set region after creation to ensure tiles load
       setTimeout(() => {
-        const mapEl = mapContainerRef.current;
-        if (mapEl) {
-          const rect = mapEl.getBoundingClientRect();
-          console.log('[AppleMapView] Map container dimensions:', {
-            width: rect.width,
-            height: rect.height,
-            offsetWidth: mapEl.offsetWidth,
-            offsetHeight: mapEl.offsetHeight,
-          });
-
-          // Dispatch resize event to trigger map recalculation
+        if (mapContainerRef.current) {
           window.dispatchEvent(new Event('resize'));
-          console.log('[AppleMapView] Dispatched window resize event');
         }
-        // Also log the map's internal state
-        console.log('[AppleMapView] Map state after 1s:', {
-          region: map.region,
-          center: map.region?.center,
-          hasAnnotations: annotationsRef.current.length,
-        });
 
         // Re-set the region to trigger tile loading
         if (window.mapkit) {
@@ -116,9 +91,8 @@ export function AppleMapView() {
             const newSpan = new window.mapkit.CoordinateSpan(80, 120);
             const newRegion = new window.mapkit.CoordinateRegion(newCenter, newSpan);
             map.region = newRegion;
-            console.log('[AppleMapView] Re-set map region to trigger tile load');
-          } catch (e) {
-            console.warn('[AppleMapView] Could not re-set region:', e);
+          } catch {
+            // Region reset failed - tiles may load on next interaction
           }
         }
       }, 1000);
@@ -138,11 +112,8 @@ export function AppleMapView() {
   // Update markers
   const updateMarkers = useCallback(() => {
     if (!mapRef.current || !window.mapkit) {
-      console.log('[AppleMapView] updateMarkers: map or mapkit not ready');
       return;
     }
-
-    console.log('[AppleMapView] Updating markers, count:', mappableDestinations.length);
 
     const map = mapRef.current;
 
@@ -176,7 +147,6 @@ export function AppleMapView() {
     if (annotations.length > 0) {
       map.addAnnotations(annotations);
       annotationsRef.current = annotations;
-      console.log('[AppleMapView] Added', annotations.length, 'annotations, fitting to bounds...');
 
       // Fit to show all markers
       map.showItems(annotations, { animate: true });

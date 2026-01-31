@@ -280,12 +280,13 @@ export async function handleSearchTool(
       }
 
       const suggestions: Array<{ type: string; value: string; metadata?: Record<string, unknown> }> = [];
+      const safeQuery = sanitizeForIlike(query as string);
 
       if (type === "all" || type === "destination") {
         const { data: destinations } = await supabase
           .from("destinations")
           .select("name, slug, city, category")
-          .ilike("name", `%${query}%`)
+          .ilike("name", `%${safeQuery}%`)
           .limit(Number(limit));
 
         destinations?.forEach((d) => {
@@ -301,7 +302,7 @@ export async function handleSearchTool(
         const { data: cities } = await supabase
           .from("destinations")
           .select("city")
-          .ilike("city", `%${query}%`)
+          .ilike("city", `%${safeQuery}%`)
           .limit(Number(limit));
 
         const uniqueCities = [...new Set(cities?.map((c) => c.city))];
@@ -329,10 +330,12 @@ export async function handleSearchTool(
         .limit(Math.min(Number(limit), 50));
 
       if (architect) {
-        dbQuery = dbQuery.or(`architect.ilike.%${architect}%,design_firm.ilike.%${architect}%`);
+        const safeArchitect = sanitizeForIlike(architect as string);
+        dbQuery = dbQuery.or(`architect.ilike.%${safeArchitect}%,design_firm.ilike.%${safeArchitect}%`);
       }
       if (style) {
-        dbQuery = dbQuery.ilike("architectural_style", `%${style}%`);
+        const safeStyle = sanitizeForIlike(style as string);
+        dbQuery = dbQuery.ilike("architectural_style", `%${safeStyle}%`);
       }
 
       const { data, error } = await dbQuery;

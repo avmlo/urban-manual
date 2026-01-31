@@ -1,10 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { withErrorHandling } from '@/lib/errors';
+import { withErrorHandling, createUnauthorizedError } from '@/lib/errors';
+import { isCronAuthorized } from '@/lib/security';
 
 const GOOGLE_KEY = process.env.GOOGLE_PLACES_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
-export const GET = withErrorHandling(async () => {
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  if (!isCronAuthorized(request)) {
+    throw createUnauthorizedError();
+  }
+
   const supabase = await createServerClient();
 
   // 1) Pull sample from curated list: deduce "CITIES"

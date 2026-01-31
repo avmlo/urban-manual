@@ -35,7 +35,7 @@ const OverlayCard = memo(function OverlayCard({
         onClick?.();
       }}
       type="button"
-      className="group relative w-full aspect-[3/4] overflow-hidden cursor-pointer text-left focus-ring
+      className="group relative w-full aspect-square overflow-hidden cursor-pointer text-left focus-ring
                  transition-all duration-300 ease-out hover:opacity-90 active:scale-[0.99]"
       aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
     >
@@ -45,7 +45,7 @@ const OverlayCard = memo(function OverlayCard({
           src={destination.image_thumbnail || destination.image!}
           alt={`${destination.name} in ${capitalizeCity(destination.city)}`}
           fill
-          sizes="(max-width: 768px) 100vw, 33vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
           className={`object-cover transition-all duration-500 ease-out
                      group-hover:scale-[1.03]
                      ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -338,8 +338,8 @@ export function ClientDestinationGrid() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Grid - 3 column overlay cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+      {/* Grid - dense overlay cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-5 md:gap-6 lg:gap-7 items-start">
         {displayedDestinations.map((destination, index) => (
           <OverlayCard
             key={destination.slug}

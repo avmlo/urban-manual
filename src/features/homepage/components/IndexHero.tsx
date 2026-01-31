@@ -2,17 +2,20 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search } from 'lucide-react';
-import { capitalizeCategory } from '@/lib/utils';
+import { capitalizeCategory, capitalizeCity } from '@/lib/utils';
 import { useHomepageData } from './HomepageDataProvider';
 
 /**
  * Index Hero Component - DS+R-inspired minimal design
  *
- * Centered search bar with two-column category filter grid.
+ * Centered search bar with two-column city + category filter grid.
  * Clean, architectural aesthetic with monospace typography.
  */
 export default function IndexHero() {
   const {
+    cities,
+    selectedCity,
+    setSelectedCity,
     categories,
     selectedCategory,
     setSelectedCategory,
@@ -62,10 +65,16 @@ export default function IndexHero() {
     [selectedCategory, setSelectedCategory]
   );
 
-  // Split categories into two columns
-  const midpoint = Math.ceil(categories.length / 2);
-  const leftCategories = categories.slice(0, midpoint);
-  const rightCategories = categories.slice(midpoint);
+  const handleCityClick = useCallback(
+    (city: string) => {
+      if (selectedCity === city) {
+        setSelectedCity('');
+      } else {
+        setSelectedCity(city);
+      }
+    },
+    [selectedCity, setSelectedCity]
+  );
 
   return (
     <div className="flex flex-col items-center justify-center w-full py-16 md:py-24 lg:py-32">
@@ -89,31 +98,31 @@ export default function IndexHero() {
         </div>
       </div>
 
-      {/* Category Grid - Two Columns */}
+      {/* Filter Grid - Cities (left) + Categories (right) */}
       <div className="mt-10 md:mt-14 px-6">
         <div className="flex gap-12 md:gap-20 lg:gap-28">
-          {/* Left Column */}
+          {/* Left Column - Cities */}
           <div className="flex flex-col gap-2">
-            {leftCategories.map((category) => (
+            {cities.map((city) => (
               <button
-                key={category}
-                onClick={() => handleCategoryClick(category)}
+                key={city}
+                onClick={() => handleCityClick(city)}
                 className={`text-left text-xs md:text-sm tracking-[0.15em] uppercase font-mono
                            transition-all duration-200 py-0.5
                            ${
-                             selectedCategory === category
+                             selectedCity === city
                                ? 'text-[var(--editorial-text-primary)] font-medium'
                                : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'
                            }`}
               >
-                {capitalizeCategory(category)}
+                {capitalizeCity(city)}
               </button>
             ))}
           </div>
 
-          {/* Right Column */}
+          {/* Right Column - Categories */}
           <div className="flex flex-col gap-2">
-            {rightCategories.map((category) => (
+            {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => handleCategoryClick(category)}

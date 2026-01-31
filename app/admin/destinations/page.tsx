@@ -8,6 +8,7 @@ import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
 import { ContentManager } from '@/features/admin/components/cms';
 import { DestinationForm } from '@/features/admin/components/DestinationForm';
+import { GooglePlaceSearch } from '@/features/admin/components/GooglePlaceSearch';
 import type { Destination } from '@/types/destination';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,11 @@ export default function AdminDestinationsPage() {
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingDataRef = useRef<Partial<Destination> | null>(null);
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Google Places search-first creation flow
+  type CreationStep = 'search' | 'form';
+  const [creationStep, setCreationStep] = useState<CreationStep>('search');
+  const [prefillData, setPrefillData] = useState<(Partial<Destination> & { _googleImage?: string }) | null>(null);
 
   // Auto-open editor when slug query parameter is present
   useEffect(() => {
@@ -197,7 +203,19 @@ export default function AdminDestinationsPage() {
   const handleCreateNew = () => {
     setEditingDestination(null);
     setSaveState('idle');
+    setCreationStep('search');
+    setPrefillData(null);
     setShowCreateModal(true);
+  };
+
+  const handlePlaceSelected = (data: Partial<Destination> & { _googleImage?: string }) => {
+    setPrefillData(data);
+    setCreationStep('form');
+  };
+
+  const handleSkipSearch = () => {
+    setPrefillData(null);
+    setCreationStep('form');
   };
 
   return (
@@ -230,6 +248,12 @@ export default function AdminDestinationsPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
+                    // If on form step during creation, go back to search
+                    if (!editingDestination && creationStep === 'form') {
+                      setCreationStep('search');
+                      setPrefillData(null);
+                      return;
+                    }
                     setShowCreateModal(false);
                     setEditingDestination(null);
                   }}
@@ -238,7 +262,11 @@ export default function AdminDestinationsPage() {
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                  {editingDestination ? editingDestination.name || 'Edit Destination' : 'New Destination'}
+                  {editingDestination
+                    ? editingDestination.name || 'Edit Destination'
+                    : creationStep === 'search'
+                      ? 'Add New'
+                      : 'New Destination'}
                 </h2>
               </div>
               <div className="flex items-center gap-3">
@@ -279,19 +307,27 @@ export default function AdminDestinationsPage() {
                 </button>
               </div>
             </div>
-            {/* Form (fills remaining space) */}
+            {/* Content: Search step or Form */}
             <div className="flex-1 overflow-hidden">
-              <DestinationForm
-                destination={editingDestination ?? undefined}
-                toast={toast}
-                onSave={handleSaveDestination}
-                onCancel={() => {
-                  setShowCreateModal(false);
-                  setEditingDestination(null);
-                }}
-                isSaving={isSaving}
-                onFormChange={editingDestination ? handleAutosaveChange : undefined}
-              />
+              {!editingDestination && creationStep === 'search' ? (
+                <GooglePlaceSearch
+                  onPlaceSelected={handlePlaceSelected}
+                  onSkip={handleSkipSearch}
+                />
+              ) : (
+                <DestinationForm
+                  destination={editingDestination ?? undefined}
+                  prefillData={!editingDestination ? prefillData : undefined}
+                  toast={toast}
+                  onSave={handleSaveDestination}
+                  onCancel={() => {
+                    setShowCreateModal(false);
+                    setEditingDestination(null);
+                  }}
+                  isSaving={isSaving}
+                  onFormChange={editingDestination ? handleAutosaveChange : undefined}
+                />
+              )}
             </div>
           </div>
         </>

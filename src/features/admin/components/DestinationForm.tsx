@@ -21,6 +21,8 @@ interface Toast {
 
 interface DestinationFormProps {
   destination?: Destination;
+  /** Pre-fill data from Google Places search (for new destinations) */
+  prefillData?: (Partial<Destination> & { _googleImage?: string }) | null;
   onSave: (data: Partial<Destination>) => Promise<void>;
   onCancel: () => void;
   isSaving: boolean;
@@ -53,6 +55,7 @@ interface DropdownOptions {
 
 export function DestinationForm({
   destination,
+  prefillData,
   onSave,
   onCancel,
   isSaving,
@@ -220,6 +223,38 @@ export function DestinationForm({
       setSelectedParent(null);
     }
   }, [destination]);
+
+  // Apply prefill data from Google Places search (new destinations only)
+  useEffect(() => {
+    if (!destination && prefillData) {
+      setFormData(prev => ({
+        ...prev,
+        name: prefillData.name || prev.name,
+        city: prefillData.city || prev.city,
+        country: prefillData.country || prev.country,
+        category: prefillData.category || prev.category,
+        description: prefillData.description ? htmlToPlainText(prefillData.description) : prev.description,
+        content: prefillData.content ? htmlToPlainText(prefillData.content) : prev.content,
+        editorial_summary: prefillData.editorial_summary || prev.editorial_summary,
+        formatted_address: prefillData.formatted_address || prev.formatted_address,
+        phone_number: prefillData.phone_number || prev.phone_number,
+        website: prefillData.website || prev.website,
+        rating: prefillData.rating ?? prev.rating,
+        price_level: prefillData.price_level ?? prev.price_level,
+        latitude: prefillData.latitude ?? prev.latitude,
+        longitude: prefillData.longitude ?? prev.longitude,
+        google_maps_url: prefillData.google_maps_url || prev.google_maps_url,
+        image: prefillData._googleImage || prev.image,
+        // Auto-generate slug from name
+        slug: prefillData.name
+          ? prefillData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+          : prev.slug,
+      }));
+      if (prefillData._googleImage) {
+        setImagePreview(prefillData._googleImage);
+      }
+    }
+  }, [destination, prefillData]);
 
   // Fetch dropdown options from normalized tables (brands, cities, countries, neighborhoods)
   // This is more efficient than querying the entire destinations table

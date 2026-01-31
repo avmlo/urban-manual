@@ -270,4 +270,381 @@ Key files that will be touched across all redesign tracks:
 
 ---
 
+## Design Element Redesign Options
+
+Below are detailed, component-level redesign options for specific UI elements: buttons, overlays, navigation, form controls, interactions, and micro-animations.
+
+---
+
+### G: Button System Overhaul
+
+**Current state**: 8 variants in the base `Button` component, plus 6 standalone button components (`UMPillButton`, `AuthButton`, `FollowButton`, `FollowCityButton`, `FilterButton`, `AddToTripButton`). **90% of buttons (1,089 of ~1,200) are inline `<button>` elements** that bypass the component entirely. 10+ different hover patterns coexist (`hover:opacity-80`, `hover:opacity-90`, `hover:bg-gray-50`, `hover:bg-gray-100`, `hover:bg-stone-100`, etc.). Transition durations vary: 150ms, 180ms, 200ms, 300ms.
+
+**Redesign options**:
+
+#### G1 - Consolidate to One Button Component
+Merge all 6 standalone button components into the base `Button` via new CVA variants. Migrate the 1,089 inline buttons to use `<Button>`.
+
+- Add variants: `auth`, `filter`, `pill`, `follow`, `fab` to the base component
+- Standardize hover to ONE pattern per variant type:
+  - **Solid buttons**: `active:scale-[0.98]` + `hover:opacity-90` (press feedback)
+  - **Ghost/outline buttons**: `hover:bg-[var(--um-bg-secondary)]` (background shift)
+  - **Icon buttons**: `hover:opacity-80` (simple opacity)
+- Lock transition duration to `200ms` across all buttons
+- Add consistent focus ring: `focus-visible:ring-2 focus-visible:ring-offset-2`
+
+**Scope**: `src/ui/button.tsx`, 6 standalone components, ~1,089 inline buttons across the codebase
+**Risk**: High (volume of changes), but each change is mechanical
+
+#### G2 - Interaction-Rich Buttons
+Keep current component structure but add richer micro-interactions:
+
+- **Ripple effect** on primary buttons (Material-style touch feedback)
+- **Icon morph** on toggle buttons (heart outline → filled with spring animation)
+- **Loading shimmer** replacing spinner (inline skeleton over button text)
+- **Success flash** after action completion (brief green tint, 300ms)
+- **Haptic feedback** via `NativeExperienceProvider` on mobile tap
+
+**Scope**: `src/ui/button.tsx`, `hooks/useMobileUX.ts`
+**Risk**: Low - Additive changes, no existing behavior removed
+
+#### G3 - Contextual Button Styles
+Buttons adapt style based on their container context:
+
+- **On images/cards**: Semi-transparent glass morphism (`bg-white/80 backdrop-blur-sm`)
+- **In drawers**: Match drawer's editorial palette automatically
+- **In forms**: Subdued until form is dirty, then animate to full prominence
+- **In admin**: Compact, no rounded-full, tighter padding
+
+**Scope**: `src/ui/button.tsx` (add context-aware variant), container components
+**Risk**: Medium - Requires context detection logic
+
+---
+
+### H: Drawer & Overlay Redesign
+
+**Current state**: Custom `Drawer.tsx` (384 lines) with gesture support sits alongside Radix-based `Sheet`, `Dialog`, `AlertDialog`. Animation timings differ: Drawer uses 500ms with `cubic-bezier(0.32, 0.72, 0, 1)`, Dialog uses 200ms with `ease-in-out`, Sheet uses 300ms/500ms. Z-index conflicts: Dialog sits at `z-[70]` while Drawer is `z-50`. Duplicate `DrawerContext` exists in two locations. Mobile safe area handling is inconsistent.
+
+**Redesign options**:
+
+#### H1 - Unified Overlay System
+Replace the parallel Drawer/Sheet/Dialog implementations with a single configurable overlay component:
+
+- One component: `<Overlay mode="drawer|sheet|dialog|alert" />`
+- Single animation curve: `cubic-bezier(0.32, 0.72, 0, 1)` for all overlays
+- Standardized durations: 300ms (small overlays), 400ms (drawers/sheets)
+- Unified z-index scale: `40` (backdrop), `50` (primary overlay), `60` (nested overlay)
+- Single state management: Merge `DrawerContext` + `drawer-store.ts` into one store
+- Delete the duplicate `src/domain/contexts/DrawerContext.tsx`
+
+**Scope**: `src/ui/Drawer.tsx`, `src/ui/sheet.tsx`, `src/ui/dialog.tsx`, `contexts/DrawerContext.tsx`, `lib/stores/drawer-store.ts`
+**Risk**: High - Core interaction pattern, needs thorough testing
+
+#### H2 - Enhanced Drawer Gestures
+Keep current architecture but add richer mobile interactions:
+
+- **Edge swipe to open** (not just close) - swipe from right edge opens last-used drawer
+- **Stacked drawers** with visible peek of parent (offset 20px left, dimmed)
+- **Snap points** for bottom sheet: 25% (peek), 50% (half), 96% (full)
+- **Magnetic edges** - drawer snaps to nearest point when released
+- **Backdrop blur** instead of solid black overlay (iOS-style)
+- **Drawer-to-page transition** - expand drawer to become a full page with shared element animation
+
+**Scope**: `src/ui/Drawer.tsx`, `hooks/useMobileUX.ts`
+**Risk**: Medium - Gesture code is complex but isolated
+
+#### H3 - Drawer Visual Refresh
+Keep behavior, refresh the visual treatment:
+
+- **Rounded handle bar** with subtle shadow (currently 40px x 1.5px, make 48px x 4px)
+- **Content fade-in** staggered as drawer opens (title first, then content, then actions)
+- **Frosted glass header** that becomes opaque on scroll
+- **Floating action bar** at bottom with shadow gradient (replace current sticky bar)
+- **Themed drawers** - destination drawers use destination's dominant image color as accent
+
+**Scope**: `src/ui/Drawer.tsx`, `src/ui/DrawerActionBar.tsx`, `src/ui/DrawerHeader.tsx`
+**Risk**: Low - Visual-only changes
+
+---
+
+### I: Navigation & Header Redesign
+
+**Current state**: Header is `relative` positioned (not sticky), uses `z-30`. Navigation is minimal: logo left, 2-3 action buttons right. No persistent category/city navigation. Mobile has swipe-back gesture but no bottom tab bar. Command palette (Cmd+K) exists but is not discoverable on mobile. Footer has an expandable sitemap that's rarely needed.
+
+**Redesign options**:
+
+#### I1 - Sticky Header with Progressive Disclosure
+- **Sticky header** that shrinks on scroll (full height → compact)
+- **Search bar** appears in header on scroll-down (currently buried in page)
+- **Category pills** slide in below header when browsing destinations
+- **Breadcrumb trail** replaces logo text on inner pages
+- **Auto-hide on scroll-down, reveal on scroll-up** (iOS Safari-style)
+
+**Scope**: `components/Header.tsx`, `app/layout.tsx`, new scroll hook
+**Risk**: Medium - Scroll behavior needs performance tuning
+
+#### I2 - Mobile Bottom Tab Bar
+Add a persistent bottom navigation bar on mobile:
+
+- **5 tabs**: Home, Explore/Search, Map, Trips, Account
+- **Active indicator**: Dot or pill underline (not icon fill change)
+- **Haptic feedback** on tab switch
+- **Safe area aware** with `pb-[env(safe-area-inset-bottom)]`
+- **Hide on scroll-down**, reveal on scroll-up or tap
+- **Badge indicators**: Unread count on trips, unsaved changes
+
+**Scope**: New `components/BottomTabBar.tsx`, `app/layout.tsx`, `hooks/useMobileUX.ts`
+**Risk**: Medium - New component, but well-defined pattern
+
+#### I3 - Command Palette as Primary Navigation
+Elevate the command palette from power-user feature to primary navigation:
+
+- **Always-visible search icon** in header (not just Cmd+K)
+- **Recent destinations** shown on open (personalized)
+- **AI suggestions** inline ("Try: best coffee in Tokyo")
+- **Quick actions**: Save place, start trip, toggle dark mode
+- **Keyboard-first** with full arrow-key navigation
+- **Mobile**: Full-screen search overlay with large touch targets
+
+**Scope**: `components/CommandPalette.tsx`, `components/Header.tsx`
+**Risk**: Low-Medium - Extends existing component
+
+---
+
+### J: Form Controls & Input Redesign
+
+**Current state**: `FormField` component has real-time validation with color-coded borders (red/green). `SearchableSelect` supports keyboard and custom values. `PasswordField` has strength meter. Switch/Checkbox are Radix-based. Input has a monolithic 200+ character class string. No standardized error animation.
+
+**Redesign options**:
+
+#### J1 - Floating Label Inputs
+Replace static labels with animated floating labels:
+
+- **Label starts inside** the input as placeholder
+- **Floats up and shrinks** on focus or when value exists
+- **Color transitions**: gray (idle) → black (focused) → red (error) → green (valid)
+- **Consistent 200ms** transition for all state changes
+- Apply to: text inputs, textareas, selects, searchable-selects
+
+**Scope**: `src/ui/input.tsx`, `src/ui/form-field.tsx`, `src/ui/searchable-select.tsx`
+**Risk**: Medium - Layout shift needs careful handling
+
+#### J2 - Enhanced Validation Feedback
+Keep current input layout but improve error/success communication:
+
+- **Shake animation** on validation failure (currently defined but not consistently used)
+- **Inline error messages** slide in from below (not just appear)
+- **Character count** with color gradient (green → yellow → red as limit approaches)
+- **Field-level progress** for multi-step forms (checkmark appears as each field validates)
+- **Undo support** for cleared fields (small "restore" link)
+
+**Scope**: `src/ui/form-field.tsx`, `src/ui/input.tsx`
+**Risk**: Low - Additive changes
+
+#### J3 - Segmented Controls & Toggle Redesign
+Replace switches and checkboxes with more expressive controls:
+
+- **Segmented control** for binary choices (replaces switch where options have labels)
+- **Chip-select** for multi-select filters (pill buttons that toggle)
+- **Slider with value tooltip** that follows the thumb
+- **Color picker** for trip/collection theming (small palette of 8 preset colors)
+- **Date range picker** with calendar visualization (for trip dates)
+
+**Scope**: New components in `src/ui/`, feature components that use switches
+**Risk**: Medium - New components need design/testing
+
+---
+
+### K: Card & List Item Interactions
+
+**Current state**: Cards use `CardStyles.ts` constants but many bypass them. Hover is `hover:scale-105` on some cards, nothing on others. No swipe actions on list items. Save/favorite is an overlay button on some cards, missing on others. Image aspect ratios are mixed (`aspect-square` vs `aspect-video`).
+
+**Redesign options**:
+
+#### K1 - Gesture-Rich Cards
+Add touch interactions to destination cards:
+
+- **Long-press** to preview (shows enlarged card with more detail, like iOS peek)
+- **Swipe right** to save/bookmark
+- **Swipe left** to add to current trip
+- **Double-tap** to open detail view
+- **Haptic feedback** on each gesture trigger
+- **Undo toast** after swipe actions
+
+**Scope**: `components/CardStyles.ts`, card components, `src/ui/undo-toast.tsx`
+**Risk**: Medium - Gesture detection needs tuning for scroll vs swipe
+
+#### K2 - Rich Hover States (Desktop)
+Enhance desktop hover interactions on cards:
+
+- **Image zoom** (scale 1.05) with overflow hidden
+- **Info overlay** slides up from bottom: category, rating, price level
+- **Save button** fades in at top-right corner
+- **Quick-add-to-trip** button fades in at top-left
+- **Cursor changes** to indicate interactivity
+- **Neighboring cards dim** slightly to focus attention
+
+**Scope**: `components/CardStyles.ts`, `app/page.tsx` grid
+**Risk**: Low - CSS-only changes for most interactions
+
+#### K3 - List View Mode
+Add an alternative list layout alongside the grid:
+
+- **Toggle** between grid and list view (icon in toolbar)
+- **List items** show: image thumbnail (64px), name, city, category, rating, save button
+- **Swipe actions** on mobile list items (save, add to trip)
+- **Compact mode** for power users (even smaller rows, more visible at once)
+- **Persist preference** in localStorage
+
+**Scope**: `app/page.tsx`, new `DestinationListItem.tsx` component
+**Risk**: Medium - New layout mode for homepage
+
+---
+
+### L: Loading & Transition States
+
+**Current state**: Skeleton loaders (`animate-pulse`) for cards and lists. `LoadingSpinner` for inline loading. `ContentState` component handles loading/error/empty. Page transitions use `slideUpFade` (300ms). Pull-to-refresh exists on mobile. No shared element transitions between views.
+
+**Redesign options**:
+
+#### L1 - Shared Element Transitions
+Animate elements that persist across view changes:
+
+- **Card → Detail**: Card image expands to detail page hero (View Transitions API)
+- **List item → Drawer**: Thumbnail morphs into drawer header image
+- **Tab → Tab**: Content cross-fades instead of instant swap
+- **Filter apply**: Cards that match stay, non-matches fade/shrink out
+- Uses native View Transitions API (already detected in `NativeExperienceProvider`)
+
+**Scope**: `components/PageTransition.tsx`, `components/NativeExperienceProvider.tsx`, detail pages
+**Risk**: Medium - View Transitions API support varies, needs fallbacks
+
+#### L2 - Skeleton Improvements
+Refine loading placeholders:
+
+- **Gradient shimmer** instead of pulse (already defined but inconsistently used)
+- **Content-aware skeletons** that match actual content shape (e.g., card skeleton shows image + 2 text lines, not generic rectangles)
+- **Progressive reveal**: Skeleton → blurred image → sharp image (3-stage)
+- **Staggered appearance**: Cards skeleton in grid animates in wave pattern (50ms delay per card)
+- **Skeleton-to-content** morph animation (skeleton smoothly transforms into real content)
+
+**Scope**: `src/ui/loading-states.tsx`, `src/ui/skeleton.tsx`, `src/ui/lazy-image.tsx`
+**Risk**: Low - Visual refinement only
+
+#### L3 - Optimistic UI & Micro-Feedback
+Add immediate visual feedback for user actions:
+
+- **Save button**: Heart fills instantly, revert on API failure
+- **Add to trip**: Card briefly highlights green, item appears in trip bar immediately
+- **Form submit**: Button text changes to "Saving..." → checkmark icon → original text
+- **Delete**: Item fades out immediately, undo toast appears
+- **Follow**: Count increments instantly, button state flips immediately
+- **Rating**: Stars fill with spring animation as user taps
+
+**Scope**: Action hooks (`useFollow`, `useSave`, trip hooks), button/icon components
+**Risk**: Low-Medium - Pattern is additive, needs error rollback logic
+
+---
+
+### M: Toast & Notification Redesign
+
+**Current state**: Sonner v2 for toasts with success/error/info variants. `DismissibleAlert` for persistent alerts. `UndoToast` for reversible actions. Toast styling uses dark mode but doesn't match the editorial palette.
+
+**Redesign options**:
+
+#### M1 - Contextual Toast Positioning
+- **Desktop**: Toast appears near the action that triggered it (not always top-right)
+- **Mobile**: Bottom-center toast, above the floating trip bar
+- **Drawer context**: Toast appears inside the drawer, not overlaying it
+- **Success actions**: Brief inline confirmation replaces toast (e.g., "Saved" text next to button)
+- **Errors only**: Full toast treatment reserved for errors/warnings; success uses subtle inline feedback
+
+**Scope**: `src/ui/sonner.tsx`, action components
+**Risk**: Low - Configuration change
+
+#### M2 - Rich Notification Center
+Add a notification panel for persistent messages:
+
+- **Bell icon** in header with unread count badge
+- **Notification drawer** with grouped items (trip updates, new destinations, system)
+- **Action buttons** inline (accept trip invite, view new destination)
+- **Mark as read** swipe gesture on mobile
+- **Auto-dismiss** after action is taken
+
+**Scope**: New `components/NotificationCenter.tsx`, header integration
+**Risk**: Medium - New feature, needs backend support
+
+---
+
+### N: Scroll & Viewport Interactions
+
+**Current state**: Pull-to-refresh on mobile. `ScrollArea` with custom scrollbar. `content-visibility: auto` not widely used. No scroll-linked animations. No parallax effects. `scrollbar-hide` used on horizontal scroll containers.
+
+**Redesign options**:
+
+#### N1 - Scroll-Linked Animations
+- **Header parallax**: Hero image on destination pages scrolls at 0.5x speed
+- **Card reveal**: Cards fade in as they enter viewport (IntersectionObserver)
+- **Progress indicator**: Thin bar at top showing scroll progress on long pages
+- **Section headers**: Sticky section titles that swap as you scroll through categories
+- **Back-to-top**: Floating button appears after scrolling 2 screens down
+
+**Scope**: New `hooks/useScrollAnimation.ts`, page components
+**Risk**: Low-Medium - Performance-sensitive, needs `will-change` optimization
+
+#### N2 - Infinite Scroll Improvements
+- **Virtual scrolling** for the homepage grid (900+ items)
+- **Smooth pagination**: Next batch loads before user reaches bottom (preload at 80%)
+- **Scroll position restoration** on back navigation
+- **"New since last visit"** indicator between old and new content
+- **Pull-to-refresh** visual polish: custom spinner matching brand
+
+**Scope**: `app/page.tsx`, `src/ui/pull-to-refresh.tsx`
+**Risk**: Medium - Virtualization affects layout and scroll position
+
+---
+
+## Updated Sequencing (All Tracks)
+
+| Phase | Tracks | Nature |
+|-------|--------|--------|
+| **Phase 1** | B (Typography), D (Spacing) | Foundation - mechanical cleanup |
+| **Phase 2** | G1 (Button consolidation), J2 (Validation feedback) | Component standardization |
+| **Phase 3** | A (Color), H3 (Drawer visual refresh) | Visual identity |
+| **Phase 4** | K2 (Card hover), L2 (Skeleton improvements) | Interaction polish |
+| **Phase 5** | E (Animations), L3 (Optimistic UI) | Motion & feedback |
+| **Phase 6** | I1 or I2 (Navigation), M1 (Toasts) | Navigation & notifications |
+| **Phase 7** | F (Homepage cards), N1 (Scroll animations) | Page-level redesign |
+| **Phase 8** | C (Component patterns), H1 (Unified overlays) | Architecture cleanup |
+
+---
+
+## Additional Decision Points
+
+5. **Button migration strategy**: Big-bang (migrate all 1,089 inline buttons at once) or incremental (file-by-file)?
+6. **Drawer architecture**: Unified overlay (H1) or keep separate components with visual alignment (H3)?
+7. **Mobile navigation**: Bottom tab bar (I2) or sticky header only (I1)?
+8. **Card interactions**: Gesture-rich (K1) or hover-focused (K2) or both?
+9. **Loading philosophy**: Skeleton-heavy (L2) or optimistic-UI-heavy (L3)?
+10. **Toast scope**: Contextual positioning (M1) or full notification center (M2)?
+
+---
+
+## Updated Success Metrics
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Design token usage in components | 5/10 | 8/10 |
+| Implementation consistency | 4/10 | 8/10 |
+| Hardcoded font sizes | 823+ | < 20 |
+| Font families loaded | 4 | 2 |
+| Custom animations | 30+ | 10 |
+| Accessibility compliance | 6/10 | 8/10 |
+| Button component adoption | 10% | 90% |
+| Overlay animation consistency | 3 different systems | 1 unified system |
+| Hover state patterns | 10+ variants | 3 standardized |
+| Transition duration variants | 5+ (150-300ms) | 2 (200ms, 400ms) |
+
+---
+
 *This plan provides options - not all tracks need to be pursued. Pick the tracks that align with current priorities.*

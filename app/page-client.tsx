@@ -2364,6 +2364,35 @@ export default function HomePageClient({
     setFilteredDestinations(filtered);
   }, [destinations, filterDestinationsWithData]);
 
+  // Stable callback for destination selection
+  const handleDestinationSelect = useCallback(
+    (destination: Destination, index?: number) => {
+      openIntelligentDestination(destination);
+      trackDestinationEngagement(destination, "grid", index);
+    },
+    [openIntelligentDestination, trackDestinationEngagement]
+  );
+
+  // Stable callback for rendering destination items
+  const renderDestinationItem = useCallback(
+    (destination: Destination, index: number) => {
+      const isVisited = !!(user && visitedSlugs.has(destination.slug));
+      const globalIndex = (currentPage - 1) * itemsPerPage + index;
+
+      return (
+        <DestinationCard
+          key={destination.slug}
+          destination={destination}
+          onSelect={handleDestinationSelect}
+          index={globalIndex}
+          isVisited={isVisited}
+          showBadges={true}
+        />
+      );
+    },
+    [user, visitedSlugs, currentPage, itemsPerPage, handleDestinationSelect]
+  );
+
   // Display featured cities (Taipei, Tokyo, New York, London) if they exist in the cities list
   const featuredCities = useMemo(
     () => FEATURED_CITIES.filter(city => cities.includes(city)),
@@ -3284,30 +3313,7 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                            renderItem={renderDestinationItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">

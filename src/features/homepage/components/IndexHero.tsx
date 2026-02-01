@@ -104,7 +104,7 @@ export default function IndexHero() {
       <div className="mt-10 md:mt-14 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-6">
         <button
           onClick={() => { setSelectedCity(''); setShowAllCities(false); }}
-          className={`text-sm transition-colors duration-200
+          className={`text-[13px] font-sans transition-colors duration-200
                      ${!selectedCity
                        ? 'text-[var(--editorial-text-primary)] font-semibold'
                        : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'
@@ -116,7 +116,7 @@ export default function IndexHero() {
           <button
             key={city}
             onClick={() => handleCityClick(city)}
-            className={`text-sm transition-colors duration-200
+            className={`text-[13px] font-sans transition-colors duration-200
                        ${selectedCity === city
                          ? 'text-[var(--editorial-text-primary)] font-semibold'
                          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
@@ -128,7 +128,7 @@ export default function IndexHero() {
         {!showAllCities && remainingCitiesCount > 0 && (
           <button
             onClick={() => setShowAllCities(true)}
-            className="text-sm text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors duration-200"
+            className="text-[13px] font-sans text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors duration-200"
           >
             +{remainingCitiesCount} more
           </button>
@@ -139,7 +139,7 @@ export default function IndexHero() {
       <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-6">
         <button
           onClick={() => { setSelectedCategory(''); setMichelinOnly(false); }}
-          className={`text-sm transition-colors duration-200
+          className={`text-[13px] font-sans transition-colors duration-200
                      ${!selectedCategory && !michelinOnly
                        ? 'text-[var(--editorial-text-primary)] font-semibold'
                        : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'
@@ -149,7 +149,7 @@ export default function IndexHero() {
         </button>
         <button
           onClick={() => setMichelinOnly(!michelinOnly)}
-          className={`text-sm flex items-center gap-1.5 transition-colors duration-200
+          className={`text-[13px] font-sans flex items-center gap-1.5 transition-colors duration-200
                      ${michelinOnly
                        ? 'text-red-600 font-semibold'
                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
@@ -164,7 +164,7 @@ export default function IndexHero() {
             <button
               key={category}
               onClick={() => handleCategoryClick(category)}
-              className={`text-sm flex items-center gap-1.5 transition-colors duration-200
+              className={`text-[13px] font-sans flex items-center gap-1.5 transition-colors duration-200
                          ${selectedCategory === category
                            ? 'text-[var(--editorial-text-primary)] font-semibold'
                            : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'

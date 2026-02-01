@@ -1,98 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState, memo } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useHomepageData } from './HomepageDataProvider';
 import { InstantGridSkeleton } from './InstantGridSkeleton';
+import { DestinationCard } from '@/components/DestinationCard';
 import { SmartEmptyState } from '@/components/SmartEmptyState';
-import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw, MapPin } from 'lucide-react';
-import { Destination } from '@/types/destination';
-import { capitalizeCity, capitalizeCategory } from '@/lib/utils';
-import Image from 'next/image';
-
-/**
- * Overlay-style destination card for the DS+R-inspired grid.
- * Tall portrait images with title and category overlaid at bottom.
- */
-const OverlayCard = memo(function OverlayCard({
-  destination,
-  onClick,
-  index = 0,
-}: {
-  destination: Destination;
-  onClick?: () => void;
-  index?: number;
-}) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const cardRef = useRef<HTMLButtonElement>(null);
-
-  return (
-    <button
-      ref={cardRef}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onClick?.();
-      }}
-      type="button"
-      className="group relative w-full aspect-square overflow-hidden cursor-pointer text-left focus-ring
-                 transition-all duration-300 ease-out hover:opacity-90 active:scale-[0.99]"
-      aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
-    >
-      {/* Image */}
-      {(destination.image_thumbnail || destination.image) && !imageError ? (
-        <Image
-          src={destination.image_thumbnail || destination.image!}
-          alt={`${destination.name} in ${capitalizeCity(destination.city)}`}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
-          className={`object-cover transition-all duration-500 ease-out
-                     group-hover:scale-[1.03]
-                     ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-          quality={80}
-          loading={index < 6 ? 'eager' : 'lazy'}
-          fetchPriority={index === 0 ? 'high' : 'auto'}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => {
-            setImageError(true);
-            setIsLoaded(true);
-          }}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-[var(--editorial-border)] text-[var(--editorial-text-tertiary)]">
-          <MapPin className="h-12 w-12 opacity-20" />
-        </div>
-      )}
-
-      {/* Loading skeleton */}
-      {!isLoaded && (
-        <div className="absolute inset-0 animate-pulse bg-[var(--editorial-border)]" />
-      )}
-
-      {/* Bottom gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-      {/* Text overlay at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
-        <h3 className="text-sm md:text-base font-semibold text-white leading-tight line-clamp-2 uppercase tracking-wide">
-          {destination.name}
-        </h3>
-        <p className="text-xs md:text-sm text-white/70 mt-1 uppercase tracking-[0.1em] font-mono">
-          {capitalizeCategory(destination.category)}
-        </p>
-      </div>
-
-      {/* Michelin badge */}
-      {typeof destination.michelin_stars === 'number' && destination.michelin_stars > 0 && (
-        <div className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-white/90 backdrop-blur-sm
-                        flex items-center gap-1 text-black">
-          <img src="/michelin-star.svg" alt="Michelin star" className="h-3 w-3" />
-          <span>{destination.michelin_stars}</span>
-        </div>
-      )}
-    </button>
-  );
-});
+import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 
 /**
  * Client Destination Grid with Pagination
@@ -338,14 +251,16 @@ export function ClientDestinationGrid() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Grid - dense overlay cards */}
+      {/* Grid with Quick Actions on Hover */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-5 md:gap-6 lg:gap-7 items-start">
         {displayedDestinations.map((destination, index) => (
-          <OverlayCard
+          <DestinationCard
             key={destination.slug}
             destination={destination}
             index={index}
             onClick={() => openDestination(destination)}
+            showQuickActions={true}
+            showBadges={true}
           />
         ))}
       </div>

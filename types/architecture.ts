@@ -57,6 +57,20 @@ export interface Material {
   created_at: string;
 }
 
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url?: string | null;
+  description?: string | null;
+  website?: string | null;
+  founded_year?: number | null;
+  headquarters?: string | null;
+  parent_company?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ArchitecturalPhoto {
   id: string;
   destination_id: number;

@@ -6,6 +6,7 @@ import BrandPageClient from './page-client';
 import { fetchBrandStats } from '@/lib/data/fetch-destinations';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { Destination } from '@/types/destination';
+import { Brand } from '@/types/architecture';
 
 // Static generation with ISR
 export const revalidate = 300; // 5 minutes
@@ -44,6 +45,39 @@ export async function generateMetadata({
     return generateBrandMetadata(decodedBrand, brandStat?.count);
   } catch {
     return generateBrandMetadata(decodedBrand);
+  }
+}
+
+/**
+ * Fetch brand data from the brands table
+ */
+async function fetchBrandData(brandName: string): Promise<Brand | null> {
+  try {
+    const supabase = createServiceRoleClient();
+
+    // First try to find by name (case-insensitive)
+    const { data, error } = await supabase
+      .from('brands')
+      .select('*')
+      .ilike('name', brandName)
+      .single();
+
+    if (error || !data) {
+      // Try by slug
+      const slug = brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const { data: slugData } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      return slugData as Brand | null;
+    }
+
+    return data as Brand;
+  } catch (error) {
+    console.error(`Error fetching brand data for ${brandName}:`, error);
+    return null;
   }
 }
 
@@ -109,8 +143,11 @@ export default async function BrandPage({
   const { brand } = await params;
   const decodedBrand = decodeURIComponent(brand);
 
-  // Fetch brand destinations on the server
-  const destinations = await fetchBrandDestinations(decodedBrand);
+  // Fetch brand data and destinations on the server (in parallel)
+  const [brandData, destinations] = await Promise.all([
+    fetchBrandData(decodedBrand),
+    fetchBrandDestinations(decodedBrand),
+  ]);
 
   // Extract unique categories from destinations
   const categoryMap = new Map<string, number>();
@@ -157,6 +194,7 @@ export default async function BrandPage({
       <Suspense fallback={<SearchGridSkeleton />}>
         <BrandPageClient
           brand={decodedBrand}
+          brandData={brandData}
           initialDestinations={destinations}
           initialCategories={categories}
           initialCities={cities}

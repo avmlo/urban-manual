@@ -10,6 +10,8 @@ import { useDrawer } from '@/contexts/DrawerContext';
 import { DestinationCard } from '@/components/DestinationCard';
 import { UniversalGrid } from '@/components/UniversalGrid';
 import { useItemsPerPage } from '@/hooks/useGridColumns';
+import { Brand } from '@/types/architecture';
+import Image from 'next/image';
 
 /**
  * Props for the BrandPageClient component
@@ -17,6 +19,7 @@ import { useItemsPerPage } from '@/hooks/useGridColumns';
  */
 export interface BrandPageClientProps {
   brand: string;
+  brandData?: Brand | null;
   initialDestinations?: Destination[];
   initialCategories?: string[];
   initialCities?: string[];
@@ -41,6 +44,7 @@ function capitalizeCategory(category: string): string {
 
 export default function BrandPageClient({
   brand,
+  brandData,
   initialDestinations = [],
   initialCategories = [],
   initialCities = [],
@@ -236,12 +240,31 @@ export default function BrandPageClient({
                 Brand
               </div>
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h1 className="text-2xl font-light text-black dark:text-white mb-1">{brand}</h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {filteredDestinations.length} {filteredDestinations.length === 1 ? 'destination' : 'destinations'}
-                    {cities.length > 0 && ` in ${cities.length} ${cities.length === 1 ? 'city' : 'cities'}`}
-                  </p>
+                <div className="flex items-center gap-4">
+                  {/* Brand Logo */}
+                  {brandData?.logo_url && (
+                    <div className="flex-shrink-0">
+                      <Image
+                        src={brandData.logo_url}
+                        alt={`${brand} logo`}
+                        width={64}
+                        height={64}
+                        className="w-16 h-16 object-contain rounded-lg bg-white dark:bg-gray-800 p-2"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <h1 className="text-2xl font-light text-black dark:text-white mb-1">{brand}</h1>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {filteredDestinations.length} {filteredDestinations.length === 1 ? 'destination' : 'destinations'}
+                      {cities.length > 0 && ` in ${cities.length} ${cities.length === 1 ? 'city' : 'cities'}`}
+                    </p>
+                    {brandData?.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-2xl">
+                        {brandData.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

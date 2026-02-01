@@ -25,6 +25,7 @@ import { generateText, generateJSON } from '@/lib/llm';
 import { tasteProfileEvolutionService } from '@/services/intelligence/taste-profile-evolution';
 import { searchRatelimit, memorySearchRatelimit, getIdentifier, createRateLimitResponse, isUpstashConfigured } from '@/lib/rate-limit';
 import { unifiedIntelligenceCore, UnifiedContext, AutonomousAction } from '@/services/intelligence/unified-intelligence-core';
+import { sanitizeForIlike } from '@/lib/sanitize';
 
 // Types
 interface ConversationMessage {
@@ -792,8 +793,8 @@ async function generateItinerary(
   // Fetch destinations for each slot
   for (const timeSlot of timeSlots) {
     // Handle both "New York" and "new-york" formats
-    const cityWithSpace = city;
-    const cityWithHyphen = city.replace(/\s+/g, '-');
+    const cityWithSpace = sanitizeForIlike(city);
+    const cityWithHyphen = sanitizeForIlike(city.replace(/\s+/g, '-'));
 
     let query = supabase
       .from('destinations')
@@ -1633,8 +1634,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
       if (intent.filters.city) {
         // Handle both "New York" and "new-york" formats
-        const cityWithSpace = intent.filters.city;
-        const cityWithHyphen = intent.filters.city.replace(/\s+/g, '-');
+        const cityWithSpace = sanitizeForIlike(intent.filters.city);
+        const cityWithHyphen = sanitizeForIlike(intent.filters.city.replace(/\s+/g, '-'));
         dbQuery = dbQuery.or(`city.ilike.%${cityWithSpace}%,city.ilike.%${cityWithHyphen}%`);
       }
 
@@ -1776,10 +1777,11 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
     // 6. Handle "more like this" queries
     if (intent.intent === 'more_like_this' && intent.referenceDestination) {
+      const safeRef = sanitizeForIlike(intent.referenceDestination);
       const { data: refDest } = await supabase
         .from('destinations')
         .select('id, slug, name, city, category, tags, vibe_tags')
-        .or(`name.ilike.%${intent.referenceDestination}%,slug.ilike.%${intent.referenceDestination}%`)
+        .or(`name.ilike.%${safeRef}%,slug.ilike.%${safeRef}%`)
         .limit(1)
         .single();
 
@@ -1855,8 +1857,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           // Apply filters - use ilike for case-insensitive matching
           if (intent.filters.city) {
             // Handle both "New York" and "new-york" formats
-            const cityWithSpace = intent.filters.city;
-            const cityWithHyphen = intent.filters.city.replace(/\s+/g, '-');
+            const cityWithSpace = sanitizeForIlike(intent.filters.city);
+            const cityWithHyphen = sanitizeForIlike(intent.filters.city.replace(/\s+/g, '-'));
 
             // Try both patterns: "New York" OR "new-york"
             dbQuery = dbQuery.or(`city.ilike.%${cityWithSpace}%,city.ilike.%${cityWithHyphen}%`);

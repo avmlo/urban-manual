@@ -1,0 +1,3 @@
+## 2025-05-21 - Component-Level Fetch Storms
+**Learning:** Components like `DestinationBadges` that trigger data fetching on mount (`useEffect`) can cause massive "fetch storms" (N+1 problem) when rendered in large lists (e.g., grids), even if the list is virtualized or paginated client-side.
+**Action:** Wrap such components in a lazy-loading container (like `LazyDestinationCard` using `IntersectionObserver`) so they only mount and fetch when they enter the viewport. This significantly reduces initial network load and main thread blocking. Also, ensure redundant `IntersectionObserver` logic is removed from the child component if the parent handles visibility.

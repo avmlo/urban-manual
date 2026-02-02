@@ -63,7 +63,7 @@ import { type ExtractedIntent } from '@/app/api/intent/schema';
 import { type RefinementTag } from '@/components/RefinementChips';
 import { capitalizeCity, capitalizeCategory } from '@/lib/utils';
 import { isOpenNow } from '@/lib/utils/opening-hours';
-import { DestinationCard } from '@/components/DestinationCard';
+import { LazyDestinationCard } from '@/components/DestinationCard';
 import HomeMapSplitView from '@/components/HomeMapSplitView';
 import { EditModeToggle } from '@/components/EditModeToggle';
 import { UniversalGrid } from '@/components/UniversalGrid';
@@ -3291,7 +3291,7 @@ export default function HomePageClient({
                           const globalIndex = startIndex + index;
 
                           return (
-                            <DestinationCard
+                            <LazyDestinationCard
                               key={destination.slug}
                               destination={destination}
                               onClick={() => {

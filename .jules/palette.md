@@ -1,0 +1,3 @@
+## 2026-02-03 - Standardizing Tooltips and Toasts
+**Learning:** Native `title` attributes are insufficient for accessibility (inconsistent screen reader support, no keyboard focus visibility). Replacing them with Radix UI `Tooltip` components ensures a consistent, accessible experience for all users. Similarly, custom toast implementations clutter components; standardizing on `sonner` improves code maintainability and visual consistency.
+**Action:** When auditing components, look for `title` attributes on interactive elements and replace them with `Tooltip` wrappers. Identify and replace ad-hoc notification states with `sonner`.

@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { LogLevel, StatsigProvider } from "@statsig/react-bindings";
 
 declare const userID: string | undefined;
 
@@ -10,23 +9,36 @@ type MyStatsigProps = {
 };
 
 export default function MyStatsig({ children }: MyStatsigProps) {
-  const id = typeof userID !== "undefined" ? userID : "a-user";
+  const sdkKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
+  
+  // If Statsig is not configured, just render children without the provider
+  if (!sdkKey) {
+    return <>{children}</>;
+  }
 
-  const user = {
-    userID: id,
-    // Optional additional fields:
-    // email: 'user@example.com',
-    // customIDs: { internalID: 'internal-123' },
-    // custom: { plan: 'premium' }
-  };
+  // Dynamically import Statsig only when configured
+  const StatsigWrapper = React.lazy(async () => {
+    const { LogLevel, StatsigProvider } = await import("@statsig/react-bindings");
+    
+    const id = typeof userID !== "undefined" ? userID : "a-user";
+    const user = { userID: id };
+    
+    return {
+      default: ({ children }: { children: React.ReactNode }) => (
+        <StatsigProvider
+          sdkKey={sdkKey}
+          user={user}
+          options={{ logLevel: LogLevel.Debug }}
+        >
+          {children}
+        </StatsigProvider>
+      ),
+    };
+  });
 
   return (
-    <StatsigProvider
-      sdkKey={process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY!}
-      user={user}
-      options={{ logLevel: LogLevel.Debug }}
-    >
-      {children}
-    </StatsigProvider>
+    <React.Suspense fallback={<>{children}</>}>
+      <StatsigWrapper>{children}</StatsigWrapper>
+    </React.Suspense>
   );
 }

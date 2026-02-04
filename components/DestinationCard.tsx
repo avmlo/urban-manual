@@ -6,7 +6,6 @@ import { MapPin, Check } from 'lucide-react';
 import { Destination } from '@/types/destination';
 import { capitalizeCity } from '@/lib/utils';
 import { DestinationCardSkeleton } from '@/ui/DestinationCardSkeleton';
-import { DestinationBadges } from './DestinationBadges';
 import { QuickActions } from './QuickActions';
 
 interface DestinationCardProps {
@@ -87,13 +86,7 @@ export const DestinationCard = memo(function DestinationCard({
     >
         {/* Image Container with Progressive Loading - 16:9 ratio */}
         <div
-          className={`
-            relative aspect-video overflow-hidden rounded-2xl
-            bg-[var(--editorial-border)]
-            transition-all duration-300 ease-out
-            mb-3
-            ${isLoaded ? 'opacity-100' : 'opacity-0'}
-          `}
+          className="relative aspect-video overflow-hidden rounded-2xl bg-[var(--editorial-border)] mb-3"
         >
         {/* Skeleton while loading */}
         {!isLoaded && isInView && (
@@ -162,16 +155,7 @@ export const DestinationCard = memo(function DestinationCard({
             {/* Michelin Stars - Bottom Left */}
             {typeof destination.michelin_stars === 'number' &&
               destination.michelin_stars > 0 && (
-                <div
-                  className={`
-                    absolute bottom-2 left-2 z-10
-                    px-2.5 py-1 text-[var(--editorial-text-primary)] text-xs font-medium
-                    bg-white/95 backdrop-blur-sm rounded-full
-                    flex items-center gap-1.5
-                    shadow-sm
-                    transition-transform duration-300
-                  `}
-                >
+                <div className="absolute bottom-2 left-2 z-10 px-2.5 py-1 text-[var(--editorial-text-primary)] text-xs font-medium bg-white/95 backdrop-blur-sm rounded-full flex items-center gap-1.5 shadow-sm">
                   <img
                     src="/michelin-star.svg"
                     alt="Michelin star"
@@ -204,25 +188,9 @@ export const DestinationCard = memo(function DestinationCard({
                : destination.category || '')}
         </div>
 
-        {/* ML Forecasting Badges */}
-        {showBadges && destination.id && (
-          <div className="mt-2">
-            <DestinationBadges destinationId={destination.id} compact={true} showTiming={false} />
-          </div>
-        )}
         </div>
       </div>
 
-      {/* Focus Ring for Accessibility */}
-      <div
-        className={`
-          absolute inset-0
-          ring-2 ring-offset-2 ring-[var(--editorial-text-primary)]
-          opacity-0 focus-within:opacity-100
-          transition-opacity duration-200
-          pointer-events-none
-        `}
-      />
     </button>
   );
 });

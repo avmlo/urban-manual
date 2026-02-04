@@ -5,7 +5,6 @@ import { HomepageDataProvider } from '@/features/homepage/components/HomepageDat
 import { HomepageContent } from '@/features/homepage/components/HomepageContent';
 import { AISearchChatWrapper } from '@/features/homepage/components/AISearchChatWrapper';
 import InteractiveHero from '@/features/homepage/components/InteractiveHero';
-import NavigationBar from '@/features/homepage/components/NavigationBar';
 
 /**
  * Homepage - Progressive Loading Architecture with Client Fallback
@@ -85,10 +84,7 @@ export default async function HomePage() {
 
           {/* Content Section - Full width */}
           <div className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
-            {/* Navigation bar */}
-            <NavigationBar />
-
-            {/* Grid or Map view - switches based on viewMode */}
+            {/* Grid or Map view */}
             <HomepageContent />
           </div>
         </main>

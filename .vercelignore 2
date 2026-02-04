@@ -1,0 +1,18 @@
+# Exclude iOS app from Vercel builds
+ios-app/
+ios/
+
+# Other build artifacts and temporary files
+*.swift
+*.xcodeproj
+*.xcworkspace
+.DS_Store
+
+# Xcode build directories
+DerivedData/
+build/
+
+# Package manager files for iOS
+Package.swift
+Package.resolved
+

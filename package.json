@@ -26,7 +26,8 @@
     "discovery:import": "tsx scripts/discovery-engine-import.ts",
     "fetch:categories": "tsx scripts/fetch-categories-from-google.ts",
     "generate:micro-descriptions": "tsx scripts/generate_micro_descriptions.ts",
-    "test:route-contracts": "tsx tests/routes-calculate-contract.test.ts"
+    "test:route-contracts": "tsx tests/routes-calculate-contract.test.ts",
+    "audit:brands": "tsx scripts/brand-and-data-audit.ts"
   },
   "dependencies": {
     "@amcharts/amcharts5": "^5.14.4",

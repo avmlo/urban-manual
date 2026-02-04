@@ -1,0 +1,13 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+	precomposeunicode = true
+[remote "origin"]
+	url = https://github.com/avmlo/urban-manual.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "copilot/rebuild-ios-app-files"]
+	remote = origin
+	merge = refs/heads/copilot/rebuild-ios-app-files

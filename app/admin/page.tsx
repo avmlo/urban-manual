@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Plus, Edit, Search, X, Trash2 } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { stripHtmlTags } from "@/lib/stripHtmlTags";
 import GooglePlacesAutocomplete from "@/components/GooglePlacesAutocomplete";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
@@ -30,6 +30,14 @@ function DestinationForm({
   isSaving: boolean;
   toast: any;
 }) {
+  const sectionCard =
+    "rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60";
+  const labelClass =
+    "text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-300";
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-100 dark:focus:border-slate-600 dark:focus:ring-slate-800";
+  const textareaClass =
+    "w-full rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-100 dark:focus:border-slate-600 dark:focus:ring-slate-800";
   const [formData, setFormData] = useState({
     slug: destination?.slug || '',
     name: destination?.name || '',
@@ -334,11 +342,14 @@ function DestinationForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Basic Information Section */}
-      <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
-        <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+      <section className={sectionCard}>
+        <div className="mb-4">
+          <p className={labelClass}>Basic Information</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Core details</h3>
+        </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Name *</label>
+            <label className={`block mb-1.5 ${labelClass}`}>Name *</label>
             <div className="flex gap-2">
               <GooglePlacesAutocomplete
                 value={formData.name}
@@ -396,14 +407,14 @@ function DestinationForm({
                   }
                 }}
                 placeholder="Start typing a place name... (autocomplete enabled)"
-                className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+                className={`flex-1 ${inputClass}`}
                 types="establishment"
               />
               <button
                 type="button"
                 onClick={fetchFromGoogle}
                 disabled={fetchingGoogle || !formData.name.trim()}
-                className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl hover:bg-gray-50 dark:hover:bg-dark-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                className="px-4 py-2 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap dark:bg-white dark:text-slate-900"
               >
                 {fetchingGoogle ? (
                   <>
@@ -415,55 +426,55 @@ function DestinationForm({
                 )}
               </button>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              💡 Type to see Google Places suggestions, or click "Fetch Details" to auto-fill all fields
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Type to see Google Places suggestions, or click "Fetch Details" to auto-fill all fields.
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5">Slug *</label>
+              <label className={`block mb-1.5 ${labelClass}`}>Slug *</label>
               <input
                 type="text"
                 required
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 placeholder="auto-generated if empty"
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">City *</label>
+              <label className={`block mb-1.5 ${labelClass}`}>City *</label>
               <input
                 type="text"
                 required
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
                 placeholder="e.g., Tokyo"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Category *</label>
+            <label className={`block mb-1.5 ${labelClass}`}>Category *</label>
             <input
               type="text"
               required
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="e.g., restaurant, hotel, cafe"
             />
           </div>
           
           {/* Parent Destination Selector */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">Parent Destination (Optional)</label>
+            <label className={`block mb-1.5 ${labelClass}`}>Parent Destination (Optional)</label>
             <div className="relative">
               {selectedParent ? (
-                <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between p-3 bg-slate-100/70 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800">
                   <div>
                     <span className="text-sm font-medium">{selectedParent.name}</span>
-                    <span className="text-xs text-gray-500 ml-2">{selectedParent.city}</span>
+                    <span className="text-xs text-slate-500 ml-2">{selectedParent.city}</span>
                   </div>
                   <button
                     type="button"
@@ -471,7 +482,7 @@ function DestinationForm({
                       setSelectedParent(null);
                       setFormData({ ...formData, parent_destination_id: null });
                     }}
-                    className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -483,7 +494,7 @@ function DestinationForm({
                     value={parentSearchQuery}
                     onChange={(e) => setParentSearchQuery(e.target.value)}
                     placeholder="Search for parent destination (e.g., hotel name)..."
-                    className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+                    className={inputClass}
                   />
                   {isSearchingParent && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -491,7 +502,7 @@ function DestinationForm({
                     </div>
                   )}
                   {parentSearchResults.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                       {parentSearchResults.map((parent) => (
                         <button
                           key={parent.id}
@@ -502,10 +513,10 @@ function DestinationForm({
                             setParentSearchQuery('');
                             setParentSearchResults([]);
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-dark-blue-700 transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                         >
                           <div className="font-medium text-sm">{parent.name}</div>
-                          <div className="text-xs text-gray-500">{parent.city} • {parent.category}</div>
+                          <div className="text-xs text-slate-500">{parent.city} • {parent.category}</div>
                         </button>
                       ))}
                     </div>
@@ -513,16 +524,19 @@ function DestinationForm({
                 </>
               )}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Select a parent destination if this venue is located within another (e.g., a bar within a hotel)
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Image Section */}
-      <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
-        <h3 className="text-lg font-semibold mb-4">Image</h3>
+      <section className={sectionCard}>
+        <div className="mb-4">
+          <p className={labelClass}>Media</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Hero image</h3>
+        </div>
         <div className="space-y-3">
           {/* Drag and Drop Zone */}
           <div
@@ -531,8 +545,8 @@ function DestinationForm({
             onDrop={handleDrop}
             className={`relative border-2 border-dashed rounded-2xl p-6 transition-colors ${
               isDragging
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50'
+                ? 'border-slate-500 bg-slate-100 dark:bg-slate-900/70'
+                : 'border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40'
             }`}
           >
             <input
@@ -563,7 +577,7 @@ function DestinationForm({
                       const input = document.getElementById('image-upload-input') as HTMLInputElement;
                       if (input) input.value = '';
                     }}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors"
+                    className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-1.5 hover:bg-rose-600 transition-colors"
                     title="Remove image"
                   >
                     <X className="h-4 w-4" />
@@ -575,7 +589,7 @@ function DestinationForm({
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Drag & drop an image here
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     or click to browse
                   </span>
                 </>
@@ -593,7 +607,7 @@ function DestinationForm({
                 className="hidden"
                 id="image-upload-button"
               />
-              <span className="inline-flex items-center justify-center w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
+              <span className="inline-flex items-center justify-center w-full px-4 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-sm font-medium">
                 📁 {imageFile ? 'Change Image' : 'Choose File'}
               </span>
             </label>
@@ -604,13 +618,13 @@ function DestinationForm({
                   setImageFile(null);
                   setImagePreview(formData.image || null);
                 }}
-                className="px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                className="px-3 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl"
               >
                 Clear
               </button>
             )}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">or</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">or</div>
           <input
             type="url"
             value={formData.image}
@@ -621,60 +635,66 @@ function DestinationForm({
               }
             }}
             placeholder="Enter image URL"
-            className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+            className={inputClass}
           />
           {imagePreview && (
             <div className="mt-3">
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-full h-64 object-cover rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm"
+                className="w-full h-64 object-cover rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
                 onError={() => setImagePreview(null)}
               />
             </div>
           )}
           {uploadingImage && (
-            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+            <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               Uploading image...
             </div>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Content Section */}
-      <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
-        <h3 className="text-lg font-semibold mb-4">Content</h3>
+      <section className={sectionCard}>
+        <div className="mb-4">
+          <p className={labelClass}>Content</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Descriptions</h3>
+        </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Short Description</label>
+            <label className={`block mb-1.5 ${labelClass}`}>Short Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className={`${textareaClass} resize-none`}
               placeholder="A brief, punchy description (1-2 sentences)"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Full Content</label>
+            <label className={`block mb-1.5 ${labelClass}`}>Full Content</label>
             <textarea
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               rows={8}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+              className={`${textareaClass} resize-y`}
               placeholder="A detailed description of the destination, what makes it special, atmosphere, best time to visit, etc."
             />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Additional Details */}
-      <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
-        <h3 className="text-lg font-semibold mb-4">Additional Details</h3>
+      <section className={sectionCard}>
+        <div className="mb-4">
+          <p className={labelClass}>Details</p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Classification</h3>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Michelin Stars</label>
+            <label className={`block mb-1.5 ${labelClass}`}>Michelin Stars</label>
             <input
               type="number"
               min="0"
@@ -689,7 +709,7 @@ function DestinationForm({
                 }
                 setFormData(updatedFormData);
               }}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputClass}
               placeholder="0-3"
             />
           </div>
@@ -699,14 +719,14 @@ function DestinationForm({
               id="crown-checkbox"
               checked={formData.crown}
               onChange={(e) => setFormData({ ...formData, crown: e.target.checked })}
-              className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
+              className="w-5 h-5 rounded border-slate-300 dark:border-slate-600 text-slate-900 focus:ring-2 focus:ring-slate-300"
             />
-            <label htmlFor="crown-checkbox" className="text-sm font-medium cursor-pointer">
+            <label htmlFor="crown-checkbox" className="text-sm font-medium cursor-pointer text-slate-700 dark:text-slate-200">
               Crown (Featured)
             </label>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-2">
@@ -714,14 +734,14 @@ function DestinationForm({
           type="button"
           onClick={onCancel}
           disabled={isSaving}
-          className="px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSaving}
-          className="min-w-[100px] px-4 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-2xl hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+          className="min-w-[100px] px-4 py-2.5 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium dark:bg-white dark:text-slate-900"
         >
           {isSaving ? (
             <>
@@ -764,6 +784,15 @@ export default function AdminPage() {
   const [editingDestination, setEditingDestination] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'destinations' | 'analytics' | 'searches' | 'discover'>('destinations');
+  const adminTabs = useMemo(
+    () => [
+      { id: 'destinations', label: 'Destinations', description: 'Manage places and editorial content.' },
+      { id: 'analytics', label: 'Analytics', description: 'Live performance signals across the platform.' },
+      { id: 'searches', label: 'Search Logs', description: 'Inspect user intent and discovery demand.' },
+      { id: 'discover', label: 'Discover Lab', description: 'Run ML discovery experiments and prompts.' },
+    ],
+    []
+  );
 
   // Check for tab query parameter on mount
   useEffect(() => {
@@ -777,6 +806,31 @@ export default function AdminPage() {
   // Searches state
   const [searchLogs, setSearchLogs] = useState<any[]>([]);
   const [loadingSearches, setLoadingSearches] = useState(false);
+  const destinationStats = useMemo(() => {
+    const total = destinationList.length;
+    const enriched = destinationList.filter((item) => !!item.google_place_id).length;
+    const crowned = destinationList.filter((item) => item.crown).length;
+    const michelin = destinationList.filter((item) => Number(item.michelin_stars) > 0).length;
+    const ratingValues = destinationList
+      .map((item) => item.rating)
+      .filter((value) => typeof value === 'number') as number[];
+    const avgRating = ratingValues.length
+      ? ratingValues.reduce((sum, value) => sum + value, 0) / ratingValues.length
+      : 0;
+    return {
+      total,
+      enriched,
+      crowned,
+      michelin,
+      avgRating,
+    };
+  }, [destinationList]);
+  const latestSearchAt = useMemo(() => {
+    if (!searchLogs.length) return '—';
+    const latest = searchLogs[0]?.created_at;
+    if (!latest) return '—';
+    return new Date(latest).toLocaleString();
+  }, [searchLogs]);
 
   // Check authentication
   useEffect(() => {
@@ -1090,151 +1144,257 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="px-6 md:px-10 py-20 min-h-screen">
-      <div className="container mx-auto">
-        {/* Header - Matches account page spacing and style */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-light">Admin</h1>
-            <button
-              onClick={() => router.push('/account')}
-              className="text-xs font-medium text-gray-500 hover:text-black dark:hover:text-white transition-colors"
-            >
-              Back to Account
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-            <span className="text-xs bg-black dark:bg-white text-white dark:text-black px-2 py-0.5 rounded-full font-medium">Admin</span>
-          </div>
+    <main className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#070b12] dark:text-slate-100">
+      <div className="relative overflow-hidden border-b border-slate-200/60 dark:border-slate-800/60">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 left-8 h-64 w-64 rounded-full bg-slate-200/40 blur-3xl dark:bg-slate-800/40" />
+          <div className="absolute -bottom-20 right-8 h-72 w-72 rounded-full bg-slate-200/40 blur-3xl dark:bg-slate-800/40" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-slate-100/40 to-slate-200/30 dark:from-[#0a101a] dark:via-[#0c1220] dark:to-[#101826]" />
         </div>
-
-        {/* Tab Navigation - Matches account page style */}
-        <div className="mb-12">
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs border-b border-gray-200 dark:border-gray-800 pb-3">
-            {['destinations', 'analytics', 'searches', 'discover'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`transition-all pb-1 ${
-                  activeTab === tab
-                    ? "font-medium text-black dark:text-white border-b-2 border-black dark:border-white"
-                    : "font-medium text-black/30 dark:text-gray-500 hover:text-black/60 dark:hover:text-gray-300"
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Destinations Tab */}
-        {activeTab === 'destinations' && (
-          <div className="fade-in space-y-12">
-
-        {/* Destination List */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-medium text-gray-500 dark:text-gray-400">Destinations</h2>
-            <button
-              onClick={() => {
-                setEditingDestination(null);
-                setShowCreateModal(true);
-              }}
-              className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-2xl hover:opacity-80 transition-opacity text-xs font-medium flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Place
-            </button>
-          </div>
-          {isLoadingList ? (
-            <div className="text-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400" />
+        <div className="relative z-10 container mx-auto px-6 md:px-10 py-12">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-3 max-w-2xl">
+              <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Admin Studio</p>
+              <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 dark:text-white">
+                Curate destinations with confidence.
+              </h1>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Streamlined workflows for editorial accuracy, enrichment, and live performance insights.
+              </p>
             </div>
-          ) : (
-            <DataTable
-              columns={createColumns(
-                (dest) => {
-                  setEditingDestination(dest);
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => {
+                  setEditingDestination(null);
                   setShowCreateModal(true);
-                },
-                handleDeleteDestination
+                }}
+                className="px-4 py-2 rounded-2xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors dark:bg-white dark:text-slate-900"
+              >
+                <Plus className="h-4 w-4 inline-block mr-2" />
+                Add Destination
+              </button>
+              <button
+                onClick={() => router.push('/account')}
+                className="px-4 py-2 rounded-2xl border border-slate-200 text-sm font-medium text-slate-600 hover:text-slate-900 hover:border-slate-300 transition-colors dark:border-slate-800 dark:text-slate-300 dark:hover:text-white"
+              >
+                Back to Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-6 md:px-10 py-12">
+        <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+          <aside className="space-y-6">
+            <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Session</p>
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{user?.email}</p>
+                <span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">
+                  Admin
+                </span>
+              </div>
+              <div className="mt-4 rounded-xl bg-slate-50/90 p-3 text-xs text-slate-600 dark:bg-slate-950/60 dark:text-slate-300">
+                Latest search: <span className="font-semibold text-slate-900 dark:text-white">{latestSearchAt}</span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-2 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+              {adminTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition ${
+                    activeTab === tab.id
+                      ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-950/60'
+                  }`}
+                >
+                  <div className="text-sm font-semibold">{tab.label}</div>
+                  <div className={`text-xs ${activeTab === tab.id ? 'text-white/80 dark:text-slate-700' : 'text-slate-500 dark:text-slate-400'}`}>
+                    {tab.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Quick Actions</p>
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={() => {
+                    setEditingDestination(null);
+                    setShowCreateModal(true);
+                  }}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-300 hover:text-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:text-white"
+                >
+                  Create new destination
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('searches');
+                    if (searchLogs.length === 0) loadSearchLogs();
+                  }}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-300 hover:text-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:text-white"
+                >
+                  Review search logs
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          <section className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Destinations</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{destinationStats.total}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Total curated entries</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Enrichment</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{destinationStats.enriched}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Google Places linked</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Editorial</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{destinationStats.crowned}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Crown selections</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Rating</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">
+                  {destinationStats.avgRating ? destinationStats.avgRating.toFixed(1) : '—'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Avg. starred destinations</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/70 bg-white/90 p-6 shadow-sm dark:border-slate-800/60 dark:bg-slate-900/60">
+              <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    {adminTabs.find((tab) => tab.id === activeTab)?.label}
+                  </p>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                    {adminTabs.find((tab) => tab.id === activeTab)?.description}
+                  </h2>
+                </div>
+              </div>
+
+              {/* Destinations Tab */}
+              {activeTab === 'destinations' && (
+                <div className="fade-in space-y-6 mt-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Destinations</p>
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Content inventory</h3>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingDestination(null);
+                        setShowCreateModal(true);
+                      }}
+                      className="px-4 py-2 rounded-2xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors dark:bg-white dark:text-slate-900"
+                    >
+                      <Plus className="h-4 w-4 inline-block mr-2" />
+                      Add Place
+                    </button>
+                  </div>
+                  {isLoadingList ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-400" />
+                    </div>
+                  ) : (
+                    <DataTable
+                      columns={createColumns(
+                        (dest) => {
+                          setEditingDestination(dest);
+                          setShowCreateModal(true);
+                        },
+                        handleDeleteDestination
+                      )}
+                      data={destinationList}
+                      searchQuery={listSearchQuery}
+                      onSearchChange={(query) => {
+                        setListSearchQuery(query);
+                      }}
+                      isLoading={isLoadingList}
+                    />
+                  )}
+                </div>
               )}
-              data={destinationList}
-              searchQuery={listSearchQuery}
-              onSearchChange={(query) => {
-                setListSearchQuery(query);
-              }}
-              isLoading={isLoadingList}
-            />
-          )}
+
+              {/* Analytics Tab */}
+              {activeTab === 'analytics' && (
+                <div className="fade-in mt-6">
+                  <AnalyticsDashboard variant="embedded" />
+                </div>
+              )}
+
+              {/* Searches Tab */}
+              {activeTab === 'searches' && (
+                <div className="fade-in mt-6">
+                  {loadingSearches ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-slate-400" />
+                    </div>
+                  ) : searchLogs.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">No search logs available</div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200/70 dark:border-slate-800/60">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-left border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40">
+                            <th className="py-2 pr-4 font-medium text-slate-500">Time</th>
+                            <th className="py-2 pr-4 font-medium text-slate-500">User</th>
+                            <th className="py-2 pr-4 font-medium text-slate-500">Query</th>
+                            <th className="py-2 pr-4 font-medium text-slate-500">City</th>
+                            <th className="py-2 pr-4 font-medium text-slate-500">Category</th>
+                            <th className="py-2 pr-4 font-medium text-slate-500">Count</th>
+                            <th className="py-2 pr-4 font-medium text-slate-500">Source</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {searchLogs.map((log) => {
+                            const q = log.metadata?.query || '';
+                            const intent = log.metadata?.intent || {};
+                            const filters = log.metadata?.filters || {};
+                            const count = log.metadata?.count ?? '';
+                            const source = log.metadata?.source || '';
+                            return (
+                              <tr
+                                key={log.id}
+                                className="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-900/50 transition-colors"
+                              >
+                                <td className="py-2 pr-4 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
+                                <td className="py-2 pr-4">{log.user_id ? log.user_id.substring(0, 8) : 'anon'}</td>
+                                <td className="py-2 pr-4 max-w-[360px] truncate" title={q}>
+                                  {q}
+                                </td>
+                                <td className="py-2 pr-4">{intent.city || filters.city || ''}</td>
+                                <td className="py-2 pr-4">{intent.category || filters.category || ''}</td>
+                                <td className="py-2 pr-4">{count}</td>
+                                <td className="py-2 pr-4">{source}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Discover Tab */}
+              {activeTab === 'discover' && (
+                <div className="fade-in mt-6">
+                  <DiscoverTab />
+                </div>
+              )}
+            </div>
+          </section>
         </div>
-        </div>
-        )}
-
-
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <div className="fade-in">
-            <AnalyticsDashboard variant="embedded" />
-          </div>
-        )}
-
-        {/* Searches Tab */}
-        {activeTab === 'searches' && (
-          <div className="fade-in">
-            {loadingSearches ? (
-              <div className="text-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-              </div>
-            ) : searchLogs.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">No search logs available</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="text-left border-b border-gray-200 dark:border-gray-800">
-                      <th className="py-2 pr-4 font-medium text-gray-500">Time</th>
-                      <th className="py-2 pr-4 font-medium text-gray-500">User</th>
-                      <th className="py-2 pr-4 font-medium text-gray-500">Query</th>
-                      <th className="py-2 pr-4 font-medium text-gray-500">City</th>
-                      <th className="py-2 pr-4 font-medium text-gray-500">Category</th>
-                      <th className="py-2 pr-4 font-medium text-gray-500">Count</th>
-                      <th className="py-2 pr-4 font-medium text-gray-500">Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {searchLogs.map((log) => {
-                      const q = log.metadata?.query || '';
-                      const intent = log.metadata?.intent || {};
-                      const filters = log.metadata?.filters || {};
-                      const count = log.metadata?.count ?? '';
-                      const source = log.metadata?.source || '';
-                      return (
-                        <tr key={log.id} className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                          <td className="py-2 pr-4 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
-                          <td className="py-2 pr-4">{log.user_id ? log.user_id.substring(0, 8) : 'anon'}</td>
-                          <td className="py-2 pr-4 max-w-[360px] truncate" title={q}>{q}</td>
-                          <td className="py-2 pr-4">{intent.city || filters.city || ''}</td>
-                          <td className="py-2 pr-4">{intent.category || filters.category || ''}</td>
-                          <td className="py-2 pr-4">{count}</td>
-                          <td className="py-2 pr-4">{source}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Discover Tab */}
-        {activeTab === 'discover' && (
-          <div className="fade-in">
-            <DiscoverTab />
-          </div>
-        )}
 
         {/* Create/Edit Drawer - Outside tabs, always available */}
         {showCreateModal && (

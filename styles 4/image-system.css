@@ -1,0 +1,9 @@
+.um-image {
+  object-fit: cover;
+  filter: brightness(0.98) contrast(0.96) saturate(0.96);
+  transition: filter var(--motion-medium) var(--ease-soft);
+}
+.um-image:hover {
+  filter: brightness(1.00) contrast(1.00) saturate(1.00);
+}
+

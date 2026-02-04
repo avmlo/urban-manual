@@ -1,0 +1,16 @@
+# Copy and paste these commands on your Ubuntu server:
+
+# 1. Navigate to project
+cd /home/ubuntu/urban-manual
+
+# 2. Pull latest changes (if needed)
+git pull origin master
+
+# 3. Install Python dependencies
+pip3 install supabase google-generativeai
+
+# 4. Set environment variable (replace with your actual key)
+export GOOGLE_API_KEY=your_google_api_key_here
+
+# 5. Run the script
+python3.11 scripts/generate_ai_fields.py

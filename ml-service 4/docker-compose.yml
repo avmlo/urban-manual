@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  ml-service:
+    build: .
+    container_name: urban-manual-ml
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - ML_SERVICE_HOST=0.0.0.0
+      - ML_SERVICE_PORT=8000
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    volumes:
+      # Optional: Mount logs directory
+      - ./logs:/app/logs
+
+networks:
+  default:
+    name: urban-manual-network

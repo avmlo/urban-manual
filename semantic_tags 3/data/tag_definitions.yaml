@@ -1,0 +1,56 @@
+{
+  "tags": [
+    {
+      "name": "live_music",
+      "keywords": ["live music", "live dj", "concert series"],
+      "negative_phrases": [
+        "no live music",
+        "live music is not available",
+        "live music has ended"
+      ],
+      "context": {
+        "sentence": {
+          "exclude_any": [
+            "cancelled",
+            "used to",
+            "formerly",
+            "no longer",
+            "not available"
+          ]
+        },
+        "paragraph": {
+          "require_any": ["band", "dj", "stage", "performance"]
+        }
+      }
+    },
+    {
+      "name": "rooftop_view",
+      "keywords": ["rooftop", "roof deck", "sky lounge"],
+      "negative_phrases": ["no rooftop access", "rooftop is closed"],
+      "context": {
+        "paragraph": {
+          "require_any": ["view", "skyline", "panoramic", "sunset"],
+          "exclude_any": ["closed for renovation", "seasonally closed"]
+        }
+      }
+    },
+    {
+      "name": "pet_friendly",
+      "keywords": ["pet-friendly", "pets welcome", "pets are welcome", "dog friendly"],
+      "negative_phrases": [
+        "no pets",
+        "not pet friendly",
+        "service animals only"
+      ],
+      "context": {
+        "sentence": {
+          "exclude_any": [
+            "only service animals",
+            "not allowed",
+            "except for service animals"
+          ]
+        }
+      }
+    }
+  ]
+}

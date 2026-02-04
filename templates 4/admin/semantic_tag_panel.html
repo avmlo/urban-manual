@@ -1,0 +1,55 @@
+<div class="semantic-tag-panel">
+  <h3>Semantic Tag Audit Trail</h3>
+  {% if tag_result %}
+    <div class="semantic-tag-panel__summary">
+      <span><strong>Forced On:</strong> {{ tag_result.forced_on | join(', ') if tag_result.forced_on else '—' }}</span>
+      <span><strong>Forced Off:</strong> {{ tag_result.forced_off | join(', ') if tag_result.forced_off else '—' }}</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Tag</th>
+          <th>Status</th>
+          <th>Reasons</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for decision in tag_result.decisions %}
+          <tr class="{% if decision.applied %}is-applied{% else %}is-muted{% endif %}">
+            <td>
+              <div class="semantic-tag-panel__tag-name">
+                {{ decision.tag.name }}
+              </div>
+              <div class="semantic-tag-panel__tag-meta">
+                #{{ decision.tag.id }} · {{ decision.tag.slug }}
+              </div>
+            </td>
+            <td>
+              {% if decision.applied %}
+                <span class="status-pill status-pill--applied">Applied</span>
+              {% else %}
+                <span class="status-pill">Skipped</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if decision.reasons %}
+                <ul class="semantic-tag-panel__reasons">
+                  {% for reason in decision.reasons %}
+                    <li>
+                      <strong>{{ reason.keyword }}</strong>
+                      <span>{{ reason.sentence }}</span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <em>No matching phrase recorded.</em>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No semantic tagging data available for this record.</p>
+  {% endif %}
+</div>

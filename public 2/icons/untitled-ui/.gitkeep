@@ -1,0 +1,24 @@
+# Untitled UI Icons Directory
+# 
+# To add icons:
+# 1. Visit https://www.untitledui.com/free-icons
+# 2. Click on an icon to copy the SVG
+# 3. Save the SVG file here with the name matching the icon name in category-icons.ts
+# 
+# Example: For 'utensils' icon, save as 'utensils.svg'
+# 
+# Common icons needed:
+# - utensils.svg (for dining/restaurant)
+# - coffee.svg (for cafe)
+# - wine.svg (for bar/nightlife)
+# - building-02.svg (for hotel)
+# - shopping-bag.svg (for shopping)
+# - camera.svg (for gallery/art)
+# - music.svg (for music/concert)
+# - film.svg (for theater/cinema)
+# - dumbbell.svg (for fitness/sports)
+# - tree.svg (for park/outdoor)
+# - waves.svg (for beach)
+# - landmark.svg (for attractions)
+# - sparkles.svg (for other)
+

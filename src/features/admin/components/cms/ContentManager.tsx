@@ -601,21 +601,47 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
-            {totalCount.toLocaleString()} destinations
+          <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+            Content library
+          </p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Manage destinations and editorial data
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {totalCount.toLocaleString()} destinations · {selectedItems.size.toLocaleString()} selected · {activeFilterCount} filters
           </p>
         </div>
-        <button
+        <Button
           onClick={onCreateNew}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-black dark:text-white hover:opacity-60 transition-opacity"
+          className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold"
         >
           <Plus className="w-3.5 h-3.5" />
-          Add New
-        </button>
+          Add destination
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800/60 bg-white dark:bg-gray-950/30 px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-[10px] uppercase tracking-[0.2em]">View</div>
+          <div className="mt-1 text-sm text-gray-900 dark:text-white">
+            {viewMode === 'table' ? 'Table layout' : 'Grid layout'}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800/60 bg-white dark:bg-gray-950/30 px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-[10px] uppercase tracking-[0.2em]">Sorting</div>
+          <div className="mt-1 text-sm text-gray-900 dark:text-white">
+            {getSortLabel(sortField, sortOrder)}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800/60 bg-white dark:bg-gray-950/30 px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-[10px] uppercase tracking-[0.2em]">Page size</div>
+          <div className="mt-1 text-sm text-gray-900 dark:text-white">
+            {itemsPerPage} per page
+          </div>
+        </div>
       </div>
 
       {/* Toolbar */}

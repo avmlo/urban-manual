@@ -3,19 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowRight,
-  Crown,
-  Users,
-  TrendingUp,
-  AlertTriangle,
-  ImageOff,
-  FileText,
-  Sparkles,
-  Globe,
-} from 'lucide-react';
+import { ArrowRight, ImageOff, FileText, Sparkles, TrendingUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Badge } from '@/ui/badge';
 import { Skeleton } from '@/ui/skeleton';
 import { Progress } from '@/ui/progress';
 
@@ -112,43 +101,90 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-10">
-      {/* Key numbers */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-y-6">
-        <Metric label="Destinations" value={stats?.totalDestinations} loading={loading} />
-        <Metric label="Enriched" value={stats?.enrichedDestinations} loading={loading} sub={stats ? `${Math.round((stats.enrichedDestinations / Math.max(stats.totalDestinations, 1)) * 100)}%` : undefined} />
-        <Metric label="Crown Picks" value={stats?.crownPicks} loading={loading} />
-        <Metric label="Michelin" value={stats?.michelinSpots} loading={loading} />
-        <Metric label="User Saves" value={stats?.totalSaves} loading={loading} />
-        <Metric label="Users" value={stats?.activeUsers} loading={loading} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
+            Admin overview
+          </p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Keep the catalog healthy and discoverable
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Track freshness, coverage, and data quality across the city guide.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push('/admin/enrich')}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            Review enrichment
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+          <Link
+            href="/admin/destinations?action=create"
+            className="inline-flex items-center gap-2 rounded-full bg-gray-900 text-white dark:bg-white dark:text-gray-900 px-4 py-2 text-xs font-semibold hover:opacity-80 transition-opacity"
+          >
+            Add destination
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
-      {/* Attention items - compact inline */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <InsightCard
+          title="Coverage"
+          description="Total catalog reach"
+          loading={loading}
+          primary={stats?.totalDestinations}
+          secondary={`+${stats?.addedThisWeek ?? 0} this week`}
+        />
+        <InsightCard
+          title="Enrichment"
+          description="Destinations with AI summaries"
+          loading={loading}
+          primary={stats?.enrichedDestinations}
+          secondary={`${Math.round((stats?.enrichedDestinations ?? 0) / Math.max(stats?.totalDestinations ?? 1, 1) * 100)}% enriched`}
+        />
+        <InsightCard
+          title="Engagement"
+          description="Active saves + user count"
+          loading={loading}
+          primary={stats?.totalSaves}
+          secondary={`${stats?.activeUsers ?? 0} users`}
+        />
+      </div>
+
       {!loading && attentionItems.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {attentionItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => router.push('/admin/enrich')}
-              className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-            >
-              {item.icon}
-              <span>{item.count} {item.label}</span>
-            </button>
-          ))}
+        <div className="rounded-2xl border border-amber-200/60 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/30 p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300">
+            <TrendingUp className="w-3.5 h-3.5" />
+            Needs attention
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {attentionItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => router.push('/admin/enrich')}
+                className="flex items-center gap-2 rounded-full border border-amber-200 dark:border-amber-800/70 bg-white/70 dark:bg-amber-900/30 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-200 hover:bg-white dark:hover:bg-amber-900/50 transition-colors"
+              >
+                {item.icon}
+                <span>{item.count} {item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Two columns: Recent + Cities */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Recent additions */}
-        <div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10">
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800/60 bg-white dark:bg-gray-950/30 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Recently Added
             </h3>
             <Link
               href="/admin/destinations"
-              className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               View all <ArrowRight className="w-3 h-3" />
             </Link>
@@ -169,12 +205,12 @@ export function DashboardOverview() {
                   className="py-2.5 flex items-center justify-between group"
                 >
                   <div className="min-w-0">
-                    <p className="text-[13px] text-black dark:text-white group-hover:opacity-60 transition-opacity truncate">
+                    <p className="text-sm text-gray-900 dark:text-white group-hover:opacity-60 transition-opacity truncate">
                       {dest.name}
                     </p>
-                    <p className="text-[11px] text-gray-400">{dest.city}</p>
+                    <p className="text-xs text-gray-400">{dest.city}</p>
                   </div>
-                  <span className="text-[11px] text-gray-400 capitalize flex-shrink-0 ml-4">
+                  <span className="text-xs text-gray-400 capitalize flex-shrink-0 ml-4">
                     {dest.category}
                   </span>
                 </Link>
@@ -183,10 +219,9 @@ export function DashboardOverview() {
           </div>
         </div>
 
-        {/* Top cities */}
-        <div>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
-            By City
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-800/60 bg-white dark:bg-gray-950/30 p-5 shadow-sm">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
+            City coverage
           </h3>
           <div className="space-y-2.5">
             {loading ? (
@@ -196,42 +231,54 @@ export function DashboardOverview() {
             ) : (
               stats?.topCities.map((city) => (
                 <div key={city.city} className="flex items-center gap-3">
-                  <span className="text-[13px] text-gray-700 dark:text-gray-300 w-24 truncate">{city.city}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 w-24 truncate">{city.city}</span>
                   <div className="flex-1">
                     <Progress
                       value={(city.count / (stats?.topCities[0]?.count || 1)) * 100}
                       className="h-1"
                     />
                   </div>
-                  <span className="text-[11px] text-gray-400 tabular-nums w-6 text-right">{city.count}</span>
+                  <span className="text-xs text-gray-400 tabular-nums w-7 text-right">{city.count}</span>
                 </div>
               ))
             )}
           </div>
         </div>
       </div>
-
-      {/* This week summary */}
-      {!loading && stats && stats.addedThisWeek > 0 && (
-        <p className="text-[11px] text-gray-400">
-          +{stats.addedThisWeek} destination{stats.addedThisWeek !== 1 ? 's' : ''} added this week
-        </p>
-      )}
     </div>
   );
 }
 
-function Metric({ label, value, loading, sub }: { label: string; value?: number; loading: boolean; sub?: string }) {
+function InsightCard({
+  title,
+  description,
+  loading,
+  primary,
+  secondary,
+}: {
+  title: string;
+  description: string;
+  loading: boolean;
+  primary?: number;
+  secondary?: string;
+}) {
   return (
-    <div>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-0.5">{label}</p>
+    <div className="rounded-2xl border border-gray-100 dark:border-gray-800/60 bg-white dark:bg-gray-950/30 p-5 shadow-sm">
+      <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        {title}
+      </div>
+      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{description}</p>
       {loading ? (
-        <Skeleton className="h-6 w-12" />
+        <Skeleton className="h-7 w-20 mt-4" />
       ) : (
-        <p className="text-lg font-medium text-black dark:text-white tabular-nums">
-          {(value || 0).toLocaleString()}
-          {sub && <span className="text-[11px] text-gray-400 font-normal ml-1.5">{sub}</span>}
-        </p>
+        <div className="mt-4">
+          <p className="text-2xl font-semibold text-gray-900 dark:text-white tabular-nums">
+            {(primary || 0).toLocaleString()}
+          </p>
+          {secondary && (
+            <p className="text-xs text-gray-400 mt-1">{secondary}</p>
+          )}
+        </div>
       )}
     </div>
   );

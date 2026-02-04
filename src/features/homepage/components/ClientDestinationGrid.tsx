@@ -259,7 +259,7 @@ export function ClientDestinationGrid() {
             destination={destination}
             index={index}
             onClick={() => openDestination(destination)}
-            showQuickActions={true}
+            showQuickActions={false}
             showBadges={true}
           />
         ))}

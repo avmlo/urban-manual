@@ -78,10 +78,9 @@ export const DestinationCard = memo(function DestinationCard({
       onClick={handleClick}
       type="button"
       className={`
-        group relative w-full flex flex-col transition-all duration-300 ease-out
+        relative w-full flex flex-col
         cursor-pointer text-left focus-ring
-        hover:scale-[1.01]
-        active:scale-[0.98]
+        active:scale-[0.98] transition-transform duration-200
         ${className}
       `}
       aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
@@ -110,8 +109,7 @@ export const DestinationCard = memo(function DestinationCard({
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={`
               object-cover
-              transition-all duration-500 ease-out
-              group-hover:scale-105
+              transition-opacity duration-500 ease-out
               ${isLoaded ? 'opacity-100' : 'opacity-0'}
             `}
             quality={80}
@@ -125,20 +123,9 @@ export const DestinationCard = memo(function DestinationCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[var(--editorial-text-tertiary)]">
-            <MapPin className="h-12 w-12 opacity-20 transition-transform duration-300 group-hover:scale-105" />
+            <MapPin className="h-12 w-12 opacity-20" />
           </div>
         )}
-
-        {/* Hover Overlay */}
-        <div
-          className={`
-            absolute inset-0
-            bg-gradient-to-t from-black/60 via-transparent to-transparent
-            opacity-0 group-hover:opacity-100
-            transition-opacity duration-300
-            pointer-events-none
-          `}
-        />
 
         {/* Quick Actions - Top Right on Hover */}
         {showQuickActions && destination.slug && (
@@ -202,12 +189,7 @@ export const DestinationCard = memo(function DestinationCard({
       <div className="flex-1 flex flex-col">
         <div>
         <h3
-          className={`
-            text-sm font-medium text-[var(--editorial-text-primary)]
-              line-clamp-2
-            transition-colors duration-200
-            group-hover:text-[var(--editorial-text-secondary)]
-          `}
+          className="text-sm font-medium text-[var(--editorial-text-primary)] line-clamp-2"
         >
           {destination.name}
         </h3>

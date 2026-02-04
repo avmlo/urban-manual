@@ -2377,6 +2377,45 @@ export default function HomePageClient({
     ? [...featuredCities, ...remainingCities]
     : featuredCities;
 
+  // OPTIMIZATION: Memoize grid computations to prevent re-renders on unrelated state changes
+  // (e.g., typing in search box, opening drawers)
+
+  const displayDestinations = useMemo(() =>
+    advancedFilters.nearMe && nearbyDestinations.length > 0
+      ? nearbyDestinations
+      : filteredDestinations
+  , [advancedFilters.nearMe, nearbyDestinations, filteredDestinations]);
+
+  const paginatedDestinations = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return displayDestinations.slice(startIndex, endIndex);
+  }, [displayDestinations, currentPage, itemsPerPage]);
+
+  const renderDestinationItem = useCallback((destination: Destination, index: number) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const globalIndex = startIndex + index;
+    const isVisited = !!(user && visitedSlugs.has(destination.slug));
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onClick={() => {
+          openIntelligentDestination(destination);
+          trackDestinationEngagement(
+            destination,
+            "grid",
+            globalIndex
+          );
+        }}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [currentPage, itemsPerPage, user, visitedSlugs, openIntelligentDestination, trackDestinationEngagement]);
+
   return (
     <ErrorBoundary>
       {/* Structured Data for SEO */}
@@ -3137,11 +3176,7 @@ export default function HomePageClient({
 
             {/* Destination Grid - Original design */}
             {(() => {
-              // Determine which destinations to show
-              const displayDestinations =
-                advancedFilters.nearMe && nearbyDestinations.length > 0
-                  ? nearbyDestinations
-                  : filteredDestinations;
+              // Use memoized values from outer scope (displayDestinations, paginatedDestinations, renderDestinationItem)
               const totalPages = Math.ceil(
                 displayDestinations.length / itemsPerPage
               );
@@ -3201,10 +3236,6 @@ export default function HomePageClient({
                     ) : null}
                     {viewMode !== "map" && (
                     (() => {
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const endIndex = startIndex + itemsPerPage;
-                      const paginatedDestinations = displayDestinations.slice(startIndex, endIndex);
-
                     const handleTouchStart = (
                       event: React.TouchEvent<HTMLDivElement>
                     ) => {
@@ -3284,31 +3315,8 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
-                          emptyState={
+                            renderItem={renderDestinationItem}
+                            emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">
                                 <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">

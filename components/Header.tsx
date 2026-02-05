@@ -238,24 +238,24 @@ export function Header() {
 
   return (
     <header
-      className="mt-6 md:mt-8 relative z-30 bg-[var(--editorial-bg)] w-full"
+      className="relative z-30 bg-[var(--editorial-bg)] w-full"
       role="banner"
     >
-      {/* Primary Nav */}
+      {/* Primary Nav - Lovably-style minimal */}
       <div className="w-full px-6 md:px-10">
         <nav
-          className="flex items-center justify-between py-4 w-full"
+          className="flex items-center justify-between py-5 w-full"
           aria-label="Main navigation"
         >
           <button
             onClick={() => navigate("/")}
-            className="font-medium text-sm text-[var(--editorial-text-primary)] hover:opacity-70 transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-[var(--editorial-text-primary)] focus:ring-offset-2 rounded-lg py-2 shrink-0"
+            className="font-medium text-sm text-[var(--editorial-text-primary)] hover:opacity-70 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--editorial-text-primary)] focus:ring-offset-2 rounded-lg py-2 shrink-0"
             aria-label="Go to homepage"
           >
-            Urban Manual®
+            Urban Manual<span className="text-[var(--editorial-text-tertiary)]">®</span>
           </button>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-3">
             <ChristmasTree />
             <CommandPalette />
             {actionButtons}

@@ -1,20 +1,21 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Search, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { capitalizeCity, capitalizeCategory } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHomepageData } from './HomepageDataProvider';
+import { getCategoryIconComponent } from '@/lib/icons/category-icons';
 
 const FEATURED_CITIES = ['Taipei', 'Tokyo', 'New York', 'London'];
 
 /**
  * Interactive Hero Component
  *
- * Clean hero with search bar and navigation links.
- * City/category links navigate to dedicated pages.
- * Search submits to AI chat.
+ * Clean hero with search bar and filter links.
+ * Search filters the grid as you type; Enter opens AI chat.
+ * City/category links filter inline and also link to dedicated pages.
  */
 export default function InteractiveHero() {
   const { user } = useAuth();
@@ -22,10 +23,17 @@ export default function InteractiveHero() {
     destinations,
     cities,
     categories,
+    selectedCity,
+    selectedCategory,
+    setSelectedCity,
+    setSelectedCategory,
+    setSearchTerm,
+    michelinOnly,
+    setMichelinOnly,
     openAIChat,
   } = useHomepageData();
 
-  const [searchValue, setSearchValue] = useState('');
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const userName =
@@ -44,15 +52,58 @@ export default function InteractiveHero() {
     cities.some((city) => city.toLowerCase() === c.toLowerCase())
   );
 
+  // Keyboard shortcut: Press '/' to focus search
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  // Update grid filter as user types
+  useEffect(() => {
+    setSearchTerm(localSearchTerm);
+  }, [localSearchTerm, setSearchTerm]);
+
+  // Handle form submit: open AI chat with the query
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      const query = searchValue.trim();
+      const query = localSearchTerm.trim();
       if (!query) return;
       openAIChat(query);
-      setSearchValue('');
+      setLocalSearchTerm('');
+      setSearchTerm('');
     },
-    [searchValue, openAIChat]
+    [localSearchTerm, openAIChat, setSearchTerm]
+  );
+
+  const handleCityClick = useCallback(
+    (city: string) => {
+      setSelectedCity(
+        city.toLowerCase() === selectedCity.toLowerCase() ? '' : city
+      );
+    },
+    [selectedCity, setSelectedCity]
+  );
+
+  const handleCategoryClick = useCallback(
+    (category: string) => {
+      setSelectedCategory(
+        category.toLowerCase() === selectedCategory.toLowerCase()
+          ? ''
+          : category
+      );
+    },
+    [selectedCategory, setSelectedCategory]
   );
 
   return (
@@ -91,8 +142,8 @@ export default function InteractiveHero() {
             <input
               ref={inputRef}
               type="text"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
               placeholder="Search destinations..."
               className="w-full h-12 pl-11 pr-14 text-sm bg-[var(--editorial-bg-elevated)] rounded-lg
                          border border-[var(--editorial-border)] text-[var(--editorial-text-primary)]
@@ -101,7 +152,7 @@ export default function InteractiveHero() {
             />
             <button
               type="submit"
-              disabled={!searchValue.trim()}
+              disabled={!localSearchTerm.trim()}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center
                          rounded-md bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]
                          disabled:opacity-30"
@@ -113,40 +164,71 @@ export default function InteractiveHero() {
         </form>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="pt-12 lg:pt-16 flex flex-col gap-4">
+      {/* City & Category Filters */}
+      <div className="pt-12 lg:pt-16 flex flex-col gap-4">
         {/* Cities */}
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+          <button
+            onClick={() => setSelectedCity('')}
+            className={`${!selectedCity ? 'text-[var(--editorial-text-primary)]' : 'text-[var(--editorial-text-tertiary)]'}`}
+          >
+            All Cities
+          </button>
           {featuredCities.map((city) => (
-            <Link
+            <button
               key={city}
-              href={`/city/${encodeURIComponent(city.toLowerCase())}`}
-              className="text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]"
+              onClick={() => handleCityClick(city)}
+              className={`${
+                selectedCity.toLowerCase() === city.toLowerCase()
+                  ? 'text-[var(--editorial-text-primary)]'
+                  : 'text-[var(--editorial-text-tertiary)]'
+              }`}
             >
               {capitalizeCity(city)}
-            </Link>
+            </button>
           ))}
           <Link
             href="/cities"
-            className="text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]"
+            className="text-[var(--editorial-text-tertiary)]"
           >
-            All cities
+            More &rarr;
           </Link>
         </div>
 
         {/* Categories */}
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
-          {categories.slice(0, 6).map((category) => (
-            <Link
-              key={category}
-              href={`/category/${encodeURIComponent(category.toLowerCase())}`}
-              className="text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]"
+        {categories.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+            <button
+              onClick={() => {
+                setSelectedCategory('');
+                setMichelinOnly(false);
+              }}
+              className={`${!selectedCategory && !michelinOnly ? 'text-[var(--editorial-text-primary)]' : 'text-[var(--editorial-text-tertiary)]'}`}
             >
-              {capitalizeCategory(category)}
-            </Link>
-          ))}
-        </div>
-      </nav>
+              All
+            </button>
+            <button
+              onClick={() => setMichelinOnly(!michelinOnly)}
+              className={`${michelinOnly ? 'text-[var(--editorial-text-primary)]' : 'text-[var(--editorial-text-tertiary)]'}`}
+            >
+              Michelin
+            </button>
+            {categories.slice(0, 8).map((category) => (
+              <button
+                key={category}
+                onClick={() => handleCategoryClick(category)}
+                className={`${
+                  selectedCategory.toLowerCase() === category.toLowerCase()
+                    ? 'text-[var(--editorial-text-primary)]'
+                    : 'text-[var(--editorial-text-tertiary)]'
+                }`}
+              >
+                {capitalizeCategory(category)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

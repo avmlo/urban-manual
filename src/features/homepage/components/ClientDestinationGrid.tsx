@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useHomepageData } from './HomepageDataProvider';
 import { InstantGridSkeleton } from './InstantGridSkeleton';
 import { DestinationCard } from '@/components/DestinationCard';
@@ -40,6 +40,9 @@ export function ClientDestinationGrid() {
 
   const hasFilters = selectedCity || selectedCategory || searchTerm || michelinOnly || crownOnly;
 
+  // Swipe detection refs
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
   // Handle page navigation
   const goToNextPage = useCallback(() => {
@@ -54,13 +57,50 @@ export function ClientDestinationGrid() {
     }
   }, [currentPage, setCurrentPage]);
 
+  // Keyboard navigation: Left/Right arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToPrevPage();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToNextPage();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [goToNextPage, goToPrevPage]);
 
-  // Show skeleton while loading
+  // Swipe navigation for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const swipeDistance = touchStartX.current - touchEndX.current;
+    if (swipeDistance > 75) goToNextPage();
+    else if (swipeDistance < -75) goToPrevPage();
+    touchStartX.current = null;
+    touchEndX.current = null;
+  }, [goToNextPage, goToPrevPage]);
+
+  // Loading
   if (isLoading) {
     return <InstantGridSkeleton count={21} />;
   }
 
-  // Show error state with retry button
+  // Error
   if (hasError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -86,29 +126,14 @@ export function ClientDestinationGrid() {
     );
   }
 
-  // Show empty state if no destinations at all (but no error - unexpected state)
+  // Empty (no data at all)
   if (destinations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-          <svg
-            className="w-8 h-8 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
+          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -130,7 +155,7 @@ export function ClientDestinationGrid() {
     );
   }
 
-  // Show smart no results for search with alternatives
+  // No results from search
   if (filteredDestinations.length === 0 && searchTerm) {
     return (
       <SmartEmptyState
@@ -140,13 +165,9 @@ export function ClientDestinationGrid() {
           category: selectedCategory || null,
         }}
         onAlternativeClick={(alternative) => {
-          // Handle alternative click - update search or clear and apply suggestion
-          if (alternative.includes('Try removing') || alternative.includes('Expand')) {
-            clearFilters();
-          } else if (alternative.includes('Browse all')) {
+          if (alternative.includes('Try removing') || alternative.includes('Expand') || alternative.includes('Browse all')) {
             clearFilters();
           } else {
-            // Apply the alternative as a new search term
             setSearchTerm(alternative);
           }
         }}
@@ -154,25 +175,10 @@ export function ClientDestinationGrid() {
     );
   }
 
-  // Show no results for filters (without search term) - simpler state
+  // No results from filters
   if (filteredDestinations.length === 0 && hasFilters) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-          <svg
-            className="w-8 h-8 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
           No results found
         </h3>
@@ -191,9 +197,28 @@ export function ClientDestinationGrid() {
     );
   }
 
+  // Build page numbers
+  const pageNumbers: number[] = [];
+  if (totalPages > 1) {
+    const maxVisible = 7;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+    } else if (currentPage <= 4) {
+      for (let i = 1; i <= maxVisible; i++) pageNumbers.push(i);
+    } else if (currentPage >= totalPages - 3) {
+      for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pageNumbers.push(i);
+    } else {
+      for (let i = currentPage - 3; i <= currentPage + 3; i++) pageNumbers.push(i);
+    }
+  }
+
   return (
-    <div>
-      {/* Grid with Quick Actions on Hover */}
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-5 md:gap-6 lg:gap-7 items-start">
         {displayedDestinations.map((destination, index) => (
           <DestinationCard
@@ -201,35 +226,51 @@ export function ClientDestinationGrid() {
             destination={destination}
             index={index}
             onClick={() => openDestination(destination)}
-            showQuickActions={false}
+            showQuickActions={true}
             showBadges={true}
           />
         ))}
       </div>
 
-      {/* Pagination - minimal prev/next */}
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-6 mt-10 mb-8">
+        <div className="flex items-center justify-center gap-1 mt-10 mb-8">
           <button
             onClick={goToPrevPage}
             disabled={currentPage === 1}
-            className="flex items-center justify-center w-10 h-10 rounded-full
+            className="flex items-center justify-center w-9 h-9 rounded-full
                        disabled:opacity-20 disabled:cursor-not-allowed"
             aria-label="Previous page"
           >
-            <ChevronLeft className="w-5 h-5 text-[var(--editorial-text-secondary)]" />
+            <ChevronLeft className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
           </button>
-          <span className="text-xs text-[var(--editorial-text-tertiary)]">
-            {currentPage} / {totalPages}
-          </span>
+
+          <div className="flex items-center gap-0.5">
+            {pageNumbers.map((pageNum, i) => (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                className={`w-9 h-9 rounded-full text-xs flex items-center justify-center
+                  ${currentPage === pageNum
+                    ? 'text-[var(--editorial-text-primary)] font-medium'
+                    : 'text-[var(--editorial-text-tertiary)]'
+                  }
+                  ${i >= 5 ? 'hidden sm:flex' : ''}
+                `}
+              >
+                {pageNum}
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={goToNextPage}
             disabled={currentPage === totalPages}
-            className="flex items-center justify-center w-10 h-10 rounded-full
+            className="flex items-center justify-center w-9 h-9 rounded-full
                        disabled:opacity-20 disabled:cursor-not-allowed"
             aria-label="Next page"
           >
-            <ChevronRight className="w-5 h-5 text-[var(--editorial-text-secondary)]" />
+            <ChevronRight className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
           </button>
         </div>
       )}

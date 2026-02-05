@@ -43,7 +43,7 @@ export function Homepage({ destinations }: HomepageProps) {
 
   const handleDestinationClick = useCallback(
     (destination: Destination) => {
-      openDrawer("destination", { slug: destination.slug });
+      openDrawer("destination", undefined, { slug: destination.slug });
     },
     [openDrawer]
   );

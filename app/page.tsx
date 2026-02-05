@@ -71,23 +71,24 @@ export default async function HomePage() {
         serverCities={cities}
         serverCategories={categories}
       >
-        <main className="relative min-h-screen bg-[var(--editorial-bg)] text-[var(--editorial-text-primary)]">
+        <main
+          className="relative bg-[var(--editorial-bg)] text-[var(--editorial-text-primary)]
+                     h-[100dvh] overflow-y-auto snap-y snap-mandatory no-scrollbar"
+        >
           <h1 className="sr-only">
             Discover the World's Best Hotels, Restaurants & Travel Destinations - The Urban Manual
           </h1>
 
-          {/* Hero Section - Full width layout */}
-          <section className="min-h-[50vh] flex flex-col pl-6 md:pl-10 pr-0 py-10 pb-6 md:pb-10">
-            <div className="w-full flex md:justify-start flex-1 items-center">
-              <InteractiveHero />
-            </div>
+          {/* Hero Section - snaps to top, natural height */}
+          <section className="snap-start flex flex-col justify-center pl-6 md:pl-10 pr-0 py-10 pb-6 md:pb-10">
+            <InteractiveHero />
           </section>
 
-          {/* Content Section - Full width */}
-          <div className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
+          {/* Grid Section - snaps to fill entire screen */}
+          <section className="snap-start min-h-[100dvh] w-full px-4 sm:px-6 md:px-10 py-8">
             <NavigationBar />
             <HomepageContent />
-          </div>
+          </section>
         </main>
 
         {/* Destination Drawer - now handled by IntelligentDrawer in layout.tsx */}

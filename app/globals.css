@@ -76,74 +76,74 @@
 
 /* ============================================
    EDITORIAL DESIGN SYSTEM
-   Lovably-inspired minimalist design
-   Clean, neutral palette with precision
+   Japanese-meets-Scandinavian minimalism
+   Inspired by print magazines and conscious design
    ============================================ */
 
 /* Import serif font for editorial headlines */
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap');
 
-/* Editorial color palette CSS variables - Lovably inspired */
+/* Editorial color palette CSS variables */
 :root {
   /* Serif font for headlines */
   --font-editorial-serif: 'Source Serif 4', 'Georgia', 'Times New Roman', serif;
 
-  /* Light Mode Colors - Lovably neutral palette */
-  /* Background: Clean off-white/light gray */
-  --editorial-bg: #f2f2f2;
-  --editorial-bg-elevated: #ffffff;
+  /* Light Mode Colors */
+  /* Background: Warm cream/off-white */
+  --editorial-bg: #F5F2ED;
+  --editorial-bg-elevated: #FDFCFA;
 
-  /* Primary text: Pure black */
-  --editorial-text-primary: #000000;
+  /* Primary text: Deep charcoal */
+  --editorial-text-primary: #2C2825;
 
-  /* Secondary text: Neutral gray */
-  --editorial-text-secondary: #757575;
-  --editorial-text-tertiary: #9a9a9a;
+  /* Secondary text: Warm gray */
+  --editorial-text-secondary: #6B6560;
+  --editorial-text-tertiary: #9A948C;
 
-  /* Accent: Subtle gray (Lovably uses minimal accent) */
-  --editorial-accent: #757575;
-  --editorial-accent-hover: #000000;
-  --editorial-accent-muted: #9a9a9a;
+  /* Accent: Terracotta/rust */
+  --editorial-accent: #A65D4C;
+  --editorial-accent-hover: #8F503F;
+  --editorial-accent-muted: #C17B5F;
 
   /* Subtle borders */
-  --editorial-border: #e5e5e5;
-  --editorial-border-subtle: #ebebeb;
+  --editorial-border: #E5E0D8;
+  --editorial-border-subtle: #EBE7E1;
 
-  /* Selection colors - Lovably style */
-  --selection-bg: #757575;
-  --selection-text: #ffffff;
+  /* Selection colors */
+  --selection-bg: #6B6560;
+  --selection-text: #FDFCFA;
 
   /* Legacy support - map to new values */
-  --editorial-terracotta: #757575;
-  --editorial-cream: #f2f2f2;
-  --editorial-charcoal: #000000;
+  --editorial-terracotta: #A65D4C;
+  --editorial-cream: #F5F2ED;
+  --editorial-charcoal: #2C2825;
 }
 
-/* Dark Mode Colors - Clean dark palette */
+/* Dark Mode Colors - Warmer tone for print aesthetic */
 .dark {
-  /* Background: Clean dark */
-  --editorial-bg: #1a1a1a;
-  --editorial-bg-elevated: #242424;
+  /* Background: Warm charcoal with brown undertone */
+  --editorial-bg: #211F1C;
+  --editorial-bg-elevated: #2A2723;
 
-  /* Primary text: Clean off-white */
-  --editorial-text-primary: #f2f2f2;
+  /* Primary text: Warm cream/off-white */
+  --editorial-text-primary: #F2EDE6;
 
-  /* Secondary text: Neutral light gray */
-  --editorial-text-secondary: #a0a0a0;
-  --editorial-text-tertiary: #6d6d6d;
+  /* Secondary text: Muted warm gray */
+  --editorial-text-secondary: #A09891;
+  --editorial-text-tertiary: #6D6660;
 
-  /* Accent: Light gray */
-  --editorial-accent: #a0a0a0;
-  --editorial-accent-hover: #f2f2f2;
-  --editorial-accent-muted: #6d6d6d;
+  /* Accent: Muted terracotta */
+  --editorial-accent: #C4907A;
+  --editorial-accent-hover: #D4A088;
+  --editorial-accent-muted: #A87A66;
 
-  /* Borders - subtle visibility */
-  --editorial-border: #333333;
-  --editorial-border-subtle: #2a2a2a;
+  /* Borders - more visible for framed card effect */
+  --editorial-border: #3D3832;
+  --editorial-border-subtle: #4A443D;
 
-  /* Selection colors - Lovably style (inverted for dark) */
-  --selection-bg: #a0a0a0;
-  --selection-text: #1a1a1a;
+  /* Selection colors */
+  --selection-bg: #A09891;
+  --selection-text: #211F1C;
 }
 
 /* Editorial Typography */
@@ -590,10 +590,10 @@
 }
 
 /* ============================================
-   LOVABLY-STYLE SELECTION & CURSOR
+   SELECTION & TEXT STYLING
    ============================================ */
 
-/* Text Selection - Lovably style */
+/* Text Selection */
 ::selection {
   background: var(--selection-bg);
   color: var(--selection-text);
@@ -604,24 +604,16 @@
   color: var(--selection-text);
 }
 
-/* Antialiasing - Lovably style */
+/* Antialiasing */
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Contrast mode support */
-@media (prefers-contrast: more) {
-  :root {
-    --editorial-text-secondary: #757575;
-    --editorial-text-tertiary: #757575;
-  }
-}
-
 @layer base {
   :root {
-    --background: 0 0% 95%; /* Matches --editorial-bg #f2f2f2 */
-    --foreground: 0 0% 0%; /* Matches --editorial-text-primary #000000 */
+    --background: 37 29% 94%; /* Matches --editorial-bg #F5F2ED */
+    --foreground: 24 9% 15%; /* Matches --editorial-text-primary #2C2825 */
     --card: 40 33% 98%;
     --card-foreground: 24 9% 15%;
     --popover: 0 0% 100%;

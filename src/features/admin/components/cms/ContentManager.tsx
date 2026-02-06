@@ -1316,7 +1316,7 @@ function TableView({
                     <div className="flex items-center gap-1.5">
                       <span className="text-[13px] text-gray-900 dark:text-white truncate group-hover/cell:opacity-60 transition-opacity">{dest.name}</span>
                       {dest.crown && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
-                      {dest.michelin_stars && dest.michelin_stars > 0 && (
+                      {dest.michelin_stars != null && dest.michelin_stars > 0 && (
                         <div className="flex items-center gap-0.5">
                           {Array.from({ length: dest.michelin_stars }).map((_, i) => (
                             <img key={i} src="/michelin-star.svg" alt="Michelin" className="w-2.5 h-2.5" />
@@ -1424,7 +1424,7 @@ function GridView({
                 </div>
               )}
               {/* Michelin stars badge */}
-              {dest.michelin_stars && dest.michelin_stars > 0 && (
+              {dest.michelin_stars != null && dest.michelin_stars > 0 && (
                 <div className="absolute bottom-2 left-2 bg-white dark:bg-gray-900 px-2 py-1 rounded text-xs font-medium flex items-center gap-0.5">
                   {Array.from({ length: dest.michelin_stars }).map((_, i) => (
                     <img key={i} src="/michelin-star.svg" alt="Michelin" className="w-3 h-3" />

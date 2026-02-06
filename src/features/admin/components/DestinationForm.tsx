@@ -11,6 +11,7 @@ import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
 import type { Destination } from '@/types/destination';
 import { cn, toTitleCase } from '@/lib/utils';
 import { SearchableSelect } from '@/ui/searchable-select';
+import { SearchableMultiSelect } from '@/ui/searchable-multi-select';
 
 interface Toast {
   success: (message: string) => void;
@@ -48,6 +49,7 @@ interface DropdownOptions {
   countries: string[];
   neighborhoods: string[];
   brands: string[];
+  architects: string[];
 }
 
 
@@ -119,6 +121,7 @@ export function DestinationForm({
     countries: [],
     neighborhoods: [],
     brands: [],
+    architects: [],
   });
   const [isLoadingDropdowns, setIsLoadingDropdowns] = useState(true);
   const [tagInput, setTagInput] = useState('');
@@ -226,11 +229,12 @@ export function DestinationForm({
         const supabase = createClient({ skipValidation: true });
 
         // Fetch from normalized tables in parallel for better performance
-        const [citiesResult, countriesResult, neighborhoodsResult, brandsResult] = await Promise.all([
+        const [citiesResult, countriesResult, neighborhoodsResult, brandsResult, architectsResult] = await Promise.all([
           supabase.from('cities').select('name').order('name'),
           supabase.from('countries').select('name').order('name'),
           supabase.from('neighborhoods').select('name').order('name'),
           supabase.from('brands').select('name').order('name'),
+          supabase.from('architects').select('name').order('name'),
         ]);
 
         // Extract names from results, filtering out any errors
@@ -238,8 +242,9 @@ export function DestinationForm({
         const countries = countriesResult.data?.map(c => c.name).filter(Boolean) || [];
         const neighborhoods = neighborhoodsResult.data?.map(n => n.name).filter(Boolean) || [];
         const brands = brandsResult.data?.map(b => b.name).filter(Boolean) || [];
+        const architects = architectsResult.data?.map(a => a.name).filter(Boolean) || [];
 
-        setDropdownOptions({ cities, countries, neighborhoods, brands });
+        setDropdownOptions({ cities, countries, neighborhoods, brands, architects });
       } catch (error) {
         console.error('Error fetching dropdown options:', error);
       } finally {
@@ -578,50 +583,13 @@ export function DestinationForm({
               </div>
             </div>
 
-            {/* Slug, City, Country */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Slug, Brand */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClasses}>Slug</label>
                 <input type="text" required value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   placeholder="url-slug" className={inputClasses} />
-              </div>
-              <div>
-                <label className={labelClasses}>City</label>
-                <SearchableSelect
-                  value={formData.city}
-                  onChange={(value) => setFormData({ ...formData, city: value })}
-                  options={dropdownOptions.cities}
-                  placeholder="Select city..."
-                  allowCustomValue
-                  isLoading={isLoadingDropdowns}
-                />
-              </div>
-              <div>
-                <label className={labelClasses}>Country</label>
-                <SearchableSelect
-                  value={formData.country}
-                  onChange={(value) => setFormData({ ...formData, country: value })}
-                  options={dropdownOptions.countries}
-                  placeholder="Select country..."
-                  allowCustomValue
-                  isLoading={isLoadingDropdowns}
-                />
-              </div>
-            </div>
-
-            {/* Neighborhood, Brand, Design Firm */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className={labelClasses}>Neighborhood</label>
-                <SearchableSelect
-                  value={formData.neighborhood}
-                  onChange={(value) => setFormData({ ...formData, neighborhood: value })}
-                  options={dropdownOptions.neighborhoods}
-                  placeholder="Select neighborhood..."
-                  allowCustomValue
-                  isLoading={isLoadingDropdowns}
-                />
               </div>
               <div>
                 <label className={labelClasses}>Brand</label>
@@ -634,14 +602,19 @@ export function DestinationForm({
                   isLoading={isLoadingDropdowns}
                 />
               </div>
-              <div>
-                <label className={labelClasses}>Design Firm</label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="text" value={formData.architect} onChange={(e) => setFormData({ ...formData, architect: e.target.value })}
-                    placeholder="Herzog & de Meuron" className={cn(inputClasses, "pl-9")} />
-                </div>
-              </div>
+            </div>
+
+            {/* Design Firm */}
+            <div>
+              <label className={labelClasses}>Design Firm</label>
+              <SearchableMultiSelect
+                values={formData.architect ? formData.architect.split(', ').filter(Boolean) : []}
+                onChange={(values) => setFormData({ ...formData, architect: values.join(', ') })}
+                options={dropdownOptions.architects}
+                placeholder="Search or add design firms..."
+                allowCustomValue
+                isLoading={isLoadingDropdowns}
+              />
             </div>
 
             {/* Category */}
@@ -809,6 +782,31 @@ export function DestinationForm({
         {/* Location Tab */}
         {activeTab === 'location' && (
           <div className="p-5 space-y-5">
+            {/* City, Neighborhood */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={labelClasses}>City</label>
+                <SearchableSelect
+                  value={formData.city}
+                  onChange={(value) => setFormData({ ...formData, city: value })}
+                  options={dropdownOptions.cities}
+                  placeholder="Select city..."
+                  allowCustomValue
+                  isLoading={isLoadingDropdowns}
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Neighborhood</label>
+                <SearchableSelect
+                  value={formData.neighborhood}
+                  onChange={(value) => setFormData({ ...formData, neighborhood: value })}
+                  options={dropdownOptions.neighborhoods}
+                  placeholder="Select neighborhood..."
+                  allowCustomValue
+                  isLoading={isLoadingDropdowns}
+                />
+              </div>
+            </div>
             <div>
               <label className={labelClasses}>Formatted Address</label>
               <div className="relative">

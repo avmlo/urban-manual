@@ -17,21 +17,25 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
   const interiorDesignerObj = (destination as any).interior_designer_obj as Architect | undefined;
   const movementObj = (destination as any).movement_obj as DesignMovement | undefined;
   
-  // Fallback to legacy text fields
-  const architect = architectObj?.name || destination.design_firm;
-  const designFirm = designFirmObj?.name;
-  const interiorDesigner = interiorDesignerObj?.name || (destination as any).designer_name;
+  // Architect person (from architect_id FK)
+  const architectName = architectObj?.name;
+  // Design firm text field (free text, multi-select values)
+  const designFirmText = destination.design_firm;
+  // Design firm object (from design_firm_id FK)
+  const designFirmName = designFirmObj?.name;
+  // Interior designer (from interior_designer_id FK — legacy, text column dropped)
+  const interiorDesigner = interiorDesignerObj?.name;
   const architecturalStyle = destination.architectural_style;
   const designPeriod = destination.design_period;
   const architectInfoJson = destination.architect_info_json as any;
-  
+
   // Architecture-first content fields
   const architecturalSignificance = (destination as any).architectural_significance;
   const designStory = (destination as any).design_story;
   const constructionYear = (destination as any).construction_year;
 
   // Check if we have any architect/design info to display
-  const hasInfo = architect || designFirm || interiorDesigner || architecturalStyle || designPeriod || 
+  const hasInfo = architectName || designFirmText || designFirmName || interiorDesigner || architecturalStyle || designPeriod ||
                   architecturalSignificance || designStory || movementObj;
 
   if (!hasInfo) {
@@ -55,18 +59,18 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
     <div className="p-6 bg-white dark:bg-[#161b22] rounded-xl border border-gray-200 dark:border-[#30363d]">
       <h2 className="text-sm font-medium text-gray-900 dark:text-white mb-5">Architecture & Design</h2>
       <div className="space-y-5">
-        {/* Architect - Enhanced with rich data */}
-        {architect && (
+        {/* Architect - person data from architect_id FK */}
+        {architectName && (
           <div className="flex items-start gap-3">
             <Building2 className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Design Firm</div>
+              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Architect</div>
               <div className="space-y-1">
                 <Link
-                  href={architectObj?.slug ? `/architect/${architectObj.slug}` : `/architect/${architectNameToSlug(architect)}`}
+                  href={architectObj?.slug ? `/architect/${architectObj.slug}` : `/architect/${architectNameToSlug(architectName)}`}
                   className="text-sm text-gray-900 dark:text-white font-medium hover:underline inline-block"
                 >
-                  {architect}
+                  {architectName}
                 </Link>
                 {architectObj && (
                   <div className="space-y-1.5">
@@ -102,15 +106,36 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
           </div>
         )}
 
-        {/* Design Firm - Enhanced */}
-        {designFirm && (
+        {/* Design Firm - text field (multi-select values) */}
+        {designFirmText && (
+          <div className="flex items-start gap-3">
+            <Building2 className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Design Firm</div>
+              <div className="space-y-1">
+                {designFirmText.split(', ').map((firm, idx) => (
+                  <Link
+                    key={idx}
+                    href={`/architect/${architectNameToSlug(firm)}`}
+                    className="text-sm text-gray-900 dark:text-white font-medium hover:underline block"
+                  >
+                    {firm}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Design Firm - from design_firm_id FK (legacy) */}
+        {designFirmName && designFirmName !== designFirmText && (
           <div className="flex items-start gap-3">
             <Building2 className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Design Firm</div>
               <div className="space-y-1">
                 <div className="text-sm text-gray-900 dark:text-white font-medium">
-                  {designFirm}
+                  {designFirmName}
                 </div>
                 {designFirmObj && (
                   <div className="space-y-1.5">
@@ -131,7 +156,7 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
           </div>
         )}
 
-        {/* Interior Designer - Enhanced */}
+        {/* Interior Designer - from interior_designer_id FK (legacy) */}
         {interiorDesigner && (
           <div className="flex items-start gap-3">
             <Palette className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />

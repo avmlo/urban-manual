@@ -16,25 +16,19 @@ export function HeroSection({ onSearch, searchQuery }: HeroSectionProps) {
   );
 
   return (
-    <section className="min-h-[60vh] flex flex-col justify-center px-10 md:px-12 py-16 bg-[var(--editorial-bg)]">
-      {/* Headline */}
-      <div className="max-w-4xl mb-12">
-        <h1 className="text-[clamp(2.5rem,8vw,5rem)] font-normal leading-[1.1] tracking-[-0.02em] text-[var(--editorial-text-primary)]">
-          <span>Travel, </span>
-          <span className="text-[var(--editorial-text-secondary)]">curated.</span>
+    <section className="min-h-[70vh] flex items-center justify-end px-10 md:px-12 lg:px-24 py-16 bg-[var(--editorial-bg)]">
+      <div className="w-full max-w-md">
+        {/* Headline */}
+        <h1 className="text-[15px] font-semibold tracking-wide text-[var(--editorial-text-primary)] mb-8">
+          TRAVEL, CURATED.
         </h1>
-      </div>
 
-      {/* Description */}
-      <div className="max-w-lg mb-12">
-        <p className="text-[15px] leading-relaxed text-[var(--editorial-text-secondary)]">
-          Urban Manual is a curated collection of the world's finest destinations.
-          Hotels, restaurants, and experiences selected with precision.
+        {/* Description */}
+        <p className="text-[15px] leading-relaxed text-[var(--editorial-text-secondary)] mb-10">
+          Urban Manual is an independent travel guide, discovering extraordinary destinations with care and precision.
         </p>
-      </div>
 
-      {/* Search */}
-      <div className="max-w-md">
+        {/* Search */}
         <div className="relative">
           <input
             type="text"

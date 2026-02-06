@@ -114,7 +114,7 @@ const TYPE_CONFIG = {
   cities: { singular: 'City', plural: 'Cities', icon: MapPin },
   countries: { singular: 'Country', plural: 'Countries', icon: Globe },
   neighborhoods: { singular: 'Neighborhood', plural: 'Neighborhoods', icon: Map },
-  architects: { singular: 'Architect', plural: 'Architects', icon: Compass },
+  architects: { singular: 'Design Firm', plural: 'Design Firms', icon: Compass },
 };
 
 

@@ -60,7 +60,7 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
           <div className="flex items-start gap-3">
             <Building2 className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Architect</div>
+              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Design Firm</div>
               <div className="space-y-1">
                 <Link
                   href={architectObj?.slug ? `/architect/${architectObj.slug}` : `/architect/${architectNameToSlug(architect)}`}

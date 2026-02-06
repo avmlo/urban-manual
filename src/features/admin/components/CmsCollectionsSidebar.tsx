@@ -19,7 +19,7 @@ const COLLECTIONS: Collection[] = [
   { id: 'neighborhoods', label: 'Neighborhoods', href: '/admin/neighborhoods', icon: Map, table: 'neighborhoods' },
   { id: 'countries', label: 'Countries', href: '/admin/countries', icon: Globe, table: 'countries' },
   { id: 'brands', label: 'Brands', href: '/admin/brands', icon: Building2, table: 'brands' },
-  { id: 'architects', label: 'Architects', href: '/admin/architects', icon: Compass, table: 'architects' },
+  { id: 'architects', label: 'Design Firms', href: '/admin/architects', icon: Compass, table: 'architects' },
   { id: 'categories', label: 'Categories', href: '/admin/categories', icon: Layers, table: '' },
 ];
 

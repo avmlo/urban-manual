@@ -86,8 +86,6 @@ export function DestinationForm({
     editorial_summary: destination?.editorial_summary || '',
     // Architecture
     architect: destination?.architect || '',
-    interior_designer: destination?.interior_designer || '',
-    design_firm: destination?.design_firm || '',
     architectural_style: destination?.architectural_style || '',
     design_period: destination?.design_period || '',
     construction_year: destination?.construction_year || null,
@@ -164,8 +162,6 @@ export function DestinationForm({
         content: htmlToPlainText(destination.content || ''),
         editorial_summary: destination.editorial_summary || '',
         architect: destination.architect || '',
-        interior_designer: destination.interior_designer || '',
-        design_firm: destination.design_firm || '',
         architectural_style: destination.architectural_style || '',
         design_period: destination.design_period || '',
         construction_year: destination.construction_year || null,
@@ -210,7 +206,7 @@ export function DestinationForm({
         brand: '', micro_description: '', tags: [], crown: false, michelin_stars: null,
         parent_destination_id: null, latitude: null, longitude: null, formatted_address: '',
         image: '', description: '', content: '', editorial_summary: '', architect: '',
-        interior_designer: '', design_firm: '', architectural_style: '', design_period: '',
+        architectural_style: '', design_period: '',
         construction_year: null, architectural_significance: '', design_story: '',
         website: '', phone_number: '', instagram_handle: '', opentable_url: '',
         resy_url: '', booking_url: '', google_maps_url: '', rating: null, price_level: null,
@@ -614,8 +610,8 @@ export function DestinationForm({
               </div>
             </div>
 
-            {/* Neighborhood, Brand */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Neighborhood, Brand, Design Firm */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelClasses}>Neighborhood</label>
                 <SearchableSelect
@@ -637,6 +633,14 @@ export function DestinationForm({
                   allowCustomValue
                   isLoading={isLoadingDropdowns}
                 />
+              </div>
+              <div>
+                <label className={labelClasses}>Design Firm</label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input type="text" value={formData.architect} onChange={(e) => setFormData({ ...formData, architect: e.target.value })}
+                    placeholder="Herzog & de Meuron" className={cn(inputClasses, "pl-9")} />
+                </div>
               </div>
             </div>
 
@@ -934,38 +938,7 @@ export function DestinationForm({
         {/* Architecture Tab */}
         {activeTab === 'architecture' && (
           <div className="p-5 space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClasses}>Architect</label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="text" value={formData.architect} onChange={(e) => setFormData({ ...formData, architect: e.target.value })}
-                    placeholder="Tadao Ando" className={cn(inputClasses, "pl-9")} />
-                </div>
-              </div>
-              <div>
-                <label className={labelClasses}>Interior Designer</label>
-                <input type="text" value={formData.interior_designer} onChange={(e) => setFormData({ ...formData, interior_designer: e.target.value })}
-                  placeholder="Kelly Wearstler" className={inputClasses} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClasses}>Design Firm</label>
-                <input type="text" value={formData.design_firm} onChange={(e) => setFormData({ ...formData, design_firm: e.target.value })}
-                  placeholder="Herzog & de Meuron" className={inputClasses} />
-              </div>
-              <div>
-                <label className={labelClasses}>Construction Year</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="number" min="1000" max="2100" value={formData.construction_year || ''}
-                    onChange={(e) => setFormData({ ...formData, construction_year: e.target.value ? parseInt(e.target.value) : null })}
-                    placeholder="2020" className={cn(inputClasses, "pl-9")} />
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelClasses}>Architectural Style</label>
                 <input type="text" value={formData.architectural_style} onChange={(e) => setFormData({ ...formData, architectural_style: e.target.value })}
@@ -975,6 +948,15 @@ export function DestinationForm({
                 <label className={labelClasses}>Design Period</label>
                 <input type="text" value={formData.design_period} onChange={(e) => setFormData({ ...formData, design_period: e.target.value })}
                   placeholder="1960s, Contemporary..." className={inputClasses} />
+              </div>
+              <div>
+                <label className={labelClasses}>Construction Year</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input type="number" min="1000" max="2100" value={formData.construction_year || ''}
+                    onChange={(e) => setFormData({ ...formData, construction_year: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="2020" className={cn(inputClasses, "pl-9")} />
+                </div>
               </div>
             </div>
             <div>

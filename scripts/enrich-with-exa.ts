@@ -335,7 +335,7 @@ async function enrichDestinationWithExa(dest: any): Promise<{
         architectInfo.architecturalStyle || architectInfo.designPeriod || architectInfo.sources?.length > 0) {
       // Use existing fields: architect, architectural_style, designer_name
       if (architectInfo.architect) {
-        updateData.architect = architectInfo.architect;
+        updateData.design_firm = architectInfo.architect;
       }
       if (architectInfo.interiorDesigner) {
         updateData.designer_name = architectInfo.interiorDesigner; // Map to existing field
@@ -375,7 +375,7 @@ async function enrichDestinationWithExa(dest: any): Promise<{
         console.log('  ⚠️  Some columns may not exist yet. Using basic fields only.');
         // Filter out columns that might not exist
         const basicUpdate: any = {};
-        if (updateData.architect) basicUpdate.architect = updateData.architect;
+        if (updateData.design_firm) basicUpdate.design_firm = updateData.design_firm;
         if (updateData.designer_name) basicUpdate.designer_name = updateData.designer_name;
         if (updateData.architectural_style) basicUpdate.architectural_style = updateData.architectural_style;
         
@@ -426,7 +426,7 @@ async function main() {
   // Note: Select only columns that exist (migration 027 may not be applied yet)
   let query = supabase
     .from('destinations')
-    .select('slug, name, city, category, architect, designer_name, architectural_style')
+    .select('slug, name, city, category, design_firm, designer_name, architectural_style')
     .is('parent_destination_id', null) // Only top-level destinations
     .order('name', { ascending: true });
   
@@ -441,13 +441,13 @@ async function main() {
   if (!enrichAll) {
     // Only enrich destinations that haven't been enriched yet
     query = query
-      .is('architect', null)
+      .is('design_firm', null)
       .is('designer_name', null)
       .is('architectural_style', null);
   } else {
     // When enriching all, still skip ones that already have architect info
     query = query
-      .is('architect', null)
+      .is('design_firm', null)
       .is('designer_name', null)
       .is('architectural_style', null);
   }

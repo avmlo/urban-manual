@@ -42,7 +42,7 @@ export default function POIEditorDrawer({ destination, initialCity, onSave }: PO
     michelin_stars: null as number | null,
     crown: false,
     brand: '',
-    architect: '',
+    design_firm: '',
     parent_destination_id: null as number | null,
   });
 
@@ -59,7 +59,7 @@ export default function POIEditorDrawer({ destination, initialCity, onSave }: PO
         michelin_stars: destination.michelin_stars || null,
         crown: destination.crown || false,
         brand: destination.brand || '',
-        architect: destination.architect || '',
+        design_firm: destination.design_firm || '',
         parent_destination_id: destination.parent_destination_id || null,
       });
       if (destination.image) setImagePreview(destination.image);
@@ -157,7 +157,7 @@ export default function POIEditorDrawer({ destination, initialCity, onSave }: PO
         michelin_stars: formData.michelin_stars || null,
         crown: formData.crown || false,
         brand: formData.brand?.trim() || null,
-        architect: formData.architect?.trim() || null,
+        design_firm: formData.design_firm?.trim() || null,
         parent_destination_id: formData.parent_destination_id || null,
       };
 

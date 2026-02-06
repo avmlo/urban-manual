@@ -293,7 +293,6 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
     crown: false,
     brand: '',
     architects: [] as string[], // Changed to array for tag input
-    interior_designer: '',
     architectural_style: '',
     website: '',
     instagram_handle: '',
@@ -443,9 +442,9 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
   // Initialize edit form when entering edit mode
   useEffect(() => {
     if (isEditMode && destination) {
-      // Parse architect string to array (comma-separated)
-      const architectsArray = destination.architect
-        ? destination.architect.split(',').map(a => a.trim()).filter(a => a)
+      // Parse design_firm string to array (comma-separated)
+      const architectsArray = destination.design_firm
+        ? destination.design_firm.split(',').map(a => a.trim()).filter(a => a)
         : [];
 
       setEditFormData({
@@ -462,7 +461,6 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
         crown: destination.crown || false,
         brand: destination.brand || '',
         architects: architectsArray,
-        interior_designer: destination.interior_designer || '',
         architectural_style: destination.architectural_style || '',
         website: destination.website || '',
         instagram_handle: destination.instagram_handle || '',
@@ -570,8 +568,7 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
         michelin_stars: editFormData.michelin_stars || null,
         crown: editFormData.crown || false,
         brand: editFormData.brand?.trim() || null,
-        architect: editFormData.architects.length > 0 ? editFormData.architects.join(', ') : null,
-        interior_designer: editFormData.interior_designer?.trim() || null,
+        design_firm: editFormData.architects.length > 0 ? editFormData.architects.join(', ') : null,
         architectural_style: editFormData.architectural_style?.trim() || null,
         website: editFormData.website?.trim() || null,
         instagram_handle: editFormData.instagram_handle?.trim() || null,
@@ -741,7 +738,7 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
             icon_background_color,
             icon_mask_base_uri,
             google_place_id,
-            architect,
+            design_firm,
             architectural_style,
             design_period,
             designer_name,
@@ -754,9 +751,9 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
             architectural_significance,
             design_story,
             construction_year,
-            architect:architects!architect_id(id, name, slug, bio, birth_year, death_year, nationality, design_philosophy, image_url),
-            design_firm:design_firms(id, name, slug, description, founded_year, image_url),
-            interior_designer:architects!interior_designer_id(id, name, slug, bio, birth_year, death_year, nationality, image_url),
+            architect_ref:architects!architect_id(id, name, slug, bio, birth_year, death_year, nationality, design_philosophy, image_url),
+            design_firm_ref:design_firms(id, name, slug, description, founded_year, image_url),
+            interior_designer_ref:architects!interior_designer_id(id, name, slug, bio, birth_year, death_year, nationality, image_url),
             movement:design_movements(id, name, slug, description, period_start, period_end)
           `)
           .eq('slug', destination.slug)
@@ -818,57 +815,49 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
             movement_obj?: any;
           } = { ...destination };
           
-          if (dataObj.architect) {
-            const architectObj = Array.isArray(dataObj.architect) && dataObj.architect.length > 0
-              ? dataObj.architect[0]
-              : dataObj.architect;
+          if (dataObj.architect_ref) {
+            const architectObj = Array.isArray(dataObj.architect_ref) && dataObj.architect_ref.length > 0
+              ? dataObj.architect_ref[0]
+              : dataObj.architect_ref;
             if (architectObj && architectObj.name) {
-              // Update destination with architect object
               updatedDestination = {
                 ...updatedDestination,
                 architect_id: architectObj.id,
                 architect_obj: architectObj,
-                // Keep legacy text field for backward compatibility
-                architect: updatedDestination.architect || architectObj.name,
+                design_firm: updatedDestination.design_firm || architectObj.name,
               };
             }
           }
-          
-          // Handle design firm object (note: Supabase join returns it as 'design_firm' object, not text)
-          // Check if design_firm is an object (from join) vs string (legacy field)
-          if (dataObj.design_firm && typeof dataObj.design_firm === 'object' && !Array.isArray(dataObj.design_firm) && dataObj.design_firm.name) {
-            // This is the joined object
-            const firmObj = dataObj.design_firm;
+
+          // Handle design firm ref object (from design_firms table join)
+          if (dataObj.design_firm_ref && typeof dataObj.design_firm_ref === 'object' && !Array.isArray(dataObj.design_firm_ref) && dataObj.design_firm_ref.name) {
+            const firmObj = dataObj.design_firm_ref;
             updatedDestination = {
               ...updatedDestination,
               design_firm_id: firmObj.id,
               design_firm_obj: firmObj,
-              design_firm: firmObj.name,
             };
-          } else if (dataObj.design_firm && Array.isArray(dataObj.design_firm) && dataObj.design_firm.length > 0) {
-            // Handle array case (shouldn't happen but just in case)
-            const firmObj = dataObj.design_firm[0];
+          } else if (dataObj.design_firm_ref && Array.isArray(dataObj.design_firm_ref) && dataObj.design_firm_ref.length > 0) {
+            const firmObj = dataObj.design_firm_ref[0];
             if (firmObj && firmObj.name) {
               updatedDestination = {
                 ...updatedDestination,
                 design_firm_id: firmObj.id,
                 design_firm_obj: firmObj,
-                design_firm: firmObj.name,
               };
             }
           }
-          
-          // Handle interior designer object
-          if (dataObj.interior_designer) {
-            const interiorDesignerObj = Array.isArray(dataObj.interior_designer) && dataObj.interior_designer.length > 0
-              ? dataObj.interior_designer[0]
-              : dataObj.interior_designer;
+
+          // Handle interior designer ref object
+          if (dataObj.interior_designer_ref) {
+            const interiorDesignerObj = Array.isArray(dataObj.interior_designer_ref) && dataObj.interior_designer_ref.length > 0
+              ? dataObj.interior_designer_ref[0]
+              : dataObj.interior_designer_ref;
             if (interiorDesignerObj && interiorDesignerObj.name) {
               updatedDestination = {
                 ...updatedDestination,
                 interior_designer_id: interiorDesignerObj.id,
                 interior_designer_obj: interiorDesignerObj,
-                interior_designer: updatedDestination.interior_designer || interiorDesignerObj.name,
               };
             }
           }
@@ -1806,18 +1795,6 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
                 onChange={(architects) => setEditFormData(prev => ({ ...prev, architects }))}
                 placeholder="Add architect..."
               />
-
-              {/* Interior Designer */}
-              <div>
-                <label className="block text-xs font-medium mb-2 text-gray-600 dark:text-gray-400">Interior Designer</label>
-                <input
-                  type="text"
-                  value={editFormData.interior_designer}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, interior_designer: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 text-sm"
-                  placeholder="e.g., Kelly Wearstler"
-                />
-              </div>
 
               {/* Architectural Style */}
               <div>

@@ -87,7 +87,7 @@ export function DestinationForm({
     content: htmlToPlainText(destination?.content || ''),
     editorial_summary: destination?.editorial_summary || '',
     // Architecture
-    architect: destination?.architect || '',
+    design_firm: destination?.design_firm || '',
     architectural_style: destination?.architectural_style || '',
     design_period: destination?.design_period || '',
     construction_year: destination?.construction_year || null,
@@ -164,7 +164,7 @@ export function DestinationForm({
         description: htmlToPlainText(destination.description || ''),
         content: htmlToPlainText(destination.content || ''),
         editorial_summary: destination.editorial_summary || '',
-        architect: destination.architect || '',
+        design_firm: destination.design_firm || '',
         architectural_style: destination.architectural_style || '',
         design_period: destination.design_period || '',
         construction_year: destination.construction_year || null,
@@ -208,7 +208,7 @@ export function DestinationForm({
         slug: '', name: '', city: '', country: '', neighborhood: '', category: '',
         brand: '', micro_description: '', tags: [], crown: false, michelin_stars: null,
         parent_destination_id: null, latitude: null, longitude: null, formatted_address: '',
-        image: '', description: '', content: '', editorial_summary: '', architect: '',
+        image: '', description: '', content: '', editorial_summary: '', design_firm: '',
         architectural_style: '', design_period: '',
         construction_year: null, architectural_significance: '', design_story: '',
         website: '', phone_number: '', instagram_handle: '', opentable_url: '',
@@ -608,8 +608,8 @@ export function DestinationForm({
             <div>
               <label className={labelClasses}>Design Firm</label>
               <SearchableMultiSelect
-                values={formData.architect ? formData.architect.split(', ').filter(Boolean) : []}
-                onChange={(values) => setFormData({ ...formData, architect: values.join(', ') })}
+                values={formData.design_firm ? formData.design_firm.split(', ').filter(Boolean) : []}
+                onChange={(values) => setFormData({ ...formData, design_firm: values.join(', ') })}
                 options={dropdownOptions.architects}
                 placeholder="Search or add design firms..."
                 allowCustomValue
@@ -939,7 +939,7 @@ export function DestinationForm({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelClasses}>Architectural Style</label>
-                <input type="text" value={formData.architectural_style} onChange={(e) => setFormData({ ...formData, architectural_style: e.target.value })}
+                <input type="text" value={formData.design_firmural_style} onChange={(e) => setFormData({ ...formData, architectural_style: e.target.value })}
                   placeholder="Brutalism, Art Deco..." className={inputClasses} />
               </div>
               <div>
@@ -959,7 +959,7 @@ export function DestinationForm({
             </div>
             <div>
               <label className={labelClasses}>Architectural Significance</label>
-              <textarea value={formData.architectural_significance} onChange={(e) => setFormData({ ...formData, architectural_significance: e.target.value })}
+              <textarea value={formData.design_firmural_significance} onChange={(e) => setFormData({ ...formData, architectural_significance: e.target.value })}
                 rows={3} className={cn(inputClasses, "resize-none")} placeholder="Why this matters architecturally..." />
             </div>
             <div>

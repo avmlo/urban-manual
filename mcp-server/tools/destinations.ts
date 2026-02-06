@@ -250,7 +250,7 @@ export async function handleDestinationTool(
           booking_url: data.booking_url,
         },
         architecture: {
-          architect: data.architect,
+          design_firm: data.design_firm,
           style: data.architectural_style,
           period: data.design_period,
           significance: data.architectural_significance,

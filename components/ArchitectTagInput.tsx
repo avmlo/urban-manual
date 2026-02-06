@@ -37,18 +37,18 @@ export function ArchitectTagInput({
         // Get distinct architect values from destinations
         const { data, error } = await supabase
           .from('destinations')
-          .select('architect')
-          .not('architect', 'is', null)
-          .not('architect', 'eq', '');
+          .select('design_firm')
+          .not('design_firm', 'is', null)
+          .not('design_firm', 'eq', '');
 
         if (error) throw error;
 
         // Extract unique architects, handling comma-separated values
         const architectSet = new Set<string>();
         data?.forEach(row => {
-          if (row.architect) {
+          if (row.design_firm) {
             // Split by comma and trim each name
-            row.architect.split(',').forEach((name: string) => {
+            row.design_firm.split(',').forEach((name: string) => {
               const trimmed = name.trim();
               if (trimmed) architectSet.add(trimmed);
             });

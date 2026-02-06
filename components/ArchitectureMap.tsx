@@ -55,7 +55,7 @@ export function ArchitectureMap({ destinations: initialDestinations, architectId
           longitude,
           architect_id,
           movement_id,
-          architect:architects(id, name, slug),
+          architect_ref:architects(id, name, slug),
           movement:design_movements(id, name, slug)
         `)
         .not('architect_id', 'is', null)
@@ -82,9 +82,9 @@ export function ArchitectureMap({ destinations: initialDestinations, architectId
       // Transform data to match ArchitectureDestination type
       const transformed = (data || []).map((dest: any) => ({
         ...dest,
-        architect: Array.isArray(dest.architect) && dest.architect.length > 0
-          ? dest.architect[0]
-          : dest.architect || null,
+        architect: Array.isArray(dest.architect_ref) && dest.architect_ref.length > 0
+          ? dest.architect_ref[0]
+          : dest.architect_ref || null,
         movement: Array.isArray(dest.movement) && dest.movement.length > 0
           ? dest.movement[0]
           : dest.movement || null,

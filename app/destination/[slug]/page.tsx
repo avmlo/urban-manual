@@ -92,7 +92,7 @@ export default async function DestinationPage({
       primary_photo_url,
       photo_count,
       parent_destination_id,
-      architect,
+      design_firm,
       design_firm_id,
       architectural_style,
       design_period,

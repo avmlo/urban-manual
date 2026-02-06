@@ -34,7 +34,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       architectural_significance,
       design_story,
       intelligence_score,
-      architect:architects(id, name, slug),
+      architect_ref:architects(id, name, slug),
       movement:design_movements(id, name, slug)
     `)
     .not('architect_id', 'is', null)

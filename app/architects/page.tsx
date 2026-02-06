@@ -32,15 +32,15 @@ export default function ArchitectsPage() {
       // Fetch all destinations with architect info
       const { data, error } = await supabase
         .from('destinations')
-        .select('architect, image')
-        .not('architect', 'is', null)
-        .neq('architect', '');
+        .select('design_firm, image')
+        .not('design_firm', 'is', null)
+        .neq('design_firm', '');
 
       if (error) throw error;
 
       // Count architects and get featured image
       const architectData = (data || []).reduce((acc, dest: any) => {
-        const architect = dest.architect?.trim();
+        const architect = dest.design_firm?.trim();
         if (!architect) return acc;
 
         if (!acc[architect]) {

@@ -83,7 +83,7 @@ export function DestinationDrawer() {
   const categoryName = selectedDestination.category ? capitalizeCategory(selectedDestination.category) : '';
 
   // Architecture data
-  const architect = selectedDestination.architect || null;
+  const architect = selectedDestination.design_firm || null;
   const designStyle = selectedDestination.architectural_style || null;
 
   return (

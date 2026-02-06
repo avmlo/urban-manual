@@ -113,16 +113,8 @@ function destinationToMarkdown(dest: any): string {
   }
 
   // Architecture & Design
-  if (dest.architect) {
-    sections.push(`\n## Architecture\n\n**Architect:** ${dest.architect}\n`);
-  }
-
   if (dest.design_firm) {
-    sections.push(`**Design Firm:** ${dest.design_firm}\n`);
-  }
-
-  if (dest.interior_designer) {
-    sections.push(`**Interior Designer:** ${dest.interior_designer}\n`);
+    sections.push(`\n## Architecture\n\n**Design Firm:** ${dest.design_firm}\n`);
   }
 
   if (dest.architectural_style) {
@@ -229,9 +221,7 @@ async function exportDestinations() {
         crown,
         rating,
         price_level,
-        architect,
         design_firm,
-        interior_designer,
         architectural_style,
         architectural_significance,
         design_story,

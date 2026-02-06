@@ -69,7 +69,7 @@ ORDER BY ordinal_position;
         // Categorize columns
         if (['id', 'slug', 'name', 'city', 'country', 'neighborhood', 'category', 'description', 'content', 'image', 'micro_description'].includes(col)) {
           categories['Core Fields'].push(`${col.padEnd(45, ' ')} (${type})`);
-        } else if (['architect', 'interior_designer', 'design_firm', 'architectural_style', 'design_period', 'architect_info_json', 'architect_info_updated_at'].includes(col)) {
+        } else if (['design_firm', 'architectural_style', 'design_period', 'architect_info_json', 'architect_info_updated_at'].includes(col)) {
           categories['Web Content (Exa)'].push(`${col.padEnd(45, ' ')} (${type})`);
         } else if (['web_content_json', 'web_content_updated_at'].includes(col)) {
           categories['Web Content (Exa)'].push(`${col.padEnd(45, ' ')} (${type})`);

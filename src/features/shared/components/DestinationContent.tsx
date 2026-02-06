@@ -677,9 +677,9 @@ const DestinationContent = memo(function DestinationContent({
             opening_hours_json,
             utc_offset,
             architectural_style,
-            architect:architects!architect_id(id, name, slug, image_url),
-            design_firm:design_firms(id, name, slug),
-            interior_designer:architects!interior_designer_id(id, name, slug),
+            architect_ref:architects!architect_id(id, name, slug, image_url),
+            design_firm_ref:design_firms(id, name, slug),
+            interior_designer_ref:architects!interior_designer_id(id, name, slug),
             movement:design_movements(id, name, slug)
           `)
           .eq('slug', destination.slug)
@@ -706,17 +706,17 @@ const DestinationContent = memo(function DestinationContent({
             } catch {}
           }
 
-          // Extract architect objects
+          // Extract architect/design firm objects from joins
           const d = data as any;
-          if (d.architect) {
-            const obj = Array.isArray(d.architect) ? d.architect[0] : d.architect;
+          if (d.architect_ref) {
+            const obj = Array.isArray(d.architect_ref) ? d.architect_ref[0] : d.architect_ref;
             if (obj?.name) enriched.architect_obj = obj;
           }
-          if (d.interior_designer) {
-            const obj = Array.isArray(d.interior_designer) ? d.interior_designer[0] : d.interior_designer;
+          if (d.interior_designer_ref) {
+            const obj = Array.isArray(d.interior_designer_ref) ? d.interior_designer_ref[0] : d.interior_designer_ref;
             if (obj?.name) enriched.interior_designer_obj = obj;
           }
-          if (d.design_firm?.name) enriched.design_firm_obj = d.design_firm;
+          if (d.design_firm_ref?.name) enriched.design_firm_obj = d.design_firm_ref;
           if (d.movement) {
             const obj = Array.isArray(d.movement) ? d.movement[0] : d.movement;
             if (obj?.name) enriched.movement_obj = obj;
@@ -956,7 +956,7 @@ const DestinationContent = memo(function DestinationContent({
 
   // Has architecture info
   const hasArchInfo = enrichedData?.architect_obj || enrichedData?.interior_designer_obj ||
-                      enrichedData?.architectural_style || destination.architect;
+                      enrichedData?.architectural_style || destination.design_firm;
 
   // Admin edit handler
   const handleSaveEdit = useCallback(async () => {
@@ -1270,14 +1270,14 @@ const DestinationContent = memo(function DestinationContent({
                   <ChevronRight className="h-4 w-4 text-[var(--editorial-text-tertiary)] group-hover:text-[var(--editorial-accent)] transition-colors" />
                 </Link>
               )}
-              {!enrichedData?.architect_obj && destination.architect && (
+              {!enrichedData?.architect_obj && destination.design_firm && (
                 <div className="flex items-center gap-4 py-3">
                   <div className="w-11 h-11 rounded-full bg-[var(--editorial-border)] flex items-center justify-center">
                     <Building2 className="h-4 w-4 text-[var(--editorial-text-secondary)]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs uppercase tracking-[0.1em] text-[var(--editorial-text-tertiary)]">Architect</p>
-                    <p className="text-sm font-medium text-[var(--editorial-text-primary)] truncate">{destination.architect}</p>
+                    <p className="text-sm font-medium text-[var(--editorial-text-primary)] truncate">{destination.design_firm}</p>
                   </div>
                 </div>
               )}

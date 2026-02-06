@@ -34,7 +34,7 @@ async function checkProgress() {
       .from('destinations')
       .select('*', { count: 'exact', head: true })
       .is('parent_destination_id', null)
-      .not('architect', 'is', null);
+      .not('design_firm', 'is', null);
 
     // Get destinations with designer name
     const { count: designerCount } = await supabase
@@ -55,14 +55,14 @@ async function checkProgress() {
       .from('destinations')
       .select('*', { count: 'exact', head: true })
       .is('parent_destination_id', null)
-      .or('architect.not.is.null,designer_name.not.is.null,architectural_style.not.is.null');
+      .or('design_firm.not.is.null,designer_name.not.is.null,architectural_style.not.is.null');
 
     // Get some recent examples (sorted by name to see variety)
     const { data: recentExamples } = await supabase
       .from('destinations')
-      .select('name, city, architect, designer_name, architectural_style')
+      .select('name, city, design_firm, designer_name, architectural_style')
       .is('parent_destination_id', null)
-      .or('architect.not.is.null,designer_name.not.is.null,architectural_style.not.is.null')
+      .or('design_firm.not.is.null,designer_name.not.is.null,architectural_style.not.is.null')
       .order('name', { ascending: false })
       .limit(10);
     
@@ -71,7 +71,7 @@ async function checkProgress() {
       .from('destinations')
       .select('name, city')
       .is('parent_destination_id', null)
-      .is('architect', null)
+      .is('design_firm', null)
       .is('designer_name', null)
       .is('architectural_style', null)
       .limit(5);
@@ -88,7 +88,7 @@ async function checkProgress() {
       console.log('\n📝 Recent Examples (Enriched):\n');
       recentExamples.slice(0, 5).forEach((dest: any) => {
         console.log(`   • ${dest.name} (${dest.city})`);
-        if (dest.architect) console.log(`     Architect: ${dest.architect}`);
+        if (dest.design_firm) console.log(`     Design Firm: ${dest.design_firm}`);
         if (dest.designer_name) console.log(`     Designer: ${dest.designer_name}`);
         if (dest.architectural_style) console.log(`     Style: ${dest.architectural_style}`);
       });

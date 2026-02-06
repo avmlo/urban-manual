@@ -18,9 +18,9 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
   const movementObj = (destination as any).movement_obj as DesignMovement | undefined;
   
   // Fallback to legacy text fields
-  const architect = architectObj?.name || destination.architect;
-  const designFirm = designFirmObj?.name || destination.design_firm;
-  const interiorDesigner = interiorDesignerObj?.name || destination.interior_designer || (destination as any).designer_name;
+  const architect = architectObj?.name || destination.design_firm;
+  const designFirm = designFirmObj?.name;
+  const interiorDesigner = interiorDesignerObj?.name || (destination as any).designer_name;
   const architecturalStyle = destination.architectural_style;
   const designPeriod = destination.design_period;
   const architectInfoJson = destination.architect_info_json as any;

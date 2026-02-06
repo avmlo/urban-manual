@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Destination } from '@/types/destination';
+import { VALID_CATEGORIES } from '@/lib/categories';
 import { CARD_WRAPPER, CARD_MEDIA, CARD_TITLE, CARD_META } from '@/components/CardStyles';
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
@@ -84,21 +85,7 @@ type ViewMode = 'table' | 'grid';
 type EnrichedFilter = 'all' | 'enriched' | 'not_enriched';
 type MissingDataFilter = 'all' | 'no_image' | 'no_description' | 'no_content';
 
-const CATEGORIES = [
-  'restaurant',
-  'hotel',
-  'bar',
-  'cafe',
-  'gallery',
-  'museum',
-  'shop',
-  'landmark',
-  'park',
-  'beach',
-  'market',
-  'spa',
-  'club',
-];
+const CATEGORIES = [...VALID_CATEGORIES];
 
 const ITEMS_PER_PAGE_OPTIONS = [12, 24, 48, 96];
 const DEFAULT_ITEMS_PER_PAGE = 24;
@@ -787,7 +774,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                     }`}
                   >
                     <Tag className="w-3 h-3" />
-                    <span>{selectedCategory ? selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) : 'All Categories'}</span>
+                    <span>{selectedCategory || 'All Categories'}</span>
                     <ChevronDown className="w-3 h-3 opacity-50" />
                   </button>
                 </DropdownMenuTrigger>
@@ -802,7 +789,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                       onClick={() => setSelectedCategory(cat)}
                       className={selectedCategory === cat ? 'font-medium' : ''}
                     >
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      {cat}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

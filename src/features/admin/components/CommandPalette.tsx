@@ -152,8 +152,8 @@ export function CommandPalette() {
     },
     {
       id: 'architects',
-      label: 'Architects',
-      description: 'Manage architect profiles',
+      label: 'Design Firms',
+      description: 'Manage design firm profiles',
       icon: User,
       section: 'Data',
       href: '/admin/architects',

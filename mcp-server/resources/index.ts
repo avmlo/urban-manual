@@ -305,18 +305,18 @@ async function getArchitects(supabase: ReturnType<typeof createServiceClient>) {
     // Table might not exist, return data from destinations
     const { data: destData } = await supabase
       .from("destinations")
-      .select("architect, architectural_style")
-      .not("architect", "is", null);
+      .select("design_firm, architectural_style")
+      .not("design_firm", "is", null);
 
     const architects = new Map<string, { count: number; styles: Set<string> }>();
     destData?.forEach((d) => {
-      if (d.architect) {
-        if (!architects.has(d.architect)) {
-          architects.set(d.architect, { count: 0, styles: new Set() });
+      if (d.design_firm) {
+        if (!architects.has(d.design_firm)) {
+          architects.set(d.design_firm, { count: 0, styles: new Set() });
         }
-        architects.get(d.architect)!.count++;
+        architects.get(d.design_firm)!.count++;
         if (d.architectural_style) {
-          architects.get(d.architect)!.styles.add(d.architectural_style);
+          architects.get(d.design_firm)!.styles.add(d.architectural_style);
         }
       }
     });

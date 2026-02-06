@@ -325,11 +325,11 @@ export async function handleSearchTool(
 
       let dbQuery = supabase
         .from("destinations")
-        .select("slug, name, city, category, architect, architectural_style, design_story, image")
+        .select("slug, name, city, category, design_firm, architectural_style, design_story, image")
         .limit(Math.min(Number(limit), 50));
 
       if (architect) {
-        dbQuery = dbQuery.or(`architect.ilike.%${architect}%,design_firm.ilike.%${architect}%`);
+        dbQuery = dbQuery.ilike('design_firm', `%${architect}%`);
       }
       if (style) {
         dbQuery = dbQuery.ilike("architectural_style", `%${style}%`);

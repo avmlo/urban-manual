@@ -94,7 +94,7 @@ async function listAllColumns() {
       'Content': ['description', 'content', 'micro_description', 'subline', 'short_summary', 'ai_summary', 'ai_short_summary'],
       'Images': ['image', 'image_thumbnail', 'image_original', 'main_image', 'primary_photo_url', 'photos_json', 'photo_count', 'additional_images', 'gallery'],
       'Location': ['latitude', 'longitude', 'lat', 'long', 'address', 'formatted_address', 'vicinity', 'plus_code', 'timezone_id', 'utc_offset'],
-      'Architect/Design': ['architect', 'architectural_style', 'designer_name', 'interior_style', 'design_firm', 'design_period', 'architect_info_json'],
+      'Architect/Design': ['design_firm', 'architectural_style', 'designer_name', 'interior_style', 'design_period', 'architect_info_json'],
       'Ratings & Reviews': ['rating', 'user_ratings_total', 'reviews_json', 'reviews_count', 'popularity_score', 'data_quality_score'],
       'Price': ['price_level', 'price_range', 'price_range_local', 'exchange_rate_to_usd', 'currency_code'],
       'Hours & Status': ['opening_hours', 'opening_hours_json', 'current_opening_hours_json', 'secondary_opening_hours_json', 'is_open_now', 'business_status'],

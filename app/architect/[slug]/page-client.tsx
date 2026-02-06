@@ -76,10 +76,10 @@ export default function ArchitectPageClient() {
       const { data, error } = await supabase
         .from('destinations')
         .select(
-          'slug, name, city, neighborhood, category, micro_description, description, content, image, image_thumbnail, michelin_stars, crown, opening_hours_json, rating, tags, architect, architectural_style'
+          'slug, name, city, neighborhood, category, micro_description, description, content, image, image_thumbnail, michelin_stars, crown, opening_hours_json, rating, tags, design_firm, architectural_style'
         )
-        .not('architect', 'is', null)
-        .neq('architect', '')
+        .not('design_firm', 'is', null)
+        .neq('design_firm', '')
         .is('parent_destination_id', null)
         .order('name');
 
@@ -88,8 +88,8 @@ export default function ArchitectPageClient() {
       // Filter by architect name (case-insensitive, handles variations)
       const normalizedArchitectName = architectName.toLowerCase().trim();
       const results = (data || []).filter((d: any) => {
-        if (!d.architect) return false;
-        const normalizedDbName = d.architect.toLowerCase().trim();
+        if (!d.design_firm) return false;
+        const normalizedDbName = d.design_firm.toLowerCase().trim();
         // Check if the architect name contains our search term or vice versa
         return normalizedDbName.includes(normalizedArchitectName) || 
                normalizedArchitectName.includes(normalizedDbName) ||

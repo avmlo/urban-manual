@@ -114,7 +114,7 @@ const TYPE_CONFIG = {
   cities: { singular: 'City', plural: 'Cities', icon: MapPin },
   countries: { singular: 'Country', plural: 'Countries', icon: Globe },
   neighborhoods: { singular: 'Neighborhood', plural: 'Neighborhoods', icon: Map },
-  architects: { singular: 'Architect', plural: 'Architects', icon: Compass },
+  architects: { singular: 'Design Firm', plural: 'Design Firms', icon: Compass },
 };
 
 
@@ -1081,7 +1081,7 @@ export function DataManager({ type }: DataManagerProps) {
                     <label className={labelClasses}>Image</label>
                     <div className="flex items-center gap-3">
                       {formData.image_url && (
-                        <img src={formData.image_url} alt="Architect" className="w-16 h-16 rounded-lg object-cover" />
+                        <img src={formData.image_url} alt="Design Firm" className="w-16 h-16 rounded-lg object-cover" />
                       )}
                       <label className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
                         <Upload className="h-4 w-4" />

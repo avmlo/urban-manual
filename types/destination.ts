@@ -18,10 +18,8 @@ export interface Destination {
   michelin_stars?: number;
   crown?: boolean;
   brand?: string | null;
-  // Legacy architecture fields (text) - kept for backward compatibility
-  architect?: string | null;
-  interior_designer?: string | null;
-  design_firm?: string | null;
+  // Architecture fields (text)
+  design_firm?: string | null;  // Comma-separated design firm names (renamed from architect)
   architectural_style?: string | null;
   design_period?: string | null;
   architect_info_json?: Record<string, unknown> | null;

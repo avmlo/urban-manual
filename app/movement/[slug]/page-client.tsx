@@ -82,7 +82,7 @@ export default function MovementPageClient({ slug }: MovementPageClientProps) {
           architect_id,
           movement_id,
           architectural_significance,
-          architect:architects(id, name, slug),
+          architect_ref:architects(id, name, slug),
           movement:design_movements(id, name, slug)
         `)
         .eq('movement_id', movementData.id)
@@ -94,9 +94,9 @@ export default function MovementPageClient({ slug }: MovementPageClientProps) {
       // Transform data to match Destination type
       const transformed = (data || []).map((dest: any) => ({
         ...dest,
-        architect: Array.isArray(dest.architect) && dest.architect.length > 0 
-          ? dest.architect[0].name 
-          : dest.architect?.name || null,
+        architect: Array.isArray(dest.architect_ref) && dest.architect_ref.length > 0
+          ? dest.architect_ref[0].name
+          : dest.architect_ref?.name || null,
         movement: Array.isArray(dest.movement) && dest.movement.length > 0
           ? dest.movement[0].name
           : dest.movement?.name || null,

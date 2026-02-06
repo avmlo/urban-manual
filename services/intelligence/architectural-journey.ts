@@ -88,7 +88,7 @@ async function getDestinationsByMovement(
       architectural_significance,
       design_story,
       intelligence_score,
-      architect:architects(id, name, slug),
+      architect_ref:architects(id, name, slug),
       movement:design_movements(id, name, slug)
     `)
     .eq('city', city.toLowerCase().replace(/\s+/g, '-'))
@@ -110,7 +110,7 @@ async function getDestinationsByMovement(
   // Transform data to match ArchitectureDestination type
   const transformDestination = (d: any): ArchitectureDestination => ({
     ...d,
-    architect: Array.isArray(d.architect) && d.architect.length > 0 ? d.architect[0] : d.architect || null,
+    architect: Array.isArray(d.architect_ref) && d.architect_ref.length > 0 ? d.architect_ref[0] : d.architect_ref || null,
     movement: Array.isArray(d.movement) && d.movement.length > 0 ? d.movement[0] : d.movement || null,
     created_at: d.created_at || new Date().toISOString(),
     country: d.country || '',
@@ -157,7 +157,7 @@ async function getDestinationsByArchitect(
       architectural_significance,
       design_story,
       intelligence_score,
-      architect:architects(id, name, slug),
+      architect_ref:architects(id, name, slug),
       movement:design_movements(id, name, slug)
     `)
     .eq('city', city.toLowerCase().replace(/\s+/g, '-'))
@@ -172,7 +172,7 @@ async function getDestinationsByArchitect(
   // Transform data to match ArchitectureDestination type
   return (data || []).map((d: any) => ({
     ...d,
-    architect: Array.isArray(d.architect) && d.architect.length > 0 ? d.architect[0] : d.architect || null,
+    architect: Array.isArray(d.architect_ref) && d.architect_ref.length > 0 ? d.architect_ref[0] : d.architect_ref || null,
     movement: Array.isArray(d.movement) && d.movement.length > 0 ? d.movement[0] : d.movement || null,
     created_at: d.created_at || new Date().toISOString(),
     country: d.country || '',
@@ -224,7 +224,7 @@ async function getDestinationsByMaterial(
       architectural_significance,
       design_story,
       intelligence_score,
-      architect:architects(id, name, slug),
+      architect_ref:architects(id, name, slug),
       movement:design_movements(id, name, slug)
     `)
     .eq('city', city.toLowerCase().replace(/\s+/g, '-'))
@@ -239,7 +239,7 @@ async function getDestinationsByMaterial(
   // Transform data to match ArchitectureDestination type
   return (data || []).map((d: any) => ({
     ...d,
-    architect: Array.isArray(d.architect) && d.architect.length > 0 ? d.architect[0] : d.architect || null,
+    architect: Array.isArray(d.architect_ref) && d.architect_ref.length > 0 ? d.architect_ref[0] : d.architect_ref || null,
     movement: Array.isArray(d.movement) && d.movement.length > 0 ? d.movement[0] : d.movement || null,
     created_at: d.created_at || new Date().toISOString(),
     country: d.country || '',
@@ -268,7 +268,7 @@ async function getDestinationsByCity(
       architectural_significance,
       design_story,
       intelligence_score,
-      architect:architects(id, name, slug),
+      architect_ref:architects(id, name, slug),
       movement:design_movements(id, name, slug)
     `)
     .eq('city', city.toLowerCase().replace(/\s+/g, '-'))
@@ -283,7 +283,7 @@ async function getDestinationsByCity(
   // Transform data to match ArchitectureDestination type
   return (data || []).map((d: any) => ({
     ...d,
-    architect: Array.isArray(d.architect) && d.architect.length > 0 ? d.architect[0] : d.architect || null,
+    architect: Array.isArray(d.architect_ref) && d.architect_ref.length > 0 ? d.architect_ref[0] : d.architect_ref || null,
     movement: Array.isArray(d.movement) && d.movement.length > 0 ? d.movement[0] : d.movement || null,
     created_at: d.created_at || new Date().toISOString(),
     country: d.country || '',

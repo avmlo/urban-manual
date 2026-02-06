@@ -89,9 +89,9 @@ export function IntelligenceItinerary({ itinerary }: IntelligenceItineraryProps)
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     {destination.category} • {destination.city}
                   </p>
-                  {destination.architect && (
+                  {destination.design_firm && (
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      by {typeof destination.architect === 'string' ? destination.architect : destination.architect.name}
+                      by {typeof destination.design_firm === 'string' ? destination.design_firm : destination.design_firm.name}
                     </p>
                   )}
                 </div>

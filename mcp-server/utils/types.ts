@@ -21,8 +21,6 @@ export interface Destination {
   michelin_stars?: number;
   crown?: boolean;
   brand?: string | null;
-  architect?: string | null;
-  interior_designer?: string | null;
   design_firm?: string | null;
   architectural_style?: string | null;
   design_period?: string | null;

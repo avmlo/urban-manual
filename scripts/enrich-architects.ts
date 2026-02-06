@@ -37,9 +37,9 @@ async function extractArchitects() {
   // Get all destinations with architect field
   const { data: destinations, error } = await supabase
     .from('destinations')
-    .select('id, name, architect, architectural_style')
-    .not('architect', 'is', null)
-    .neq('architect', '');
+    .select('id, name, design_firm, architectural_style')
+    .not('design_firm', 'is', null)
+    .neq('design_firm', '');
 
   if (error) {
     console.error('Error fetching destinations:', error);
@@ -56,7 +56,7 @@ async function extractArchitects() {
   }>();
 
   for (const dest of destinations || []) {
-    const architectName = dest.architect?.trim();
+    const architectName = dest.design_firm?.trim();
     if (!architectName) continue;
 
     if (!architectMap.has(architectName)) {

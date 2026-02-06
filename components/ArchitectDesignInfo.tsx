@@ -17,14 +17,8 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
   const interiorDesignerObj = (destination as any).interior_designer_obj as Architect | undefined;
   const movementObj = (destination as any).movement_obj as DesignMovement | undefined;
   
-  // Architect person (from architect_id FK)
-  const architectName = architectObj?.name;
-  // Design firm text field (free text, multi-select values)
+  // Design firm text field (primary — stores all design-related names)
   const designFirmText = destination.design_firm;
-  // Design firm object (from design_firm_id FK)
-  const designFirmName = designFirmObj?.name;
-  // Interior designer (from interior_designer_id FK — legacy, text column dropped)
-  const interiorDesigner = interiorDesignerObj?.name;
   const architecturalStyle = destination.architectural_style;
   const designPeriod = destination.design_period;
   const architectInfoJson = destination.architect_info_json as any;
@@ -34,8 +28,45 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
   const designStory = (destination as any).design_story;
   const constructionYear = (destination as any).construction_year;
 
+  // Collect all design firm names from text field + FK objects, deduplicated
+  const designFirmNames: string[] = [];
+  const seen = new Set<string>();
+  if (designFirmText) {
+    for (const name of designFirmText.split(', ').filter(Boolean)) {
+      if (!seen.has(name.toLowerCase())) {
+        seen.add(name.toLowerCase());
+        designFirmNames.push(name);
+      }
+    }
+  }
+  // Add FK names not already in the text field
+  for (const name of [architectObj?.name, designFirmObj?.name, interiorDesignerObj?.name]) {
+    if (name && !seen.has(name.toLowerCase())) {
+      seen.add(name.toLowerCase());
+      designFirmNames.push(name);
+    }
+  }
+
+  // Build a lookup from name → rich object data (for inline details)
+  const richDataByName = new Map<string, { architect?: Architect; firm?: DesignFirm }>();
+  if (architectObj?.name) {
+    richDataByName.set(architectObj.name.toLowerCase(), { architect: architectObj });
+  }
+  if (interiorDesignerObj?.name) {
+    const key = interiorDesignerObj.name.toLowerCase();
+    const existing = richDataByName.get(key);
+    richDataByName.set(key, { ...existing, architect: existing?.architect || interiorDesignerObj });
+  }
+  if (designFirmObj?.name) {
+    const key = designFirmObj.name.toLowerCase();
+    const existing = richDataByName.get(key);
+    richDataByName.set(key, { ...existing, firm: designFirmObj });
+  }
+
+  const hasDesignFirms = designFirmNames.length > 0;
+
   // Check if we have any architect/design info to display
-  const hasInfo = architectName || designFirmText || designFirmName || interiorDesigner || architecturalStyle || designPeriod ||
+  const hasInfo = hasDesignFirms || architecturalStyle || designPeriod ||
                   architecturalSignificance || designStory || movementObj;
 
   if (!hasInfo) {
@@ -59,128 +90,73 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
     <div className="p-6 bg-white dark:bg-[#161b22] rounded-xl border border-gray-200 dark:border-[#30363d]">
       <h2 className="text-sm font-medium text-gray-900 dark:text-white mb-5">Architecture & Design</h2>
       <div className="space-y-5">
-        {/* Architect - person data from architect_id FK */}
-        {architectName && (
+        {/* Design Firm — unified section for architects, interior designers, and firms */}
+        {hasDesignFirms && (
           <div className="flex items-start gap-3">
             <Building2 className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Architect</div>
-              <div className="space-y-1">
-                <Link
-                  href={architectObj?.slug ? `/architect/${architectObj.slug}` : `/architect/${architectNameToSlug(architectName)}`}
-                  className="text-sm text-gray-900 dark:text-white font-medium hover:underline inline-block"
-                >
-                  {architectName}
-                </Link>
-                {architectObj && (
-                  <div className="space-y-1.5">
-                    {(architectObj.birth_year || architectObj.death_year) && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatArchitectYears(architectObj)}
-                      </div>
-                    )}
-                    {architectObj.nationality && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                        <Globe className="h-3 w-3" />
-                        <span>{architectObj.nationality}</span>
-                      </div>
-                    )}
-                    {architectObj.design_philosophy && (
-                      <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <div className="flex items-start gap-1.5 mb-1">
-                          <Sparkles className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Design Philosophy</span>
+              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Design Firm</div>
+              <div className="space-y-3">
+                {designFirmNames.map((name, idx) => {
+                  const rich = richDataByName.get(name.toLowerCase());
+                  const arch = rich?.architect;
+                  const firm = rich?.firm;
+                  const slug = arch?.slug || firm?.slug || architectNameToSlug(name);
+
+                  return (
+                    <div key={idx}>
+                      <Link
+                        href={`/architect/${slug}`}
+                        className="text-sm text-gray-900 dark:text-white font-medium hover:underline inline-block"
+                      >
+                        {name}
+                      </Link>
+                      {arch && (
+                        <div className="space-y-1.5 mt-1">
+                          {(arch.birth_year || arch.death_year) && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatArchitectYears(arch)}
+                            </div>
+                          )}
+                          {arch.nationality && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                              <Globe className="h-3 w-3" />
+                              <span>{arch.nationality}</span>
+                            </div>
+                          )}
+                          {arch.design_philosophy && (
+                            <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                              <div className="flex items-start gap-1.5 mb-1">
+                                <Sparkles className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Design Philosophy</span>
+                              </div>
+                              <p className="text-xs text-gray-700 dark:text-gray-300">{arch.design_philosophy}</p>
+                            </div>
+                          )}
+                          {arch.bio && (
+                            <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
+                              <p>{arch.bio}</p>
+                            </div>
+                          )}
                         </div>
-                        <p className="text-xs text-gray-700 dark:text-gray-300">{architectObj.design_philosophy}</p>
-                      </div>
-                    )}
-                    {architectObj.bio && (
-                      <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
-                        <p>{architectObj.bio}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Design Firm - text field (multi-select values) */}
-        {designFirmText && (
-          <div className="flex items-start gap-3">
-            <Building2 className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Design Firm</div>
-              <div className="space-y-1">
-                {designFirmText.split(', ').map((firm, idx) => (
-                  <Link
-                    key={idx}
-                    href={`/architect/${architectNameToSlug(firm)}`}
-                    className="text-sm text-gray-900 dark:text-white font-medium hover:underline block"
-                  >
-                    {firm}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Design Firm - from design_firm_id FK (legacy) */}
-        {designFirmName && designFirmName !== designFirmText && (
-          <div className="flex items-start gap-3">
-            <Building2 className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Design Firm</div>
-              <div className="space-y-1">
-                <div className="text-sm text-gray-900 dark:text-white font-medium">
-                  {designFirmName}
-                </div>
-                {designFirmObj && (
-                  <div className="space-y-1.5">
-                    {designFirmObj.founded_year && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Founded {designFirmObj.founded_year}
-                      </div>
-                    )}
-                    {designFirmObj.description && (
-                      <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
-                        <p>{designFirmObj.description}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Interior Designer - from interior_designer_id FK (legacy) */}
-        {interiorDesigner && (
-          <div className="flex items-start gap-3">
-            <Palette className="h-4 w-4 text-gray-400 dark:text-[#8b949e] mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 dark:text-[#8b949e] mb-1">Interior Designer</div>
-              <div className="space-y-1">
-                <div className="text-sm text-gray-900 dark:text-white font-medium">
-                  {interiorDesigner}
-                </div>
-                {interiorDesignerObj && (
-                  <div className="space-y-1.5">
-                    {(interiorDesignerObj.birth_year || interiorDesignerObj.death_year) && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatArchitectYears(interiorDesignerObj)}
-                      </div>
-                    )}
-                    {interiorDesignerObj.nationality && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                        <Globe className="h-3 w-3" />
-                        <span>{interiorDesignerObj.nationality}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                      {firm && (
+                        <div className="space-y-1.5 mt-1">
+                          {firm.founded_year && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Founded {firm.founded_year}
+                            </div>
+                          )}
+                          {firm.description && (
+                            <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
+                              <p>{firm.description}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

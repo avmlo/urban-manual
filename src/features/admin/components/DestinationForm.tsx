@@ -939,7 +939,7 @@ export function DestinationForm({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelClasses}>Architectural Style</label>
-                <input type="text" value={formData.design_firmural_style} onChange={(e) => setFormData({ ...formData, architectural_style: e.target.value })}
+                <input type="text" value={formData.architectural_style} onChange={(e) => setFormData({ ...formData, architectural_style: e.target.value })}
                   placeholder="Brutalism, Art Deco..." className={inputClasses} />
               </div>
               <div>
@@ -959,7 +959,7 @@ export function DestinationForm({
             </div>
             <div>
               <label className={labelClasses}>Architectural Significance</label>
-              <textarea value={formData.design_firmural_significance} onChange={(e) => setFormData({ ...formData, architectural_significance: e.target.value })}
+              <textarea value={formData.architectural_significance} onChange={(e) => setFormData({ ...formData, architectural_significance: e.target.value })}
                 rows={3} className={cn(inputClasses, "resize-none")} placeholder="Why this matters architecturally..." />
             </div>
             <div>

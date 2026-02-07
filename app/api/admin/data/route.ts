@@ -120,6 +120,13 @@ export async function DELETE(request: NextRequest) {
           .eq(field, id);
 
         if (updateError) {
+          // Detect stale trigger referencing old column name (architect → design_firm)
+          if (updateError.message.includes('has no field "architect"')) {
+            throw new Error(
+              `Database trigger references the old "architect" column. ` +
+              `Please apply migration 504_fix_triggers_after_architect_rename.sql in the Supabase SQL editor to fix this.`
+            );
+          }
           throw new Error(`Failed to clear ${field} references: ${updateError.message}`);
         }
       }

@@ -336,11 +336,11 @@ export function MediaLibrary() {
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Bulk Actions - Fixed floating bar */}
       {selectedItems.size > 0 && (
-        <div className="sticky top-0 z-20 flex items-center gap-3 p-4 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm">
-          <Badge variant="secondary">{selectedItems.size} selected</Badge>
-          <Separator orientation="vertical" className="h-4" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-gray-900/95 dark:bg-gray-100/95 backdrop-blur-sm text-white dark:text-gray-900 rounded-xl shadow-2xl border border-gray-700/50 dark:border-gray-300/50">
+          <Badge variant="secondary" className="font-medium whitespace-nowrap bg-white/15 dark:bg-gray-900/15 text-white dark:text-gray-900 border-0">{selectedItems.size} selected</Badge>
+          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
           <Button
             variant="ghost"
             size="sm"
@@ -351,15 +351,17 @@ export function MediaLibrary() {
               confirmText: 'Delete',
               onConfirm: handleBulkDelete,
             })}
-            className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10"
+            className="text-red-400 dark:text-red-500 hover:bg-red-500/20 dark:hover:bg-red-500/20"
           >
             <Trash2 className="w-3 h-3 mr-1" />
             Delete
           </Button>
+          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSelectedItems(new Set())}
+            className="shrink-0 text-white/70 dark:text-gray-900/70 hover:text-white dark:hover:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10"
           >
             <X className="w-3 h-3 mr-1" />
             Clear

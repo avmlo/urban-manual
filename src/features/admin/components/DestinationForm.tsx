@@ -12,6 +12,7 @@ import type { Destination } from '@/types/destination';
 import { cn, toTitleCase } from '@/lib/utils';
 import { SearchableSelect } from '@/ui/searchable-select';
 import { SearchableMultiSelect } from '@/ui/searchable-multi-select';
+import { parseDesignFirms } from '@/lib/architect-utils';
 
 interface Toast {
   success: (message: string) => void;
@@ -608,7 +609,7 @@ export function DestinationForm({
             <div>
               <label className={labelClasses}>Design Firm</label>
               <SearchableMultiSelect
-                values={formData.design_firm ? formData.design_firm.split(', ').filter(Boolean) : []}
+                values={parseDesignFirms(formData.design_firm)}
                 onChange={(values) => setFormData({ ...formData, design_firm: values.join(', ') })}
                 options={dropdownOptions.architects}
                 placeholder="Search or add design firms..."

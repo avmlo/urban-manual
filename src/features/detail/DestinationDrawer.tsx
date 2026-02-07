@@ -47,7 +47,7 @@ import { getParentDestination, getNestedDestinations } from '@/lib/supabase/nest
 import { createClient } from '@/lib/supabase/client';
 import { ArchitectDesignInfo } from '@/components/ArchitectDesignInfo';
 import { Drawer } from '@/ui/Drawer';
-import { architectNameToSlug } from '@/lib/architect-utils';
+import { architectNameToSlug, parseDesignFirms } from '@/lib/architect-utils';
 import { DestinationCard } from '@/components/DestinationCard';
 import { InlineAddToTrip } from './InlineAddToTrip';
 import { SimilarPlacesGrid } from './SimilarPlacesGrid';
@@ -442,10 +442,8 @@ export function DestinationDrawer({ destination, isOpen, onClose, onSaveToggle, 
   // Initialize edit form when entering edit mode
   useEffect(() => {
     if (isEditMode && destination) {
-      // Parse design_firm string to array (comma-separated)
-      const architectsArray = destination.design_firm
-        ? destination.design_firm.split(',').map(a => a.trim()).filter(a => a)
-        : [];
+      // Parse design_firm string to array (comma or semicolon-separated)
+      const architectsArray = parseDesignFirms(destination.design_firm);
 
       setEditFormData({
         slug: destination.slug || '',

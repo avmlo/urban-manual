@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { parseDesignFirms } from '@/lib/architect-utils';
 
 interface ArchitectTagInputProps {
   value: string[]; // Array of architect names
@@ -47,10 +48,9 @@ export function ArchitectTagInput({
         const architectSet = new Set<string>();
         data?.forEach(row => {
           if (row.design_firm) {
-            // Split by comma and trim each name
-            row.design_firm.split(',').forEach((name: string) => {
-              const trimmed = name.trim();
-              if (trimmed) architectSet.add(trimmed);
+            // Split by comma or semicolon and trim each name
+            parseDesignFirms(row.design_firm).forEach((name: string) => {
+              architectSet.add(name);
             });
           }
         });

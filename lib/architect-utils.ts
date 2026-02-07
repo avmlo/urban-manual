@@ -21,6 +21,22 @@ export function architectNameToSlug(name: string): string {
 }
 
 /**
+ * Parse a design_firm string into an array of individual firm names.
+ * Handles comma-separated, semicolon-separated, or mixed delimiters.
+ * Examples:
+ *   "andre-fu; renzo-piano-building-workshop" -> ["andre-fu", "renzo-piano-building-workshop"]
+ *   "Frank Lloyd Wright, Tadao Ando" -> ["Frank Lloyd Wright", "Tadao Ando"]
+ *   "Studio A; Studio B, Studio C" -> ["Studio A", "Studio B", "Studio C"]
+ */
+export function parseDesignFirms(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(/[,;]/)
+    .map(name => name.trim())
+    .filter(Boolean);
+}
+
+/**
  * Convert slug back to display name (capitalize words)
  * Example: "renzo-piano" -> "Renzo Piano"
  */

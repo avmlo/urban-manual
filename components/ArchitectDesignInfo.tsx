@@ -4,7 +4,7 @@ import { Building2, Palette, Calendar, ExternalLink, Globe, Sparkles } from 'luc
 import Link from 'next/link';
 import { Destination } from '@/types/destination';
 import { Architect, DesignFirm, DesignMovement } from '@/types/architecture';
-import { architectNameToSlug } from '@/lib/architect-utils';
+import { architectNameToSlug, parseDesignFirms } from '@/lib/architect-utils';
 
 interface ArchitectDesignInfoProps {
   destination: Destination;
@@ -32,7 +32,7 @@ export function ArchitectDesignInfo({ destination }: ArchitectDesignInfoProps) {
   const designFirmNames: string[] = [];
   const seen = new Set<string>();
   if (designFirmText) {
-    for (const name of designFirmText.split(', ').filter(Boolean)) {
+    for (const name of parseDesignFirms(designFirmText)) {
       if (!seen.has(name.toLowerCase())) {
         seen.add(name.toLowerCase());
         designFirmNames.push(name);

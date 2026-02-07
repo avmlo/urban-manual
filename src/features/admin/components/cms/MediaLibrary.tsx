@@ -338,7 +338,7 @@ export function MediaLibrary() {
 
       {/* Bulk Actions */}
       {selectedItems.size > 0 && (
-        <div className="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="sticky top-0 z-20 flex items-center gap-3 p-4 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm">
           <Badge variant="secondary">{selectedItems.size} selected</Badge>
           <Separator orientation="vertical" className="h-4" />
           <Button

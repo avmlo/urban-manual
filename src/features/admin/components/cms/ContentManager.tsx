@@ -938,7 +938,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
 
       {/* Bulk Actions */}
       {selectedItems.size > 0 && (
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-3 sm:px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800/50 rounded-xl">
+        <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center gap-3 px-3 sm:px-4 py-3 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-100 dark:border-gray-800/50 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="font-medium whitespace-nowrap">{selectedItems.size} selected</Badge>
             <Separator orientation="vertical" className="h-5 hidden sm:block" />

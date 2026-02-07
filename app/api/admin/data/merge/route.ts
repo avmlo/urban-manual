@@ -85,9 +85,41 @@ export async function POST(request: NextRequest) {
           .select('id');
 
         if (updateError) {
+          // Detect stale trigger referencing old column name (architect → design_firm)
+          if (updateError.message.includes('has no field "architect"')) {
+            throw new Error(
+              `Database trigger references the old "architect" column. ` +
+              `Please apply migration 504_fix_triggers_after_architect_rename.sql in the Supabase SQL editor to fix this.`
+            );
+          }
           throw new Error(`Failed to update destinations.${field}: ${updateError.message}`);
         }
         affectedCount += updated?.length || 0;
+      }
+
+      // Also update the design_firm text field if the source name appears there
+      if (sourceName && targetName && sourceName !== targetName) {
+        const { data: textMatches, error: textError } = await serviceClient
+          .from('destinations')
+          .select('id, design_firm')
+          .ilike('design_firm', `%${sourceName}%`);
+
+        if (!textError && textMatches) {
+          for (const dest of textMatches) {
+            if (!dest.design_firm) continue;
+            const updated = dest.design_firm.replace(
+              new RegExp(sourceName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+              targetName
+            );
+            if (updated !== dest.design_firm) {
+              await serviceClient
+                .from('destinations')
+                .update({ design_firm: updated })
+                .eq('id', dest.id);
+              affectedCount++;
+            }
+          }
+        }
       }
     } else {
       // For text-based types (brands, cities, etc.)
@@ -174,18 +206,37 @@ export async function GET(request: NextRequest) {
     let totalCount = 0;
 
     if (validatedType === 'architects') {
-      // For architects: count references across all three UUID fields
+      // For architects: count references across UUID fields and text field
+      const countedDestIds = new Set<number>();
+
       for (const field of ARCHITECT_FIELDS) {
-        const { count, error: countError } = await supabase
+        const { data: matches, error: countError } = await supabase
           .from('destinations')
-          .select('*', { count: 'exact', head: true })
+          .select('id')
           .eq(field, sourceId);
 
         if (countError) {
           throw new Error(`Failed to count destinations.${field}: ${countError.message}`);
         }
-        totalCount += count || 0;
+        if (matches) {
+          for (const m of matches) countedDestIds.add(m.id);
+        }
       }
+
+      // Also count text field matches
+      const sourceName = sourceItem.name;
+      if (sourceName) {
+        const { data: textMatches, error: textError } = await supabase
+          .from('destinations')
+          .select('id')
+          .ilike('design_firm', `%${sourceName}%`);
+
+        if (!textError && textMatches) {
+          for (const m of textMatches) countedDestIds.add(m.id);
+        }
+      }
+
+      totalCount = countedDestIds.size;
     } else {
       // For text-based types
       const field = FIELD_MAPPING[validatedType];

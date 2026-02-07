@@ -1212,17 +1212,20 @@ function TableView({
           </div>
         );
       }
-      case 'status':
+      case 'status': {
+        const score = getCompletenessScore(dest);
+        const isPublished = score >= 50 && !!dest.image && !!dest.description;
         return (
-          <div className="flex items-center gap-1">
-            {dest.last_enriched_at && (
-              <Check className="w-3 h-3 text-green-500 dark:text-green-400" />
-            )}
-            {dest.image && (
-              <ImageIcon className="w-3 h-3 text-gray-300 dark:text-gray-600" />
-            )}
+          <div className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium"
+            style={{
+              backgroundColor: isPublished ? 'rgb(240 253 244)' : 'rgb(254 249 195)',
+              color: isPublished ? 'rgb(22 101 52)' : 'rgb(133 77 14)',
+            }}>
+            <div className={`w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-green-500' : 'bg-amber-400'}`} />
+            {isPublished ? 'Published' : 'Draft'}
           </div>
         );
+      }
       case 'rating':
         return dest.rating ? (
           <span className="inline-flex items-center gap-1 text-[13px] text-gray-400 dark:text-gray-500">

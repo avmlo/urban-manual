@@ -4,14 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   Loader2, X, Upload, Link2, Search, MapPin, Star, Crown, ChevronDown, ImageIcon,
-  Globe, Phone, Instagram, ExternalLink, Building2, Compass, Calendar, Tag, DollarSign
+  Globe, Phone, Instagram, ExternalLink, Building2, Compass, Calendar, Tag, DollarSign,
+  Eye, EyeOff, Hash,
 } from 'lucide-react';
-import { htmlToPlainText } from '@/lib/sanitize';
 import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
 import type { Destination } from '@/types/destination';
-import { cn, toTitleCase } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { SearchableSelect } from '@/ui/searchable-select';
 import { SearchableMultiSelect } from '@/ui/searchable-multi-select';
+import { RichTextEditor } from './cms/RichTextEditor';
 
 interface Toast {
   success: (message: string) => void;
@@ -28,9 +29,11 @@ interface DestinationFormProps {
   toast: Toast;
   /** Called on every form field change with the full current form data (for autosave) */
   onFormChange?: (data: Partial<Destination>) => void;
+  /** Current save state for the header indicator */
+  saveState?: 'idle' | 'saving' | 'saved' | 'error';
 }
 
-type TabId = 'details' | 'location' | 'media' | 'content' | 'architecture' | 'booking' | 'data';
+type SectionId = 'details' | 'location' | 'media' | 'content' | 'architecture' | 'booking';
 
 const CATEGORIES = [
   'Restaurant', 'Hotel', 'Bar', 'Cafe', 'Shopping', 'Museum', 'Gallery',
@@ -42,6 +45,15 @@ const PRICE_LEVELS = [
   { value: 2, label: '$$ - Moderate' },
   { value: 3, label: '$$$ - Expensive' },
   { value: 4, label: '$$$$ - Very Expensive' },
+];
+
+const SECTIONS: { id: SectionId; label: string; icon: React.ReactNode }[] = [
+  { id: 'details', label: 'Details', icon: <Hash size={14} /> },
+  { id: 'location', label: 'Location', icon: <MapPin size={14} /> },
+  { id: 'media', label: 'Media', icon: <ImageIcon size={14} /> },
+  { id: 'content', label: 'Content', icon: <Globe size={14} /> },
+  { id: 'architecture', label: 'Design', icon: <Building2 size={14} /> },
+  { id: 'booking', label: 'Booking', icon: <Phone size={14} /> },
 ];
 
 interface DropdownOptions {
@@ -61,7 +73,7 @@ export function DestinationForm({
   toast,
   onFormChange,
 }: DestinationFormProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('details');
+  const [activeSection, setActiveSection] = useState<SectionId>('details');
   const [formData, setFormData] = useState({
     // Core fields
     slug: destination?.slug || '',
@@ -83,8 +95,8 @@ export function DestinationForm({
     // Media
     image: destination?.image || '',
     // Content
-    description: htmlToPlainText(destination?.description || ''),
-    content: htmlToPlainText(destination?.content || ''),
+    description: destination?.description || '',
+    content: destination?.content || '',
     editorial_summary: destination?.editorial_summary || '',
     // Architecture
     design_firm: destination?.design_firm || '',
@@ -127,6 +139,15 @@ export function DestinationForm({
   const [tagInput, setTagInput] = useState('');
   const [isEnriching, setIsEnriching] = useState(false);
   const formInitializedRef = useRef(false);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Record<SectionId, HTMLDivElement | null>>({
+    details: null,
+    location: null,
+    media: null,
+    content: null,
+    architecture: null,
+    booking: null,
+  });
 
   // Notify parent of form changes (for autosave)
   useEffect(() => {
@@ -161,8 +182,8 @@ export function DestinationForm({
         longitude: destination.longitude || null,
         formatted_address: destination.formatted_address || '',
         image: destination.image || '',
-        description: htmlToPlainText(destination.description || ''),
-        content: htmlToPlainText(destination.content || ''),
+        description: destination.description || '',
+        content: destination.content || '',
         editorial_summary: destination.editorial_summary || '',
         design_firm: destination.design_firm || '',
         architectural_style: destination.architectural_style || '',
@@ -189,7 +210,7 @@ export function DestinationForm({
             const supabase = createClient({ skipValidation: true });
             const { data, error } = await supabase
               .from('destinations')
-              .select('id, slug, name, city, category')
+              .select('id, slug, name, city, category, image')
               .eq('id', destination.parent_destination_id)
               .single();
             if (!error && data) {
@@ -220,15 +241,12 @@ export function DestinationForm({
     }
   }, [destination]);
 
-  // Fetch dropdown options from normalized tables (brands, cities, countries, neighborhoods)
-  // This is more efficient than querying the entire destinations table
+  // Fetch dropdown options from normalized tables
   useEffect(() => {
     const fetchDropdownOptions = async () => {
       setIsLoadingDropdowns(true);
       try {
         const supabase = createClient({ skipValidation: true });
-
-        // Fetch from normalized tables in parallel for better performance
         const [citiesResult, countriesResult, neighborhoodsResult, brandsResult, architectsResult] = await Promise.all([
           supabase.from('cities').select('name').order('name'),
           supabase.from('countries').select('name').order('name'),
@@ -237,21 +255,19 @@ export function DestinationForm({
           supabase.from('architects').select('name').order('name'),
         ]);
 
-        // Extract names from results, filtering out any errors
-        const cities = citiesResult.data?.map(c => c.name).filter(Boolean) || [];
-        const countries = countriesResult.data?.map(c => c.name).filter(Boolean) || [];
-        const neighborhoods = neighborhoodsResult.data?.map(n => n.name).filter(Boolean) || [];
-        const brands = brandsResult.data?.map(b => b.name).filter(Boolean) || [];
-        const architects = architectsResult.data?.map(a => a.name).filter(Boolean) || [];
-
-        setDropdownOptions({ cities, countries, neighborhoods, brands, architects });
+        setDropdownOptions({
+          cities: citiesResult.data?.map(c => c.name).filter(Boolean) || [],
+          countries: countriesResult.data?.map(c => c.name).filter(Boolean) || [],
+          neighborhoods: neighborhoodsResult.data?.map(n => n.name).filter(Boolean) || [],
+          brands: brandsResult.data?.map(b => b.name).filter(Boolean) || [],
+          architects: architectsResult.data?.map(a => a.name).filter(Boolean) || [],
+        });
       } catch (error) {
         console.error('Error fetching dropdown options:', error);
       } finally {
         setIsLoadingDropdowns(false);
       }
     };
-
     fetchDropdownOptions();
   }, []);
 
@@ -265,13 +281,45 @@ export function DestinationForm({
     }
   }, [parentSearchQuery]);
 
+  // Track active section based on scroll position
+  useEffect(() => {
+    const container = mainContentRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollTop = container.scrollTop;
+      let currentSection: SectionId = 'details';
+
+      for (const section of SECTIONS) {
+        const el = sectionRefs.current[section.id];
+        if (el && el.offsetTop - 80 <= scrollTop) {
+          currentSection = section.id;
+        }
+      }
+      setActiveSection(currentSection);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (sectionId: SectionId) => {
+    const el = sectionRefs.current[sectionId];
+    if (el && mainContentRef.current) {
+      mainContentRef.current.scrollTo({
+        top: el.offsetTop - 24,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   const searchParentDestinations = async (query: string) => {
     setIsSearchingParent(true);
     try {
       const supabase = createClient({ skipValidation: true });
       const { data, error } = await supabase
         .from('destinations')
-        .select('id, slug, name, city, category')
+        .select('id, slug, name, city, category, image')
         .is('parent_destination_id', null)
         .or(`name.ilike.%${query}%,city.ilike.%${query}%,slug.ilike.%${query}%`)
         .limit(10);
@@ -381,8 +429,8 @@ export function DestinationForm({
         name: data.name || prev.name,
         city: data.city || prev.city,
         category: data.category || prev.category,
-        description: htmlToPlainText(data.description || prev.description),
-        content: htmlToPlainText(data.content || prev.content),
+        description: data.description || prev.description,
+        content: data.content || prev.content,
         image: data.image || prev.image,
         formatted_address: data.formatted_address || prev.formatted_address,
         phone_number: data.phone_number || prev.phone_number,
@@ -420,7 +468,6 @@ export function DestinationForm({
       longitude: formData.longitude ? Number(formData.longitude) : null,
       rating: formData.rating ? Number(formData.rating) : null,
       price_level: formData.price_level ? Number(formData.price_level) : null,
-      // parent_destination_id is already in formData and kept in sync via UI handlers
       tags: formData.tags.length > 0 ? formData.tags : null,
     };
     await onSave(data);
@@ -485,8 +532,8 @@ export function DestinationForm({
         name: data.name || prev.name,
         city: data.city || prev.city,
         category: data.category || prev.category,
-        description: htmlToPlainText(data.description || ''),
-        content: htmlToPlainText(data.content || ''),
+        description: data.description || '',
+        content: data.content || '',
         image: data.image || prev.image,
         formatted_address: data.formatted_address || prev.formatted_address,
         phone_number: data.phone_number || prev.phone_number,
@@ -515,589 +562,711 @@ export function DestinationForm({
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tagToRemove) }));
   };
 
-  const tabs: { id: TabId; label: string }[] = [
-    { id: 'details', label: 'Details' },
-    { id: 'location', label: 'Location' },
-    { id: 'media', label: 'Media' },
-    { id: 'content', label: 'Content' },
-    { id: 'architecture', label: 'Design' },
-    { id: 'booking', label: 'Booking' },
-    { id: 'data', label: 'Data' },
-  ];
-
   const inputClasses = "w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-shadow";
   const labelClasses = "block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5";
+  const sectionTitleClasses = "text-sm font-semibold text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-100 dark:border-gray-800";
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col h-full">
-      {/* Tab Navigation */}
-      <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
-        <nav className="flex gap-0.5 px-1 min-w-max" aria-label="Tabs">
-          {tabs.map((tab) => (
+    <form onSubmit={handleSubmit} className="flex h-full">
+      {/* Left Sidebar — Section Anchor Nav */}
+      <div className="hidden lg:flex flex-col w-44 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 py-4">
+        <nav className="space-y-0.5 px-2">
+          {SECTIONS.map((section) => (
             <button
-              key={tab.id}
+              key={section.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => scrollToSection(section.id)}
               className={cn(
-                "px-3 py-2.5 text-xs font-medium transition-colors relative whitespace-nowrap",
-                activeTab === tab.id
-                  ? "text-black dark:text-white"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                "w-full flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors text-left",
+                activeSection === section.id
+                  ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/50"
               )}
             >
-              {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-white" />
-              )}
+              <span className={cn(
+                "transition-colors",
+                activeSection === section.id ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-500"
+              )}>
+                {section.icon}
+              </span>
+              {section.label}
             </button>
           ))}
         </nav>
+
+        {/* Data quality section in sidebar */}
+        {destination && (
+          <div className="mt-auto px-3 pt-4 border-t border-gray-200 dark:border-gray-800 mx-2">
+            <div className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Data</div>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Rating</span>
+                <span className="font-medium">{destination.rating ? `${destination.rating}/5` : '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Views</span>
+                <span className="font-medium">{destination.views_count?.toLocaleString() || '0'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Saves</span>
+                <span className="font-medium">{destination.saves_count?.toLocaleString() || '0'}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Details Tab */}
-        {activeTab === 'details' && (
-          <div className="p-5 space-y-5">
-            {/* Name with Google Places */}
-            <div>
-              <label className={labelClasses}>Name</label>
-              <div className="flex gap-2">
-                <GooglePlacesAutocomplete
-                  value={formData.name}
-                  onChange={(value) => setFormData({ ...formData, name: value })}
-                  onPlaceSelect={handlePlaceSelect}
-                  placeholder="Search for a place..."
-                  className={cn(inputClasses, "flex-1")}
-                  types="establishment"
-                />
-                <button
-                  type="button"
-                  onClick={fetchFromGoogle}
-                  disabled={fetchingGoogle || !formData.name.trim()}
-                  className="px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Fetch details from Google"
-                >
-                  {fetchingGoogle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+      {/* Main Content — Stacked Fields */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Scrollable content area */}
+        <div ref={mainContentRef} className="flex-1 overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-6 py-6 space-y-10">
 
-            {/* Slug, Brand */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClasses}>Slug</label>
-                <input type="text" required value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="url-slug" className={inputClasses} />
-              </div>
-              <div>
-                <label className={labelClasses}>Brand</label>
-                <SearchableSelect
-                  value={formData.brand}
-                  onChange={(value) => setFormData({ ...formData, brand: value })}
-                  options={dropdownOptions.brands}
-                  placeholder="Select brand..."
-                  allowCustomValue
-                  isLoading={isLoadingDropdowns}
-                />
-              </div>
-            </div>
-
-            {/* Design Firm */}
-            <div>
-              <label className={labelClasses}>Design Firm</label>
-              <SearchableMultiSelect
-                values={formData.design_firm ? formData.design_firm.split(', ').filter(Boolean) : []}
-                onChange={(values) => setFormData({ ...formData, design_firm: values.join(', ') })}
-                options={dropdownOptions.architects}
-                placeholder="Search or add design firms..."
-                allowCustomValue
-                isLoading={isLoadingDropdowns}
-              />
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className={labelClasses}>Category</label>
-              <div className="relative">
-                <button type="button" onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className={cn(inputClasses, "text-left flex items-center justify-between")}>
-                  <span className={formData.category ? "" : "text-gray-400"}>{formData.category || "Select..."}</span>
-                  <ChevronDown className={cn("h-4 w-4 text-gray-400 transition-transform", showCategoryDropdown && "rotate-180")} />
-                </button>
-                {showCategoryDropdown && (
-                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {CATEGORIES.map((cat) => (
-                      <button key={cat} type="button"
-                        onClick={() => { setFormData({ ...formData, category: cat }); setShowCategoryDropdown(false); }}
-                        className={cn("w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800",
-                          formData.category === cat && "bg-gray-50 dark:bg-gray-800 font-medium")}>
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Micro Description */}
-            <div>
-              <label className={labelClasses}>Micro Description</label>
-              <input type="text" value={formData.micro_description}
-                onChange={(e) => setFormData({ ...formData, micro_description: e.target.value })}
-                placeholder="Short tagline for cards (50-100 chars)" className={inputClasses} maxLength={150} />
-              <div className="mt-1 text-right text-xs text-gray-400">{formData.micro_description.length}/150</div>
-            </div>
-
-            {/* Tags */}
-            <div>
-              <label className={labelClasses}>Tags</label>
-              <div className="flex gap-2 mb-2">
-                <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-                  placeholder="Add a tag..." className={cn(inputClasses, "flex-1")} />
-                <button type="button" onClick={addTag}
-                  className="px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <Tag className="h-4 w-4" />
-                </button>
-              </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {formData.tags.map((tag) => (
-                    <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-                      {tag}
-                      <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Parent Destination */}
-            <div>
-              <label className={labelClasses}>Parent Destination</label>
-              <div className="relative">
-                {selectedParent ? (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      <div>
-                        <div className="text-sm font-medium">{selectedParent.name}</div>
-                        <div className="text-xs text-gray-500">{selectedParent.city}</div>
-                      </div>
-                    </div>
-                    <button type="button" onClick={() => { setSelectedParent(null); setFormData({ ...formData, parent_destination_id: null }); }}
-                      className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
-                      <X className="h-4 w-4 text-gray-500" />
+            {/* ─── DETAILS SECTION ─── */}
+            <div ref={el => { sectionRefs.current.details = el; }}>
+              <h3 className={sectionTitleClasses}>Details</h3>
+              <div className="space-y-5">
+                {/* Name with Google Places */}
+                <div>
+                  <label className={labelClasses}>Name</label>
+                  <div className="flex gap-2">
+                    <GooglePlacesAutocomplete
+                      value={formData.name}
+                      onChange={(value) => setFormData({ ...formData, name: value })}
+                      onPlaceSelect={handlePlaceSelect}
+                      placeholder="Search for a place..."
+                      className={cn(inputClasses, "flex-1")}
+                      types="establishment"
+                    />
+                    <button
+                      type="button"
+                      onClick={fetchFromGoogle}
+                      disabled={fetchingGoogle || !formData.name.trim()}
+                      className="px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Fetch details from Google"
+                    >
+                      {fetchingGoogle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     </button>
                   </div>
-                ) : (
-                  <>
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input type="text" value={parentSearchQuery} onChange={(e) => setParentSearchQuery(e.target.value)}
-                      placeholder="Search parent venue..." className={cn(inputClasses, "pl-9")} />
-                    {isSearchingParent && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />}
-                    {parentSearchResults.length > 0 && (
+                </div>
+
+                {/* Slug, Brand */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClasses}>Slug</label>
+                    <input type="text" required value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                      placeholder="url-slug" className={inputClasses} />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Brand</label>
+                    <SearchableSelect
+                      value={formData.brand}
+                      onChange={(value) => setFormData({ ...formData, brand: value })}
+                      options={dropdownOptions.brands}
+                      placeholder="Select brand..."
+                      allowCustomValue
+                      isLoading={isLoadingDropdowns}
+                    />
+                  </div>
+                </div>
+
+                {/* Design Firm */}
+                <div>
+                  <label className={labelClasses}>Design Firm</label>
+                  <SearchableMultiSelect
+                    values={formData.design_firm ? formData.design_firm.split(', ').filter(Boolean) : []}
+                    onChange={(values) => setFormData({ ...formData, design_firm: values.join(', ') })}
+                    options={dropdownOptions.architects}
+                    placeholder="Search or add design firms..."
+                    allowCustomValue
+                    isLoading={isLoadingDropdowns}
+                  />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className={labelClasses}>Category</label>
+                  <div className="relative">
+                    <button type="button" onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      className={cn(inputClasses, "text-left flex items-center justify-between")}>
+                      <span className={formData.category ? "" : "text-gray-400"}>{formData.category || "Select..."}</span>
+                      <ChevronDown className={cn("h-4 w-4 text-gray-400 transition-transform", showCategoryDropdown && "rotate-180")} />
+                    </button>
+                    {showCategoryDropdown && (
                       <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {parentSearchResults.map((parent) => (
-                          <button key={parent.id} type="button"
-                            onClick={() => { setSelectedParent(parent); setFormData({ ...formData, parent_destination_id: parent.id ?? null }); setParentSearchQuery(''); setParentSearchResults([]); }}
-                            className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <div className="text-sm font-medium">{parent.name}</div>
-                            <div className="text-xs text-gray-500">{parent.city} · {parent.category}</div>
+                        {CATEGORIES.map((cat) => (
+                          <button key={cat} type="button"
+                            onClick={() => { setFormData({ ...formData, category: cat }); setShowCategoryDropdown(false); }}
+                            className={cn("w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800",
+                              formData.category === cat && "bg-gray-50 dark:bg-gray-800 font-medium")}>
+                            {cat}
                           </button>
                         ))}
                       </div>
                     )}
-                  </>
+                  </div>
+                </div>
+
+                {/* Micro Description with character count */}
+                <div>
+                  <label className={labelClasses}>Micro Description</label>
+                  <input type="text" value={formData.micro_description}
+                    onChange={(e) => setFormData({ ...formData, micro_description: e.target.value })}
+                    placeholder="Short tagline for cards (50-100 chars)" className={inputClasses} maxLength={150} />
+                  <div className="mt-1 text-right text-xs text-gray-400">{formData.micro_description.length}/150</div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className={labelClasses}>Tags</label>
+                  <div className="flex gap-2 mb-2">
+                    <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                      placeholder="Add a tag..." className={cn(inputClasses, "flex-1")} />
+                    <button type="button" onClick={addTag}
+                      className="px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <Tag className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {formData.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {formData.tags.map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                          {tag}
+                          <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Parent Destination — Reference Field with Preview */}
+                <div>
+                  <label className={labelClasses}>Parent Destination</label>
+                  <div className="relative">
+                    {selectedParent ? (
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                        {/* Thumbnail preview */}
+                        {(selectedParent as Destination & { image?: string }).image ? (
+                          <img
+                            src={(selectedParent as Destination & { image?: string }).image!}
+                            alt={selectedParent.name}
+                            className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                            <MapPin className="h-4 w-4 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{selectedParent.name}</div>
+                          <div className="text-xs text-gray-500">{selectedParent.city} · {selectedParent.category}</div>
+                        </div>
+                        <button type="button" onClick={() => { setSelectedParent(null); setFormData({ ...formData, parent_destination_id: null }); }}
+                          className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg flex-shrink-0">
+                          <X className="h-4 w-4 text-gray-500" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input type="text" value={parentSearchQuery} onChange={(e) => setParentSearchQuery(e.target.value)}
+                          placeholder="Search parent venue..." className={cn(inputClasses, "pl-9")} />
+                        {isSearchingParent && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />}
+                        {parentSearchResults.length > 0 && (
+                          <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                            {parentSearchResults.map((parent) => (
+                              <button key={parent.id} type="button"
+                                onClick={() => { setSelectedParent(parent); setFormData({ ...formData, parent_destination_id: parent.id ?? null }); setParentSearchQuery(''); setParentSearchResults([]); }}
+                                className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3">
+                                {/* Search result with thumbnail */}
+                                {(parent as Destination & { image?: string }).image ? (
+                                  <img
+                                    src={(parent as Destination & { image?: string }).image!}
+                                    alt={parent.name}
+                                    className="w-8 h-8 rounded-md object-cover flex-shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                    <MapPin className="h-3 w-3 text-gray-400" />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium truncate">{parent.name}</div>
+                                  <div className="text-xs text-gray-500">{parent.city} · {parent.category}</div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Badges & Recognition */}
+                <div className="space-y-3">
+                  <label className={labelClasses}>Badges & Recognition</label>
+                  {/* Michelin Stars */}
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">Michelin Stars</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[0, 1, 2, 3].map((stars) => (
+                        <button key={stars} type="button"
+                          onClick={() => { setFormData({ ...formData, michelin_stars: stars || null, category: stars > 0 ? 'Restaurant' : formData.category }); }}
+                          className={cn("w-8 h-8 rounded-md text-sm font-medium transition-colors",
+                            (formData.michelin_stars || 0) === stars
+                              ? "bg-black dark:bg-white text-white dark:text-black"
+                              : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700")}>
+                          {stars}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Crown */}
+                  <button type="button" onClick={() => setFormData({ ...formData, crown: !formData.crown })}
+                    className={cn("w-full flex items-center justify-between p-3 rounded-lg border transition-colors",
+                      formData.crown ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
+                        : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800")}>
+                    <div className="flex items-center gap-2">
+                      <Crown className={cn("h-4 w-4", formData.crown ? "text-amber-500" : "text-gray-500")} />
+                      <span className="text-sm">Featured (Crown)</span>
+                    </div>
+                    <div className={cn("w-10 h-6 rounded-full relative transition-colors",
+                      formData.crown ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600")}>
+                      <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
+                        formData.crown ? "translate-x-5" : "translate-x-1")} />
+                    </div>
+                  </button>
+                </div>
+
+                {/* AI Enrichment */}
+                {destination && (
+                  <div>
+                    <label className={labelClasses}>AI Enrichment</label>
+                    <button type="button" onClick={handleEnrich}
+                      disabled={isEnriching || !formData.slug || !formData.name || !formData.city}
+                      className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-md flex items-center justify-center">
+                          <Star className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-sm font-medium">Enrich with AI</div>
+                          <div className="text-xs text-gray-500">Fetch Google Places data & generate tags</div>
+                        </div>
+                      </div>
+                      {isEnriching ? <Loader2 className="h-4 w-4 animate-spin text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-400 -rotate-90" />}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Badges */}
-            <div className="space-y-3">
-              <label className={labelClasses}>Badges & Recognition</label>
-              {/* Michelin Stars */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">Michelin Stars</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  {[0, 1, 2, 3].map((stars) => (
-                    <button key={stars} type="button"
-                      onClick={() => { setFormData({ ...formData, michelin_stars: stars || null, category: stars > 0 ? 'Restaurant' : formData.category }); }}
-                      className={cn("w-8 h-8 rounded-md text-sm font-medium transition-colors",
-                        (formData.michelin_stars || 0) === stars
-                          ? "bg-black dark:bg-white text-white dark:text-black"
-                          : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700")}>
-                      {stars}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {/* Crown */}
-              <button type="button" onClick={() => setFormData({ ...formData, crown: !formData.crown })}
-                className={cn("w-full flex items-center justify-between p-3 rounded-lg border transition-colors",
-                  formData.crown ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-                    : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800")}>
-                <div className="flex items-center gap-2">
-                  <Crown className={cn("h-4 w-4", formData.crown ? "text-amber-500" : "text-gray-500")} />
-                  <span className="text-sm">Featured (Crown)</span>
-                </div>
-                <div className={cn("w-10 h-6 rounded-full relative transition-colors",
-                  formData.crown ? "bg-amber-500" : "bg-gray-300 dark:bg-gray-600")}>
-                  <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
-                    formData.crown ? "translate-x-5" : "translate-x-1")} />
-                </div>
-              </button>
-            </div>
-
-            {/* AI Enrichment */}
-            {destination && (
-              <div>
-                <label className={labelClasses}>AI Enrichment</label>
-                <button type="button" onClick={handleEnrich}
-                  disabled={isEnriching || !formData.slug || !formData.name || !formData.city}
-                  className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-md flex items-center justify-center">
-                      <Star className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium">Enrich with AI</div>
-                      <div className="text-xs text-gray-500">Fetch Google Places data & generate tags</div>
-                    </div>
+            {/* ─── LOCATION SECTION ─── */}
+            <div ref={el => { sectionRefs.current.location = el; }}>
+              <h3 className={sectionTitleClasses}>Location</h3>
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClasses}>City</label>
+                    <SearchableSelect
+                      value={formData.city}
+                      onChange={(value) => setFormData({ ...formData, city: value })}
+                      options={dropdownOptions.cities}
+                      placeholder="Select city..."
+                      allowCustomValue
+                      isLoading={isLoadingDropdowns}
+                    />
                   </div>
-                  {isEnriching ? <Loader2 className="h-4 w-4 animate-spin text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-400 -rotate-90" />}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Location Tab */}
-        {activeTab === 'location' && (
-          <div className="p-5 space-y-5">
-            {/* City, Neighborhood */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClasses}>City</label>
-                <SearchableSelect
-                  value={formData.city}
-                  onChange={(value) => setFormData({ ...formData, city: value })}
-                  options={dropdownOptions.cities}
-                  placeholder="Select city..."
-                  allowCustomValue
-                  isLoading={isLoadingDropdowns}
-                />
-              </div>
-              <div>
-                <label className={labelClasses}>Neighborhood</label>
-                <SearchableSelect
-                  value={formData.neighborhood}
-                  onChange={(value) => setFormData({ ...formData, neighborhood: value })}
-                  options={dropdownOptions.neighborhoods}
-                  placeholder="Select neighborhood..."
-                  allowCustomValue
-                  isLoading={isLoadingDropdowns}
-                />
-              </div>
-            </div>
-            <div>
-              <label className={labelClasses}>Formatted Address</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input type="text" value={formData.formatted_address}
-                  onChange={(e) => setFormData({ ...formData, formatted_address: e.target.value })}
-                  placeholder="123 Main St, City, Country" className={cn(inputClasses, "pl-9")} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClasses}>Latitude</label>
-                <div className="relative">
-                  <Compass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="number" step="any" value={formData.latitude || ''}
-                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
-                    placeholder="35.6762" className={cn(inputClasses, "pl-9")} />
+                  <div>
+                    <label className={labelClasses}>Neighborhood</label>
+                    <SearchableSelect
+                      value={formData.neighborhood}
+                      onChange={(value) => setFormData({ ...formData, neighborhood: value })}
+                      options={dropdownOptions.neighborhoods}
+                      placeholder="Select neighborhood..."
+                      allowCustomValue
+                      isLoading={isLoadingDropdowns}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className={labelClasses}>Longitude</label>
-                <div className="relative">
-                  <Compass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="number" step="any" value={formData.longitude || ''}
-                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
-                    placeholder="139.6503" className={cn(inputClasses, "pl-9")} />
-                </div>
-              </div>
-            </div>
-            {formData.latitude && formData.longitude && (
-              <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
-                <a href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                  <ExternalLink className="h-4 w-4" />
-                  View on Google Maps
-                </a>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Media Tab */}
-        {activeTab === 'media' && (
-          <div className="p-5 space-y-5">
-            <div>
-              <label className={labelClasses}>Image</label>
-              <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-                className={cn("relative border-2 border-dashed rounded-xl transition-all cursor-pointer overflow-hidden",
-                  isDragging ? "border-black dark:border-white bg-gray-50 dark:bg-gray-900"
-                    : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700")}>
-                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="image-upload-input" />
-                <label htmlFor="image-upload-input" className="block cursor-pointer">
-                  {imagePreview ? (
-                    <div className="relative aspect-video">
-                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">Click to change</span>
-                      </div>
-                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImageFile(null); setImagePreview(null); setFormData({ ...formData, image: '' }); }}
-                        className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full">
-                        <X className="h-4 w-4" />
-                      </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClasses}>Country</label>
+                    <SearchableSelect
+                      value={formData.country}
+                      onChange={(value) => setFormData({ ...formData, country: value })}
+                      options={dropdownOptions.countries}
+                      placeholder="Select country..."
+                      allowCustomValue
+                      isLoading={isLoadingDropdowns}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Price Level</label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <select value={formData.price_level || ''}
+                        onChange={(e) => setFormData({ ...formData, price_level: e.target.value ? parseInt(e.target.value) : null })}
+                        className={cn(inputClasses, "pl-9")}>
+                        <option value="">Not set</option>
+                        {PRICE_LEVELS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                      </select>
                     </div>
-                  ) : (
-                    <div className="py-12 px-6 flex flex-col items-center justify-center text-center">
-                      <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center mb-3">
-                        <ImageIcon className="h-6 w-6 text-gray-400" />
-                      </div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Drop an image here</p>
-                      <p className="text-xs text-gray-500">or click to browse</p>
-                    </div>
-                  )}
-                </label>
-              </div>
-              {uploadingImage && <div className="mt-2 flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" /><span>Uploading...</span></div>}
-            </div>
-            <div>
-              <label className={labelClasses}>Or paste image URL</label>
-              <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input type="url" value={formData.image}
-                  onChange={(e) => { setFormData({ ...formData, image: e.target.value }); if (!imageFile) setImagePreview(e.target.value || null); }}
-                  placeholder="https://..." className={cn(inputClasses, "pl-9")} />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); setFormData({ ...formData, image: '' }); }}
-                disabled={!imagePreview && !formData.image}
-                className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50">
-                Clear Image
-              </button>
-              <label className="flex-1">
-                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                <span className="flex items-center justify-center gap-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
-                  <Upload className="h-4 w-4" />Upload New
-                </span>
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* Content Tab */}
-        {activeTab === 'content' && (
-          <div className="p-5 space-y-5">
-            <div>
-              <label className={labelClasses}>Short Description</label>
-              <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3} className={cn(inputClasses, "resize-none")} placeholder="A brief description (1-2 sentences)" />
-              <div className="mt-1 text-right text-xs text-gray-400">{formData.description.length} chars</div>
-            </div>
-            <div>
-              <label className={labelClasses}>Full Content</label>
-              <textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={10} className={cn(inputClasses, "resize-y min-h-[200px]")}
-                placeholder="Detailed description, what makes it special, atmosphere, best time to visit..." />
-              <div className="mt-1 text-right text-xs text-gray-400">{formData.content.length} chars</div>
-            </div>
-            <div>
-              <label className={labelClasses}>Editorial Summary</label>
-              <textarea value={formData.editorial_summary} onChange={(e) => setFormData({ ...formData, editorial_summary: e.target.value })}
-                rows={3} className={cn(inputClasses, "resize-none")} placeholder="Brief editorial summary" />
-            </div>
-          </div>
-        )}
-
-        {/* Architecture Tab */}
-        {activeTab === 'architecture' && (
-          <div className="p-5 space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className={labelClasses}>Architectural Style</label>
-                <input type="text" value={formData.architectural_style} onChange={(e) => setFormData({ ...formData, architectural_style: e.target.value })}
-                  placeholder="Brutalism, Art Deco..." className={inputClasses} />
-              </div>
-              <div>
-                <label className={labelClasses}>Design Period</label>
-                <input type="text" value={formData.design_period} onChange={(e) => setFormData({ ...formData, design_period: e.target.value })}
-                  placeholder="1960s, Contemporary..." className={inputClasses} />
-              </div>
-              <div>
-                <label className={labelClasses}>Construction Year</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="number" min="1000" max="2100" value={formData.construction_year || ''}
-                    onChange={(e) => setFormData({ ...formData, construction_year: e.target.value ? parseInt(e.target.value) : null })}
-                    placeholder="2020" className={cn(inputClasses, "pl-9")} />
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className={labelClasses}>Architectural Significance</label>
-              <textarea value={formData.architectural_significance} onChange={(e) => setFormData({ ...formData, architectural_significance: e.target.value })}
-                rows={3} className={cn(inputClasses, "resize-none")} placeholder="Why this matters architecturally..." />
-            </div>
-            <div>
-              <label className={labelClasses}>Design Story</label>
-              <textarea value={formData.design_story} onChange={(e) => setFormData({ ...formData, design_story: e.target.value })}
-                rows={5} className={cn(inputClasses, "resize-y")} placeholder="Narrative about the design..." />
-            </div>
-          </div>
-        )}
-
-        {/* Booking Tab */}
-        {activeTab === 'booking' && (
-          <div className="p-5 space-y-5">
-            <div>
-              <label className={labelClasses}>Website</label>
-              <div className="relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input type="url" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  placeholder="https://example.com" className={cn(inputClasses, "pl-9")} />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClasses}>Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="tel" value={formData.phone_number} onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                    placeholder="+1 234 567 8900" className={cn(inputClasses, "pl-9")} />
-                </div>
-              </div>
-              <div>
-                <label className={labelClasses}>Instagram Handle</label>
-                <div className="relative">
-                  <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input type="text" value={formData.instagram_handle} onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
-                    placeholder="username" className={cn(inputClasses, "pl-9")} />
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className={labelClasses}>Google Maps URL</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input type="url" value={formData.google_maps_url} onChange={(e) => setFormData({ ...formData, google_maps_url: e.target.value })}
-                  placeholder="https://maps.google.com/..." className={cn(inputClasses, "pl-9")} />
-              </div>
-            </div>
-            <div className="border-t border-gray-200 dark:border-gray-800 pt-5">
-              <label className={cn(labelClasses, "mb-3")}>Reservation Links</label>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">OpenTable</label>
-                  <input type="url" value={formData.opentable_url} onChange={(e) => setFormData({ ...formData, opentable_url: e.target.value })}
-                    placeholder="https://opentable.com/..." className={inputClasses} />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Resy</label>
-                  <input type="url" value={formData.resy_url} onChange={(e) => setFormData({ ...formData, resy_url: e.target.value })}
-                    placeholder="https://resy.com/..." className={inputClasses} />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Other Booking URL</label>
-                  <input type="url" value={formData.booking_url} onChange={(e) => setFormData({ ...formData, booking_url: e.target.value })}
-                    placeholder="https://..." className={inputClasses} />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Data Tab (Read-only enrichment) */}
-        {activeTab === 'data' && (
-          <div className="p-5 space-y-5">
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <p className="text-xs text-gray-500 mb-3">This data is typically populated from Google Places API enrichment.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClasses}>Rating</label>
-                  <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 text-amber-500" />
-                    <input type="number" step="0.1" min="0" max="5" value={formData.rating || ''}
-                      onChange={(e) => setFormData({ ...formData, rating: e.target.value ? parseFloat(e.target.value) : null })}
-                      placeholder="4.5" className={inputClasses} />
                   </div>
                 </div>
                 <div>
-                  <label className={labelClasses}>Price Level</label>
+                  <label className={labelClasses}>Formatted Address</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <select value={formData.price_level || ''}
-                      onChange={(e) => setFormData({ ...formData, price_level: e.target.value ? parseInt(e.target.value) : null })}
-                      className={cn(inputClasses, "pl-9")}>
-                      <option value="">Not set</option>
-                      {PRICE_LEVELS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                    </select>
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="text" value={formData.formatted_address}
+                      onChange={(e) => setFormData({ ...formData, formatted_address: e.target.value })}
+                      placeholder="123 Main St, City, Country" className={cn(inputClasses, "pl-9")} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClasses}>Latitude</label>
+                    <div className="relative">
+                      <Compass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input type="number" step="any" value={formData.latitude || ''}
+                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                        placeholder="35.6762" className={cn(inputClasses, "pl-9")} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Longitude</label>
+                    <div className="relative">
+                      <Compass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input type="number" step="any" value={formData.longitude || ''}
+                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                        placeholder="139.6503" className={cn(inputClasses, "pl-9")} />
+                    </div>
+                  </div>
+                </div>
+                {formData.latitude && formData.longitude && (
+                  <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <a href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                      <ExternalLink className="h-4 w-4" />
+                      View on Google Maps
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ─── MEDIA SECTION ─── */}
+            <div ref={el => { sectionRefs.current.media = el; }}>
+              <h3 className={sectionTitleClasses}>Media</h3>
+              <div className="space-y-5">
+                <div>
+                  <label className={labelClasses}>Image</label>
+                  <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                    className={cn("relative border-2 border-dashed rounded-xl transition-all cursor-pointer overflow-hidden",
+                      isDragging ? "border-black dark:border-white bg-gray-50 dark:bg-gray-900"
+                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700")}>
+                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="image-upload-input" />
+                    <label htmlFor="image-upload-input" className="block cursor-pointer">
+                      {imagePreview ? (
+                        <div className="relative aspect-video">
+                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="text-white text-sm font-medium">Click to change</span>
+                          </div>
+                          <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setImageFile(null); setImagePreview(null); setFormData({ ...formData, image: '' }); }}
+                            className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="py-12 px-6 flex flex-col items-center justify-center text-center">
+                          <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center mb-3">
+                            <ImageIcon className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Drop an image here</p>
+                          <p className="text-xs text-gray-500">or click to browse</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                  {uploadingImage && <div className="mt-2 flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" /><span>Uploading...</span></div>}
+                </div>
+                <div>
+                  <label className={labelClasses}>Or paste image URL</label>
+                  <div className="relative">
+                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="url" value={formData.image}
+                      onChange={(e) => { setFormData({ ...formData, image: e.target.value }); if (!imageFile) setImagePreview(e.target.value || null); }}
+                      placeholder="https://..." className={cn(inputClasses, "pl-9")} />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); setFormData({ ...formData, image: '' }); }}
+                    disabled={!imagePreview && !formData.image}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50">
+                    Clear Image
+                  </button>
+                  <label className="flex-1">
+                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                    <span className="flex items-center justify-center gap-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                      <Upload className="h-4 w-4" />Upload New
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── CONTENT SECTION — Rich Text Editors ─── */}
+            <div ref={el => { sectionRefs.current.content = el; }}>
+              <h3 className={sectionTitleClasses}>Content</h3>
+              <div className="space-y-6">
+                <div>
+                  <label className={labelClasses}>Short Description</label>
+                  <RichTextEditor
+                    content={formData.description}
+                    onChange={(html) => setFormData(prev => ({ ...prev, description: html }))}
+                    placeholder="A brief description (1-2 sentences)"
+                    minHeight={100}
+                  />
+                </div>
+                <div>
+                  <label className={labelClasses}>Full Content</label>
+                  <RichTextEditor
+                    content={formData.content}
+                    onChange={(html) => setFormData(prev => ({ ...prev, content: html }))}
+                    placeholder="Detailed description, what makes it special, atmosphere, best time to visit..."
+                    minHeight={250}
+                  />
+                </div>
+                <div>
+                  <label className={labelClasses}>Editorial Summary</label>
+                  <textarea value={formData.editorial_summary} onChange={(e) => setFormData({ ...formData, editorial_summary: e.target.value })}
+                    rows={3} className={cn(inputClasses, "resize-none")} placeholder="Brief editorial summary" />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── ARCHITECTURE SECTION ─── */}
+            <div ref={el => { sectionRefs.current.architecture = el; }}>
+              <h3 className={sectionTitleClasses}>Design & Architecture</h3>
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className={labelClasses}>Architectural Style</label>
+                    <input type="text" value={formData.architectural_style} onChange={(e) => setFormData({ ...formData, architectural_style: e.target.value })}
+                      placeholder="Brutalism, Art Deco..." className={inputClasses} />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Design Period</label>
+                    <input type="text" value={formData.design_period} onChange={(e) => setFormData({ ...formData, design_period: e.target.value })}
+                      placeholder="1960s, Contemporary..." className={inputClasses} />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Construction Year</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input type="number" min="1000" max="2100" value={formData.construction_year || ''}
+                        onChange={(e) => setFormData({ ...formData, construction_year: e.target.value ? parseInt(e.target.value) : null })}
+                        placeholder="2020" className={cn(inputClasses, "pl-9")} />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClasses}>Architectural Significance</label>
+                  <RichTextEditor
+                    content={formData.architectural_significance}
+                    onChange={(html) => setFormData(prev => ({ ...prev, architectural_significance: html }))}
+                    placeholder="Why this matters architecturally..."
+                    minHeight={100}
+                  />
+                </div>
+                <div>
+                  <label className={labelClasses}>Design Story</label>
+                  <RichTextEditor
+                    content={formData.design_story}
+                    onChange={(html) => setFormData(prev => ({ ...prev, design_story: html }))}
+                    placeholder="Narrative about the design..."
+                    minHeight={150}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── BOOKING SECTION ─── */}
+            <div ref={el => { sectionRefs.current.booking = el; }}>
+              <h3 className={sectionTitleClasses}>Booking & Contact</h3>
+              <div className="space-y-5">
+                <div>
+                  <label className={labelClasses}>Website</label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="url" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      placeholder="https://example.com" className={cn(inputClasses, "pl-9")} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClasses}>Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input type="tel" value={formData.phone_number} onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                        placeholder="+1 234 567 8900" className={cn(inputClasses, "pl-9")} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Instagram Handle</label>
+                    <div className="relative">
+                      <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input type="text" value={formData.instagram_handle} onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+                        placeholder="username" className={cn(inputClasses, "pl-9")} />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClasses}>Google Maps URL</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="url" value={formData.google_maps_url} onChange={(e) => setFormData({ ...formData, google_maps_url: e.target.value })}
+                      placeholder="https://maps.google.com/..." className={cn(inputClasses, "pl-9")} />
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-800 pt-5">
+                  <label className={cn(labelClasses, "mb-3")}>Reservation Links</label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">OpenTable</label>
+                      <input type="url" value={formData.opentable_url} onChange={(e) => setFormData({ ...formData, opentable_url: e.target.value })}
+                        placeholder="https://opentable.com/..." className={inputClasses} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Resy</label>
+                      <input type="url" value={formData.resy_url} onChange={(e) => setFormData({ ...formData, resy_url: e.target.value })}
+                        placeholder="https://resy.com/..." className={inputClasses} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Other Booking URL</label>
+                      <input type="url" value={formData.booking_url} onChange={(e) => setFormData({ ...formData, booking_url: e.target.value })}
+                        placeholder="https://..." className={inputClasses} />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            {destination && (
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-500">Place ID</span>
-                  <span className="font-mono text-xs">{destination.place_id || '—'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-500">User Ratings Total</span>
-                  <span>{destination.user_ratings_total?.toLocaleString() || '—'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-500">Views</span>
-                  <span>{destination.views_count?.toLocaleString() || '0'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-500">Saves</span>
-                  <span>{destination.saves_count?.toLocaleString() || '0'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                  <span className="text-gray-500">Last Enriched</span>
-                  <span>{destination.last_enriched_at ? new Date(destination.last_enriched_at).toLocaleDateString() : '—'}</span>
-                </div>
-              </div>
-            )}
+
+            {/* Bottom spacing */}
+            <div className="h-8" />
           </div>
-        )}
+        </div>
+
+        {/* Sticky Action Bar */}
+        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-6 py-3">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <button type="button" onClick={onCancel} disabled={isSaving}
+              className="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50">
+              Cancel
+            </button>
+            <div className="flex items-center gap-3">
+              {destination && (
+                <button type="submit" disabled={isSaving}
+                  className="px-5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2">
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <EyeOff className="h-4 w-4" />}
+                  Save as Draft
+                </button>
+              )}
+              <button type="submit" disabled={isSaving}
+                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50 flex items-center gap-2">
+                {isSaving ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving...</span></> : destination ? <><Eye className="h-4 w-4" /><span>Publish</span></> : 'Create Destination'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Sticky Action Bar */}
-      <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-5 py-4">
-        <div className="flex items-center justify-between">
-          <button type="button" onClick={onCancel} disabled={isSaving}
-            className="px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50">
-            Cancel
-          </button>
-          <button type="submit" disabled={isSaving}
-            className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:opacity-80 disabled:opacity-50 flex items-center gap-2">
-            {isSaving ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving...</span></> : destination ? 'Save Changes' : 'Create Destination'}
-          </button>
+      {/* Right Sidebar — Metadata */}
+      <div className="hidden xl:flex flex-col w-56 flex-shrink-0 border-l border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 p-4 overflow-y-auto">
+        <div className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Metadata</div>
+
+        <div className="space-y-4">
+          {/* Status */}
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Status</div>
+            <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              <span className="text-xs font-medium text-green-700 dark:text-green-400">Published</span>
+            </div>
+          </div>
+
+          {/* Slug */}
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Slug</div>
+            <code className="text-xs font-mono text-gray-700 dark:text-gray-300 break-all">{formData.slug || '—'}</code>
+          </div>
+
+          {/* Category */}
+          <div>
+            <div className="text-xs text-gray-500 mb-1">Category</div>
+            <span className="text-xs font-medium">{formData.category || '—'}</span>
+          </div>
+
+          {/* City */}
+          <div>
+            <div className="text-xs text-gray-500 mb-1">City</div>
+            <span className="text-xs font-medium">{formData.city || '—'}</span>
+          </div>
+
+          {destination && (
+            <>
+              {/* Last Enriched */}
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Last Enriched</div>
+                <span className="text-xs">
+                  {destination.last_enriched_at ? new Date(destination.last_enriched_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                </span>
+              </div>
+
+              {/* Place ID */}
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Place ID</div>
+                <code className="text-[10px] font-mono text-gray-500 break-all">{destination.place_id || '—'}</code>
+              </div>
+
+              {/* Rating */}
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Rating</div>
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 text-amber-500" />
+                  <span className="text-xs font-medium">{destination.rating || '—'}</span>
+                  {destination.user_ratings_total && (
+                    <span className="text-[10px] text-gray-400">({destination.user_ratings_total.toLocaleString()})</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Engagement */}
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-800">
+                <div className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Engagement</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center p-2 bg-white dark:bg-gray-900 rounded-lg">
+                    <div className="text-sm font-semibold">{destination.views_count?.toLocaleString() || '0'}</div>
+                    <div className="text-[10px] text-gray-500">Views</div>
+                  </div>
+                  <div className="text-center p-2 bg-white dark:bg-gray-900 rounded-lg">
+                    <div className="text-sm font-semibold">{destination.saves_count?.toLocaleString() || '0'}</div>
+                    <div className="text-[10px] text-gray-500">Saves</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </form>

@@ -14,7 +14,6 @@ import {
   Sparkles,
   Globe,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { Badge } from '@/ui/badge';
 import { Skeleton } from '@/ui/skeleton';
 import { Progress } from '@/ui/progress';
@@ -42,58 +41,10 @@ export function DashboardOverview() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [
-          { count: totalDestinations },
-          { count: enrichedCount },
-          { count: michelinCount },
-          { count: crownCount },
-          { count: totalSaves },
-          { count: missingImages },
-          { count: missingDescriptions },
-          { count: notEnriched },
-          { count: addedThisWeek },
-          { data: recentDests },
-          { data: allDests },
-          { count: totalUsers },
-        ] = await Promise.all([
-          supabase.from('destinations').select('*', { count: 'exact', head: true }),
-          supabase.from('destinations').select('*', { count: 'exact', head: true }).not('last_enriched_at', 'is', null),
-          supabase.from('destinations').select('*', { count: 'exact', head: true }).gt('michelin_stars', 0),
-          supabase.from('destinations').select('*', { count: 'exact', head: true }).eq('crown', true),
-          supabase.from('saved_places').select('*', { count: 'exact', head: true }),
-          supabase.from('destinations').select('*', { count: 'exact', head: true }).or('image.is.null,image.eq.'),
-          supabase.from('destinations').select('*', { count: 'exact', head: true }).or('description.is.null,description.eq.'),
-          supabase.from('destinations').select('*', { count: 'exact', head: true }).is('last_enriched_at', null),
-          supabase.from('destinations').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
-          supabase.from('destinations').select('name, city, category, slug').order('created_at', { ascending: false }).limit(6),
-          supabase.from('destinations').select('city'),
-          supabase.from('user_preferences').select('*', { count: 'exact', head: true }),
-        ]);
-
-        const cityCount: Record<string, number> = {};
-        allDests?.forEach(d => {
-          if (d.city) cityCount[d.city] = (cityCount[d.city] || 0) + 1;
-        });
-
-        const topCities = Object.entries(cityCount)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 8)
-          .map(([city, count]) => ({ city, count }));
-
-        setStats({
-          totalDestinations: totalDestinations || 0,
-          enrichedDestinations: enrichedCount || 0,
-          michelinSpots: michelinCount || 0,
-          crownPicks: crownCount || 0,
-          totalSaves: totalSaves || 0,
-          activeUsers: totalUsers || 0,
-          missingImages: missingImages || 0,
-          missingDescriptions: missingDescriptions || 0,
-          notEnriched: notEnriched || 0,
-          addedThisWeek: addedThisWeek || 0,
-          recentDestinations: recentDests || [],
-          topCities,
-        });
+        const res = await fetch('/api/admin/dashboard');
+        if (!res.ok) throw new Error('Failed to fetch dashboard stats');
+        const data: DashboardStats = await res.json();
+        setStats(data);
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);
       } finally {

@@ -68,16 +68,34 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [dbStats, setDbStats] = useState<{ records: number; status: string } | null>(null);
 
-  // Load persisted settings
+  // Load persisted settings from API (with localStorage fallback)
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
+    const loadSettings = async () => {
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+          const { settings: saved } = await res.json();
+          if (saved && Object.keys(saved).length > 0) {
+            setSettings(prev => ({ ...prev, ...saved }));
+            // Sync to localStorage as cache
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+            return;
+          }
+        }
+      } catch {
+        // API unavailable — fall back to localStorage
       }
-    } catch {
-      // Use defaults
-    }
+      // Fallback to localStorage
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setSettings(prev => ({ ...prev, ...JSON.parse(stored) }));
+        }
+      } catch {
+        // Use defaults
+      }
+    };
+    loadSettings();
   }, []);
 
   // Fetch DB stats
@@ -103,8 +121,24 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      // Also cache in localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-      await new Promise(resolve => setTimeout(resolve, 400));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      // Fall back to localStorage-only save
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } finally {

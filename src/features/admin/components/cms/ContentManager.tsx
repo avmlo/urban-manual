@@ -211,6 +211,12 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
   // Bulk action states
   const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState<string>('');
+  const [showBulkCityModal, setShowBulkCityModal] = useState(false);
+  const [bulkCitySearch, setBulkCitySearch] = useState('');
+  const [showBulkNeighborhoodModal, setShowBulkNeighborhoodModal] = useState(false);
+  const [bulkNeighborhoodValue, setBulkNeighborhoodValue] = useState('');
+  const [showBulkTagModal, setShowBulkTagModal] = useState(false);
+  const [bulkTagInput, setBulkTagInput] = useState('');
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(new Set(DEFAULT_VISIBLE_COLUMNS));
 
@@ -558,6 +564,91 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     } catch (error) {
       console.error('Bulk crown toggle failed:', error);
       alert('Failed to update crown status');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkCityChange = async (city: string) => {
+    if (selectedItems.size === 0 || !city) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('destinations')
+        .update({ city })
+        .in('id', Array.from(selectedItems));
+
+      if (error) throw error;
+
+      setSelectedItems(new Set());
+      setShowBulkCityModal(false);
+      setBulkCitySearch('');
+      fetchDestinations();
+    } catch (error) {
+      console.error('Bulk city change failed:', error);
+      alert('Failed to update cities');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkNeighborhoodChange = async () => {
+    if (selectedItems.size === 0 || !bulkNeighborhoodValue.trim()) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('destinations')
+        .update({ neighborhood: bulkNeighborhoodValue.trim() })
+        .in('id', Array.from(selectedItems));
+
+      if (error) throw error;
+
+      setSelectedItems(new Set());
+      setShowBulkNeighborhoodModal(false);
+      setBulkNeighborhoodValue('');
+      fetchDestinations();
+    } catch (error) {
+      console.error('Bulk neighborhood change failed:', error);
+      alert('Failed to update neighborhoods');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkAddTags = async () => {
+    if (selectedItems.size === 0 || !bulkTagInput.trim()) return;
+    setBulkActionLoading(true);
+    try {
+      const newTags = bulkTagInput.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (newTags.length === 0) return;
+
+      // Get current tags for selected destinations
+      const { data: dests, error: fetchError } = await supabase
+        .from('destinations')
+        .select('id, tags')
+        .in('id', Array.from(selectedItems));
+
+      if (fetchError) throw fetchError;
+
+      // Update each destination by merging tags
+      const updates = (dests || []).map(dest => {
+        const existingTags: string[] = dest.tags || [];
+        const mergedTags = [...new Set([...existingTags, ...newTags])];
+        return supabase
+          .from('destinations')
+          .update({ tags: mergedTags })
+          .eq('id', dest.id);
+      });
+
+      await Promise.all(updates);
+
+      setSelectedItems(new Set());
+      setShowBulkTagModal(false);
+      setBulkTagInput('');
+      fetchDestinations();
+    } catch (error) {
+      console.error('Bulk tag add failed:', error);
+      alert('Failed to add tags');
     } finally {
       setBulkActionLoading(false);
     }
@@ -993,6 +1084,102 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* City Change */}
+            <Popover open={showBulkCityModal} onOpenChange={setShowBulkCityModal}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" disabled={bulkActionLoading} className="shrink-0">
+                  <MapPin className="w-3.5 h-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">City</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-0" align="start">
+                <Command>
+                  <CommandInput
+                    placeholder="Search cities..."
+                    value={bulkCitySearch}
+                    onValueChange={setBulkCitySearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No city found.</CommandEmpty>
+                    <CommandGroup>
+                      {cities
+                        .filter(c => !bulkCitySearch || c.toLowerCase().includes(bulkCitySearch.toLowerCase()))
+                        .slice(0, 20)
+                        .map((city) => (
+                          <CommandItem
+                            key={city}
+                            onSelect={() => handleBulkCityChange(city)}
+                          >
+                            {city}
+                          </CommandItem>
+                        ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* Neighborhood Change */}
+            <Popover open={showBulkNeighborhoodModal} onOpenChange={setShowBulkNeighborhoodModal}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" disabled={bulkActionLoading} className="shrink-0">
+                  <Globe className="w-3.5 h-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Neighborhood</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-3" align="start">
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Set neighborhood for {selectedItems.size} items:</p>
+                  <Input
+                    value={bulkNeighborhoodValue}
+                    onChange={(e) => setBulkNeighborhoodValue(e.target.value)}
+                    placeholder="Enter neighborhood..."
+                    className="h-8 text-xs"
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleBulkNeighborhoodChange(); } }}
+                  />
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={handleBulkNeighborhoodChange}
+                    disabled={!bulkNeighborhoodValue.trim() || bulkActionLoading}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Tags */}
+            <Popover open={showBulkTagModal} onOpenChange={setShowBulkTagModal}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" disabled={bulkActionLoading} className="shrink-0">
+                  <Tag className="w-3.5 h-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Tags</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-3" align="start">
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Add tags to {selectedItems.size} items:</p>
+                  <Input
+                    value={bulkTagInput}
+                    onChange={(e) => setBulkTagInput(e.target.value)}
+                    placeholder="tag1, tag2, tag3..."
+                    className="h-8 text-xs"
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleBulkAddTags(); } }}
+                  />
+                  <p className="text-[10px] text-gray-400">Separate with commas. Existing tags are preserved.</p>
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={handleBulkAddTags}
+                    disabled={!bulkTagInput.trim() || bulkActionLoading}
+                  >
+                    Add Tags
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {/* Enrich */}
             <Button

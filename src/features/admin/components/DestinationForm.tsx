@@ -53,6 +53,15 @@ interface DropdownOptions {
 }
 
 
+interface ValidationErrors {
+  name?: string;
+  slug?: string;
+  city?: string;
+  category?: string;
+}
+
+const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 export function DestinationForm({
   destination,
   onSave,
@@ -62,6 +71,9 @@ export function DestinationForm({
   onFormChange,
 }: DestinationFormProps) {
   const [activeTab, setActiveTab] = useState<TabId>('details');
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [slugChecking, setSlugChecking] = useState(false);
+  const slugCheckTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [formData, setFormData] = useState({
     // Core fields
     slug: destination?.slug || '',
@@ -404,6 +416,21 @@ export function DestinationForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate all required fields
+    const errors = validateAll();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      // Switch to details tab if errors are there
+      if (errors.name || errors.slug || errors.category) {
+        setActiveTab('details');
+      } else if (errors.city) {
+        setActiveTab('location');
+      }
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     let imageUrl = formData.image;
     if (imageFile) {
       const uploadedUrl = await uploadImage();
@@ -515,6 +542,86 @@ export function DestinationForm({
     setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tagToRemove) }));
   };
 
+  // --- Validation ---
+  const validateField = (field: keyof ValidationErrors, value: string): string | undefined => {
+    switch (field) {
+      case 'name':
+        if (!value.trim()) return 'Name is required';
+        if (value.trim().length < 2) return 'Name must be at least 2 characters';
+        return undefined;
+      case 'slug':
+        if (!value.trim()) return 'Slug is required';
+        if (!SLUG_REGEX.test(value)) return 'Slug must be lowercase letters, numbers, and hyphens only';
+        return undefined;
+      case 'city':
+        if (!value.trim()) return 'City is required';
+        return undefined;
+      case 'category':
+        if (!value.trim()) return 'Category is required';
+        return undefined;
+      default:
+        return undefined;
+    }
+  };
+
+  const validateAll = (): ValidationErrors => {
+    const errors: ValidationErrors = {};
+    const nameErr = validateField('name', formData.name);
+    if (nameErr) errors.name = nameErr;
+    const slugErr = validateField('slug', formData.slug);
+    if (slugErr) errors.slug = slugErr;
+    const cityErr = validateField('city', formData.city);
+    if (cityErr) errors.city = cityErr;
+    const categoryErr = validateField('category', formData.category);
+    if (categoryErr) errors.category = categoryErr;
+    return errors;
+  };
+
+  // Debounced slug uniqueness check
+  const checkSlugUniqueness = (slug: string) => {
+    if (slugCheckTimeout.current) clearTimeout(slugCheckTimeout.current);
+    if (!slug.trim() || !SLUG_REGEX.test(slug)) return;
+
+    slugCheckTimeout.current = setTimeout(async () => {
+      setSlugChecking(true);
+      try {
+        const supabase = createClient({ skipValidation: true });
+        const { data } = await supabase
+          .from('destinations')
+          .select('id')
+          .eq('slug', slug)
+          .maybeSingle();
+
+        if (data && data.id !== destination?.id) {
+          setValidationErrors(prev => ({ ...prev, slug: 'This slug is already in use' }));
+        } else {
+          setValidationErrors(prev => {
+            if (prev.slug === 'This slug is already in use') {
+              const { slug: _, ...rest } = prev;
+              return rest;
+            }
+            return prev;
+          });
+        }
+      } catch {
+        // Non-critical — skip uniqueness check on error
+      } finally {
+        setSlugChecking(false);
+      }
+    }, 500);
+  };
+
+  // Clear field error when value changes
+  const updateFieldWithValidation = (field: keyof ValidationErrors, value: string) => {
+    const error = validateField(field, value);
+    setValidationErrors(prev => {
+      if (error) return { ...prev, [field]: error };
+      const { [field]: _, ...rest } = prev;
+      return rest;
+    });
+    if (field === 'slug') checkSlugUniqueness(value);
+  };
+
   const tabs: { id: TabId; label: string }[] = [
     { id: 'details', label: 'Details' },
     { id: 'location', label: 'Location' },
@@ -527,6 +634,13 @@ export function DestinationForm({
 
   const inputClasses = "w-full px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-shadow";
   const labelClasses = "block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5";
+
+  // Compute which tabs have errors
+  const tabHasError = (tabId: TabId): boolean => {
+    if (tabId === 'details') return !!(validationErrors.name || validationErrors.slug || validationErrors.category);
+    if (tabId === 'location') return !!validationErrors.city;
+    return false;
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
@@ -545,7 +659,10 @@ export function DestinationForm({
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               )}
             >
-              {tab.label}
+              <span className="flex items-center gap-1">
+                {tab.label}
+                {tabHasError(tab.id) && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+              </span>
               {activeTab === tab.id && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-white" />
               )}
@@ -561,14 +678,14 @@ export function DestinationForm({
           <div className="p-5 space-y-5">
             {/* Name with Google Places */}
             <div>
-              <label className={labelClasses}>Name</label>
+              <label className={labelClasses}>Name <span className="text-red-500">*</span></label>
               <div className="flex gap-2">
                 <GooglePlacesAutocomplete
                   value={formData.name}
-                  onChange={(value) => setFormData({ ...formData, name: value })}
+                  onChange={(value) => { setFormData({ ...formData, name: value }); updateFieldWithValidation('name', value); }}
                   onPlaceSelect={handlePlaceSelect}
                   placeholder="Search for a place..."
-                  className={cn(inputClasses, "flex-1")}
+                  className={cn(inputClasses, "flex-1", validationErrors.name && "border-red-400 dark:border-red-500")}
                   types="establishment"
                 />
                 <button
@@ -581,15 +698,20 @@ export function DestinationForm({
                   {fetchingGoogle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </button>
               </div>
+              {validationErrors.name && <p className="mt-1 text-xs text-red-500">{validationErrors.name}</p>}
             </div>
 
             {/* Slug, Brand */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClasses}>Slug</label>
-                <input type="text" required value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="url-slug" className={inputClasses} />
+                <label className={labelClasses}>Slug <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <input type="text" value={formData.slug}
+                    onChange={(e) => { const v = e.target.value; setFormData({ ...formData, slug: v }); updateFieldWithValidation('slug', v); }}
+                    placeholder="url-slug" className={cn(inputClasses, validationErrors.slug && "border-red-400 dark:border-red-500")} />
+                  {slugChecking && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-gray-400" />}
+                </div>
+                {validationErrors.slug && <p className="mt-1 text-xs text-red-500">{validationErrors.slug}</p>}
               </div>
               <div>
                 <label className={labelClasses}>Brand</label>
@@ -619,10 +741,10 @@ export function DestinationForm({
 
             {/* Category */}
             <div>
-              <label className={labelClasses}>Category</label>
+              <label className={labelClasses}>Category <span className="text-red-500">*</span></label>
               <div className="relative">
                 <button type="button" onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className={cn(inputClasses, "text-left flex items-center justify-between")}>
+                  className={cn(inputClasses, "text-left flex items-center justify-between", validationErrors.category && "border-red-400 dark:border-red-500")}>
                   <span className={formData.category ? "" : "text-gray-400"}>{formData.category || "Select..."}</span>
                   <ChevronDown className={cn("h-4 w-4 text-gray-400 transition-transform", showCategoryDropdown && "rotate-180")} />
                 </button>
@@ -630,7 +752,7 @@ export function DestinationForm({
                   <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {CATEGORIES.map((cat) => (
                       <button key={cat} type="button"
-                        onClick={() => { setFormData({ ...formData, category: cat }); setShowCategoryDropdown(false); }}
+                        onClick={() => { setFormData({ ...formData, category: cat }); setShowCategoryDropdown(false); updateFieldWithValidation('category', cat); }}
                         className={cn("w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800",
                           formData.category === cat && "bg-gray-50 dark:bg-gray-800 font-medium")}>
                         {cat}
@@ -639,6 +761,7 @@ export function DestinationForm({
                   </div>
                 )}
               </div>
+              {validationErrors.category && <p className="mt-1 text-xs text-red-500">{validationErrors.category}</p>}
             </div>
 
             {/* Micro Description */}
@@ -785,15 +908,16 @@ export function DestinationForm({
             {/* City, Neighborhood */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClasses}>City</label>
+                <label className={labelClasses}>City <span className="text-red-500">*</span></label>
                 <SearchableSelect
                   value={formData.city}
-                  onChange={(value) => setFormData({ ...formData, city: value })}
+                  onChange={(value) => { setFormData({ ...formData, city: value }); updateFieldWithValidation('city', value); }}
                   options={dropdownOptions.cities}
                   placeholder="Select city..."
                   allowCustomValue
                   isLoading={isLoadingDropdowns}
                 />
+                {validationErrors.city && <p className="mt-1 text-xs text-red-500">{validationErrors.city}</p>}
               </div>
               <div>
                 <label className={labelClasses}>Neighborhood</label>

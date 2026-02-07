@@ -11,11 +11,13 @@ import {
   Users,
   Settings,
   Layers,
+  FileText,
 } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/admin', label: 'Overview', value: 'overview', icon: LayoutDashboard },
   { href: '/admin/destinations', label: 'CMS', value: 'cms', icon: Layers },
+  { href: '/admin/blog', label: 'Blog', value: 'blog', icon: FileText },
   { href: '/admin/analytics', label: 'Analytics', value: 'analytics', icon: BarChart3 },
   { href: '/admin/enrich', label: 'Enrich', value: 'enrich', icon: Sparkles },
   { href: '/admin/users', label: 'Users', value: 'users', icon: Users },

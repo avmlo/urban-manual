@@ -47,6 +47,14 @@ interface MediaItem {
 type ViewMode = 'grid' | 'list';
 
 const BUCKET_NAME = 'media';
+const FOLDERS = ['', 'destinations', 'brands', 'cities', 'general'] as const;
+const FOLDER_LABELS: Record<string, string> = {
+  '': 'All Files',
+  'destinations': 'Destinations',
+  'brands': 'Brands',
+  'cities': 'Cities',
+  'general': 'General',
+};
 
 export function MediaLibrary() {
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -62,6 +70,7 @@ export function MediaLibrary() {
   const [totalCount, setTotalCount] = useState(0);
   const [storageUsed, setStorageUsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [currentFolder, setCurrentFolder] = useState('');
   const { confirm: showConfirm, Dialog: ConfirmDialogComponent } = useConfirmDialog();
 
   const ITEMS_PER_PAGE = viewMode === 'grid' ? 24 : 20;
@@ -77,23 +86,43 @@ export function MediaLibrary() {
     setLoading(true);
     setError(null);
     try {
-      // List files from the media bucket
-      const { data: files, error: listError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .list('', {
-          limit: 1000,
-          sortBy: { column: 'created_at', order: 'desc' },
-        });
+      // If "All Files", fetch from root and all folders; otherwise list from specific folder
+      let allFiles: Array<{ id?: string; name: string; metadata?: { size?: number }; created_at?: string }> = [];
 
-      if (listError) {
-        throw listError;
+      if (currentFolder === '') {
+        // Fetch root and all named folders
+        const results = await Promise.all(
+          FOLDERS.map(folder =>
+            supabase.storage.from(BUCKET_NAME).list(folder || '', {
+              limit: 1000,
+              sortBy: { column: 'created_at', order: 'desc' },
+            })
+          )
+        );
+        for (let i = 0; i < results.length; i++) {
+          const folder = FOLDERS[i];
+          const { data: files } = results[i];
+          if (files) {
+            for (const file of files) {
+              if (file.id && file.name) {
+                allFiles.push({ ...file, name: folder ? `${folder}/${file.name}` : file.name });
+              }
+            }
+          }
+        }
+      } else {
+        const { data: files, error: listError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .list(currentFolder, {
+            limit: 1000,
+            sortBy: { column: 'created_at', order: 'desc' },
+          });
+        if (listError) throw listError;
+        allFiles = (files || []).filter(f => f.id && f.name).map(f => ({ ...f, name: `${currentFolder}/${f.name}` }));
       }
 
-      // Filter out folders (they have no metadata)
-      const validFiles = (files || []).filter(file => file.id && file.name);
-
       // Apply search filter
-      let filteredFiles = validFiles;
+      let filteredFiles = allFiles;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filteredFiles = filteredFiles.filter(file =>
@@ -127,7 +156,7 @@ export function MediaLibrary() {
       setMedia(mediaItems);
 
       // Calculate total storage used
-      const totalSize = validFiles.reduce((acc, file) => acc + (file.metadata?.size || 0), 0);
+      const totalSize = allFiles.reduce((acc, file) => acc + (file.metadata?.size || 0), 0);
       setStorageUsed(totalSize);
     } catch (err) {
       console.error('Failed to fetch media:', err);
@@ -135,7 +164,7 @@ export function MediaLibrary() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, page, ITEMS_PER_PAGE]);
+  }, [searchQuery, page, ITEMS_PER_PAGE, currentFolder]);
 
   useEffect(() => {
     fetchMedia();
@@ -150,7 +179,10 @@ export function MediaLibrary() {
     try {
       for (const file of Array.from(files)) {
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const baseName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        // Upload into the current folder (or root if no folder selected)
+        const uploadFolder = currentFolder || 'general';
+        const fileName = `${uploadFolder}/${baseName}`;
 
         const { error: uploadError } = await supabase.storage
           .from(BUCKET_NAME)
@@ -299,6 +331,23 @@ export function MediaLibrary() {
           </Button>
         </div>
       )}
+
+      {/* Folder Navigation */}
+      <div className="flex items-center gap-1 overflow-x-auto">
+        {FOLDERS.map((folder) => (
+          <button
+            key={folder}
+            onClick={() => { setCurrentFolder(folder); setPage(1); }}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+              currentFolder === folder
+                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            {FOLDER_LABELS[folder]}
+          </button>
+        ))}
+      </div>
 
       {/* Search & View Toggle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

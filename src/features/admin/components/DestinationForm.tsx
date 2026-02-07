@@ -7,6 +7,7 @@ import {
   Globe, Phone, Instagram, ExternalLink, Building2, Compass, Calendar, Tag, DollarSign
 } from 'lucide-react';
 import { htmlToPlainText } from '@/lib/sanitize';
+import { RichTextEditor } from '@/ui/rich-text-editor';
 import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
 import type { Destination } from '@/types/destination';
 import { cn, toTitleCase } from '@/lib/utils';
@@ -86,6 +87,7 @@ export function DestinationForm({
     micro_description: destination?.micro_description || '',
     tags: destination?.tags || [],
     crown: destination?.crown || false,
+    status: destination?.status || 'published',
     michelin_stars: destination?.michelin_stars || null,
     parent_destination_id: destination?.parent_destination_id || null,
     // Location
@@ -96,7 +98,7 @@ export function DestinationForm({
     image: destination?.image || '',
     // Content
     description: htmlToPlainText(destination?.description || ''),
-    content: htmlToPlainText(destination?.content || ''),
+    content: destination?.content || '',  // Preserve HTML for rich text editor
     editorial_summary: destination?.editorial_summary || '',
     // Architecture
     design_firm: destination?.design_firm || '',
@@ -104,7 +106,7 @@ export function DestinationForm({
     design_period: destination?.design_period || '',
     construction_year: destination?.construction_year || null,
     architectural_significance: destination?.architectural_significance || '',
-    design_story: destination?.design_story || '',
+    design_story: destination?.design_story || '',  // Preserve HTML for rich text editor
     // Booking
     website: destination?.website || '',
     phone_number: destination?.phone_number || '',
@@ -116,6 +118,11 @@ export function DestinationForm({
     // Data (read-only but stored)
     rating: destination?.rating || null,
     price_level: destination?.price_level || null,
+    // SEO fields
+    meta_title: destination?.meta_title || '',
+    meta_description: destination?.meta_description || '',
+    canonical_url: destination?.canonical_url || '',
+    noindex: destination?.noindex || false,
   });
 
   const [parentSearchQuery, setParentSearchQuery] = useState('');
@@ -877,6 +884,32 @@ export function DestinationForm({
                     formData.crown ? "translate-x-5" : "translate-x-1")} />
                 </div>
               </button>
+
+              {/* Content Status */}
+              <div>
+                <label className={labelClasses}>Status</label>
+                <div className="flex gap-1">
+                  {(['draft', 'published', 'archived'] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, status: s })}
+                      className={cn(
+                        "flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors capitalize",
+                        formData.status === s
+                          ? s === 'published'
+                            ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400"
+                            : s === 'draft'
+                            ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400"
+                            : "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400"
+                          : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* AI Enrichment */}
@@ -1030,6 +1063,40 @@ export function DestinationForm({
                 </span>
               </label>
             </div>
+            {/* Optimize & Generate Thumbnails */}
+            {(imageFile || formData.image) && destination?.slug && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!imageFile && !formData.image) return;
+                  try {
+                    const fd = new FormData();
+                    if (imageFile) {
+                      fd.append('file', imageFile);
+                    } else if (formData.image) {
+                      // Fetch the image URL and create a file from it
+                      const res = await fetch(formData.image);
+                      const blob = await res.blob();
+                      fd.append('file', blob, 'image.webp');
+                    }
+                    fd.append('destinationSlug', destination.slug);
+
+                    const res = await fetch('/api/admin/optimize-image', { method: 'POST', body: fd });
+                    if (!res.ok) throw new Error('Optimization failed');
+                    const { thumbnail, large } = await res.json();
+                    setFormData(prev => ({ ...prev, image: large }));
+                    setImagePreview(large);
+                    toast.success('Image optimized & thumbnails generated');
+                  } catch {
+                    toast.error('Failed to optimize image');
+                  }
+                }}
+                className="w-full px-3 py-2 text-sm font-medium bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center gap-2"
+              >
+                <ImageIcon className="h-4 w-4" />
+                Optimize & Generate Thumbnails
+              </button>
+            )}
           </div>
         )}
 
@@ -1044,9 +1111,12 @@ export function DestinationForm({
             </div>
             <div>
               <label className={labelClasses}>Full Content</label>
-              <textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={10} className={cn(inputClasses, "resize-y min-h-[200px]")}
-                placeholder="Detailed description, what makes it special, atmosphere, best time to visit..." />
+              <RichTextEditor
+                value={formData.content}
+                onChange={(html) => setFormData({ ...formData, content: html })}
+                rows={10}
+                placeholder="Detailed description, what makes it special, atmosphere, best time to visit..."
+              />
               <div className="mt-1 text-right text-xs text-gray-400">{formData.content.length} chars</div>
             </div>
             <div>
@@ -1088,8 +1158,12 @@ export function DestinationForm({
             </div>
             <div>
               <label className={labelClasses}>Design Story</label>
-              <textarea value={formData.design_story} onChange={(e) => setFormData({ ...formData, design_story: e.target.value })}
-                rows={5} className={cn(inputClasses, "resize-y")} placeholder="Narrative about the design..." />
+              <RichTextEditor
+                value={formData.design_story}
+                onChange={(html) => setFormData({ ...formData, design_story: html })}
+                rows={5}
+                placeholder="Narrative about the design..."
+              />
             </div>
           </div>
         )}
@@ -1154,9 +1228,70 @@ export function DestinationForm({
           </div>
         )}
 
-        {/* Data Tab (Read-only enrichment) */}
+        {/* Data Tab (Read-only enrichment + SEO) */}
         {activeTab === 'data' && (
           <div className="p-5 space-y-5">
+            {/* SEO Section */}
+            <div className="space-y-3">
+              <label className={labelClasses}>SEO</label>
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">
+                  Meta Title <span className="text-gray-300">({(formData.meta_title || '').length}/60)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.meta_title || ''}
+                  onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                  placeholder={formData.name ? `${formData.name} - ${formData.city || ''} | Urban Manual` : 'Auto-generated from name'}
+                  maxLength={200}
+                  className={cn(inputClasses, (formData.meta_title || '').length > 60 && "border-amber-400")}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">
+                  Meta Description <span className="text-gray-300">({(formData.meta_description || '').length}/160)</span>
+                </label>
+                <textarea
+                  value={formData.meta_description || ''}
+                  onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                  placeholder={formData.micro_description || 'Auto-generated from micro description'}
+                  maxLength={500}
+                  rows={3}
+                  className={cn(inputClasses, "resize-none", (formData.meta_description || '').length > 160 && "border-amber-400")}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">Canonical URL</label>
+                <input
+                  type="url"
+                  value={formData.canonical_url || ''}
+                  onChange={(e) => setFormData({ ...formData, canonical_url: e.target.value })}
+                  placeholder="Leave empty for default"
+                  className={inputClasses}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, noindex: !formData.noindex })}
+                className={cn("w-full flex items-center justify-between p-3 rounded-lg border transition-colors",
+                  formData.noindex
+                    ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                    : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800")}
+              >
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm">Exclude from search engines (noindex)</span>
+                </div>
+                <div className={cn("w-10 h-6 rounded-full relative transition-colors",
+                  formData.noindex ? "bg-red-500" : "bg-gray-300 dark:bg-gray-600")}>
+                  <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm",
+                    formData.noindex ? "translate-x-5" : "translate-x-1")} />
+                </div>
+              </button>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-gray-800 pt-5" />
+
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
               <p className="text-xs text-gray-500 mb-3">This data is typically populated from Google Places API enrichment.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/useToast";
 import { ContentManager } from '@/features/admin/components/cms';
 import { DestinationForm } from '@/features/admin/components/DestinationForm';
 import type { Destination } from '@/types/destination';
+import { logAuditEvent, computeChanges } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,11 +84,28 @@ export default function AdminDestinationsPage() {
       const supabase = createClient({ skipValidation: true });
 
       if (editingDestination) {
+        // Snapshot current version before updating
+        const slug = editingDestination.slug;
+        const changes = computeChanges(editingDestination as Record<string, unknown>, data as Record<string, unknown>);
+
         const { error } = await supabase
           .from('destinations')
           .update(data)
-          .eq('slug', editingDestination.slug);
+          .eq('slug', slug);
         if (error) throw error;
+
+        // Log audit trail (non-blocking)
+        logAuditEvent({ action: 'update', slug, changes: changes || undefined });
+
+        // Save version snapshot (non-blocking)
+        if (editingDestination.id) {
+          supabase.from('destination_versions').insert({
+            destination_id: editingDestination.id,
+            version_number: Date.now(),
+            data: editingDestination as unknown as Record<string, unknown>,
+            changed_fields: changes ? Object.keys(changes) : [],
+          }).then(() => {});
+        }
       } else {
         if (!data.slug && data.name) {
           data.slug = data.name.toLowerCase()
@@ -98,6 +116,9 @@ export default function AdminDestinationsPage() {
           .from('destinations')
           .insert([data] as Destination[]);
         if (error) throw error;
+
+        // Log audit trail for creation (non-blocking)
+        logAuditEvent({ action: 'create', slug: data.slug! });
       }
 
       // Close drawer and refresh list (without resetting pagination)

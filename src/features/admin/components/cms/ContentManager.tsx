@@ -39,6 +39,8 @@ import type { Destination } from '@/types/destination';
 import { VALID_CATEGORIES } from '@/lib/categories';
 import { CARD_WRAPPER, CARD_MEDIA, CARD_TITLE, CARD_META } from '@/components/CardStyles';
 import { Input } from '@/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/ui/command';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
 import { Badge } from '@/ui/badge';
@@ -84,6 +86,7 @@ type SortOrder = 'asc' | 'desc';
 type ViewMode = 'table' | 'grid';
 type EnrichedFilter = 'all' | 'enriched' | 'not_enriched';
 type MissingDataFilter = 'all' | 'no_image' | 'no_description' | 'no_content';
+type StatusFilter = 'all' | 'draft' | 'published' | 'archived';
 
 const CATEGORIES = [...VALID_CATEGORIES];
 
@@ -182,6 +185,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
   const [crownOnly, setCrownOnly] = useState(searchParams?.get('crown') === 'true');
   const [michelinOnly, setMichelinOnly] = useState(searchParams?.get('michelin') === 'true');
   const [missingDataFilter, setMissingDataFilter] = useState<MissingDataFilter>((searchParams?.get('missing') as MissingDataFilter) || 'all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>((searchParams?.get('status') as StatusFilter) || 'all');
   const [itemsPerPage, setItemsPerPage] = useState(Number(searchParams?.get('per_page')) || DEFAULT_ITEMS_PER_PAGE);
 
   // Sync state to URL params (debounced)
@@ -202,12 +206,13 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     if (crownOnly) params.set('crown', 'true');
     if (michelinOnly) params.set('michelin', 'true');
     if (missingDataFilter !== 'all') params.set('missing', missingDataFilter);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
     if (itemsPerPage !== DEFAULT_ITEMS_PER_PAGE) params.set('per_page', String(itemsPerPage));
 
     const qs = params.toString();
     const newUrl = qs ? `${pathname}?${qs}` : pathname;
     router.replace(newUrl, { scroll: false });
-  }, [searchQuery, selectedCategory, selectedCity, sortField, sortOrder, page, viewMode, enrichedFilter, crownOnly, michelinOnly, missingDataFilter, itemsPerPage, pathname, router]);
+  }, [searchQuery, selectedCategory, selectedCity, sortField, sortOrder, page, viewMode, enrichedFilter, crownOnly, michelinOnly, missingDataFilter, statusFilter, itemsPerPage, pathname, router]);
   // Bulk action states
   const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState<string>('');
@@ -293,6 +298,11 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
         query = query.or('content.is.null,content.eq.');
       }
 
+      // Status filter
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
       // Sorting
       query = query.order(sortField, { ascending: sortOrder === 'asc' });
 
@@ -314,7 +324,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, selectedCity, sortField, sortOrder, page, enrichedFilter, crownOnly, michelinOnly, missingDataFilter, itemsPerPage]);
+  }, [searchQuery, selectedCategory, selectedCity, sortField, sortOrder, page, enrichedFilter, crownOnly, michelinOnly, missingDataFilter, statusFilter, itemsPerPage]);
 
   useEffect(() => {
     fetchDestinations();
@@ -330,7 +340,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedCategory, selectedCity, enrichedFilter, crownOnly, michelinOnly, missingDataFilter]);
+  }, [searchQuery, selectedCategory, selectedCity, enrichedFilter, crownOnly, michelinOnly, missingDataFilter, statusFilter]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -421,6 +431,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     setCrownOnly(false);
     setMichelinOnly(false);
     setMissingDataFilter('all');
+    setStatusFilter('all');
   };
 
   const toggleColumn = (columnId: ColumnId) => {
@@ -442,7 +453,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     enrichedFilter !== 'all' ||
     crownOnly ||
     michelinOnly ||
-    missingDataFilter !== 'all'
+    missingDataFilter !== 'all' ||
+    statusFilter !== 'all'
   );
 
   const activeFilterCount = [
@@ -452,6 +464,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     crownOnly ? 'crown' : '',
     michelinOnly ? 'michelin' : '',
     missingDataFilter !== 'all' ? missingDataFilter : '',
+    statusFilter !== 'all' ? statusFilter : '',
   ].filter(Boolean).length;
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -943,6 +956,38 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setMissingDataFilter('no_content')} className={missingDataFilter === 'no_content' ? 'font-medium' : ''}>
                     Missing Content
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Content Status Filter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
+                      statusFilter !== 'all'
+                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <FileText className="w-3 h-3" />
+                    <span>{statusFilter === 'all' ? 'All Status' : statusFilter === 'draft' ? 'Draft' : statusFilter === 'published' ? 'Published' : 'Archived'}</span>
+                    <ChevronDown className="w-3 h-3 opacity-50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="rounded-xl">
+                  <DropdownMenuItem onClick={() => setStatusFilter('all')} className={statusFilter === 'all' ? 'font-medium' : ''}>
+                    All Status
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setStatusFilter('published')} className={statusFilter === 'published' ? 'font-medium' : ''}>
+                    Published
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter('draft')} className={statusFilter === 'draft' ? 'font-medium' : ''}>
+                    Draft
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter('archived')} className={statusFilter === 'archived' ? 'font-medium' : ''}>
+                    Archived
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

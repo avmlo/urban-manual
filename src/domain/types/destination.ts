@@ -77,4 +77,11 @@ export interface Destination {
   resy_url?: string | null;
   booking_url?: string | null;
   reservation_phone?: string | null;
+  // Content status
+  status?: 'draft' | 'published' | 'archived';
+  // SEO fields
+  meta_title?: string | null;
+  meta_description?: string | null;
+  canonical_url?: string | null;
+  noindex?: boolean;
 }

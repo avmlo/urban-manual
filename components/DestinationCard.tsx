@@ -18,6 +18,7 @@ interface DestinationCardProps {
   showQuickActions?: boolean;
   className?: string;
   onAddToTrip?: () => void;
+  onSelect?: (destination: Destination, index?: number) => void;
 }
 
 /**
@@ -33,6 +34,7 @@ export const DestinationCard = memo(function DestinationCard({
   showQuickActions = true,
   className = '',
   onAddToTrip,
+  onSelect,
 }: DestinationCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -69,7 +71,11 @@ export const DestinationCard = memo(function DestinationCard({
     e.preventDefault();
     e.stopPropagation();
     // Simply call onClick - Drawer component handles scroll locking without layout shift
-    onClick?.();
+    if (onSelect) {
+      onSelect(destination, index);
+    } else {
+      onClick?.();
+    }
   };
 
   return (

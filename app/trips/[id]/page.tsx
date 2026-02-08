@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, memo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -1508,7 +1508,7 @@ function DaySection({
                     item={item}
                     activityType={hotelActivityType}
                     isEditMode={isEditMode}
-                    onSelect={onSelectItem ? () => onSelectItem(item) : undefined}
+                    onSelect={onSelectItem}
                     onDragEnd={handleReorderComplete}
                   />
                 ) : (
@@ -1516,12 +1516,12 @@ function DaySection({
                     item={item}
                     isExpanded={expandedItemId === item.id}
                     isEditMode={isEditMode}
-                    onToggle={() => onToggleItem(item.id)}
-                    onRemove={() => onRemove(item.id)}
+                    onToggle={onToggleItem}
+                    onRemove={onRemove}
                     onUpdateItem={onUpdateItem}
                     onUpdateTime={onUpdateTime}
                     onDragEnd={handleReorderComplete}
-                    onSelect={onSelectItem ? () => onSelectItem(item) : undefined}
+                    onSelect={onSelectItem}
                   />
                 )}
                 {/* Drop zone after each item */}
@@ -1990,7 +1990,7 @@ function TransportForm({
 /**
  * Hotel activity row - for breakfast, checkout, checkin items (draggable in edit mode)
  */
-function HotelActivityRow({
+const HotelActivityRow = memo(function HotelActivityRow({
   item,
   activityType,
   isEditMode,
@@ -2000,7 +2000,7 @@ function HotelActivityRow({
   item: EnrichedItineraryItem;
   activityType: 'breakfast' | 'checkout' | 'checkin';
   isEditMode?: boolean;
-  onSelect?: () => void;
+  onSelect?: (item: EnrichedItineraryItem) => void;
   onDragEnd?: () => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -2045,7 +2045,7 @@ function HotelActivityRow({
       className={`${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''} ${isDragging ? 'z-50' : ''}`}
     >
       <div
-        onClick={onSelect}
+        onClick={() => onSelect?.(item)}
         className={`
           relative overflow-hidden rounded-2xl cursor-pointer transition-all
           bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]
@@ -2102,12 +2102,12 @@ function HotelActivityRow({
       </div>
     </Reorder.Item>
   );
-}
+});
 
 /**
  * Item row - with inline times and edit button
  */
-function ItemRow({
+const ItemRow = memo(function ItemRow({
   item,
   isExpanded,
   isEditMode,
@@ -2121,12 +2121,12 @@ function ItemRow({
   item: EnrichedItineraryItem;
   isExpanded: boolean;
   isEditMode?: boolean;
-  onToggle: () => void;
-  onRemove?: () => void;
+  onToggle: (id: string) => void;
+  onRemove?: (id: string) => void;
   onUpdateItem: (id: string, updates: Record<string, unknown>) => void;
   onUpdateTime: (id: string, time: string) => void;
   onDragEnd: () => void;
-  onSelect?: () => void;
+  onSelect?: (item: EnrichedItineraryItem) => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -2371,9 +2371,9 @@ function ItemRow({
           onClick={() => {
             const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
             if (isDesktop && onSelect) {
-              onSelect();
+              onSelect(item);
             } else {
-              onToggle();
+              onToggle(item.id);
             }
           }}
         >
@@ -2486,7 +2486,7 @@ function ItemRow({
                 itemType={itemType}
                 onUpdateItem={onUpdateItem}
                 onUpdateTime={onUpdateTime}
-                onClose={onToggle}
+                onClose={() => onToggle(item.id)}
               />
             </motion.div>
           )}
@@ -2512,9 +2512,9 @@ function ItemRow({
         onClick={() => {
           const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
           if (isDesktop && onSelect) {
-            onSelect();
+              onSelect(item);
           } else {
-            onToggle();
+              onToggle(item.id);
           }
         }}
       >
@@ -2613,7 +2613,7 @@ function ItemRow({
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowActions(false);
-                        onToggle();
+                        onToggle(item.id);
                       }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
                     >
@@ -2625,7 +2625,7 @@ function ItemRow({
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowActions(false);
-                          onRemove();
+                          onRemove(item.id);
                         }}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       >
@@ -2662,15 +2662,15 @@ function ItemRow({
               itemType={itemType}
               onUpdateItem={onUpdateItem}
               onUpdateTime={onUpdateTime}
-              onRemove={onRemove}
-              onClose={onToggle}
+              onRemove={onRemove ? () => onRemove(item.id) : undefined}
+              onClose={() => onToggle(item.id)}
             />
           </motion.div>
         )}
       </AnimatePresence>
     </Reorder.Item>
   );
-}
+});
 
 /**
  * Item details - minimal inline edit form for mobile
@@ -2854,7 +2854,7 @@ function ItemDetails({
 /**
  * Travel time between items - shows spare time, travel info, and suggestions
  */
-function TravelTime({
+const TravelTime = memo(function TravelTime({
   from,
   to,
   onUpdateTravelMode,
@@ -3020,7 +3020,7 @@ function TravelTime({
       </button>
     </div>
   );
-}
+});
 
 // Keep WalkingTime as alias for backwards compatibility
 function WalkingTime({ from, to }: { from: EnrichedItineraryItem; to: EnrichedItineraryItem }) {

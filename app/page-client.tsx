@@ -523,6 +523,13 @@ export default function HomePageClient({
     [user?.id]
   );
 
+  const handleDestinationSelect = useCallback((destination: Destination, index?: number) => {
+    openIntelligentDestination(destination);
+    if (typeof index === 'number') {
+      trackDestinationEngagement(destination, "grid", index);
+    }
+  }, [openIntelligentDestination, trackDestinationEngagement]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -3294,14 +3301,7 @@ export default function HomePageClient({
                             <DestinationCard
                               key={destination.slug}
                               destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
+                              onSelect={handleDestinationSelect}
                               index={globalIndex}
                               isVisited={isVisited}
                               showBadges={true}

@@ -103,6 +103,7 @@ export default function TripQuickActions({
           onClick={handleNativeShare}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
           title="Share trip"
+          aria-label="Share trip"
         >
           <Share2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Share</span>
@@ -132,6 +133,7 @@ export default function TripQuickActions({
                   <button
                     onClick={() => setShowShareMenu(false)}
                     className="p-1 text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+                    aria-label="Close share menu"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -143,11 +145,13 @@ export default function TripQuickActions({
                       readOnly
                       value={shareUrl}
                       className="flex-1 px-2 py-1.5 text-xs bg-[var(--editorial-bg)] border border-[var(--editorial-border)] rounded-lg text-[var(--editorial-text-secondary)] truncate"
+                      aria-label="Trip share link"
                     />
                     <button
                       onClick={handleCopyLink}
                       className="p-1.5 text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-accent)] transition-colors"
                       title={copied ? 'Copied!' : 'Copy link'}
+                      aria-label={copied ? 'Copied' : 'Copy link'}
                     >
                       {copied ? (
                         <Check className="w-4 h-4 text-green-500" />
@@ -165,6 +169,7 @@ export default function TripQuickActions({
                       setShowShareMenu(false);
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] rounded-lg transition-colors text-left"
+                    aria-label="Share on X (Twitter)"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Share on X (Twitter)
@@ -183,6 +188,7 @@ export default function TripQuickActions({
           disabled={exporting}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors disabled:opacity-50"
           title="Add to Google Calendar"
+          aria-label="Export to Google Calendar"
         >
           <Calendar className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Export</span>
@@ -194,6 +200,7 @@ export default function TripQuickActions({
         onClick={handlePrint}
         className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors print:hidden"
         title="Print itinerary"
+        aria-label="Print itinerary"
       >
         <Printer className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">Print</span>

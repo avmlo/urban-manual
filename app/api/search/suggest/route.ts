@@ -11,6 +11,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { withErrorHandling } from '@/lib/errors';
 import { sanitizeForIlike } from '@/lib/sanitize';
+import {
+  searchRatelimit,
+  memorySearchRatelimit,
+  enforceRateLimit,
+} from '@/lib/rate-limit';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,6 +25,19 @@ if (!supabaseKey) {
 }
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
+  // Rate limiting (IP-based as this is a public endpoint)
+  const rateLimitResponse = await enforceRateLimit({
+    request,
+    userId: null, // Public endpoint, use IP
+    message: 'Too many search requests',
+    limiter: searchRatelimit,
+    memoryLimiter: memorySearchRatelimit,
+  });
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');

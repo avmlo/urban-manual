@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect, memo } from 'react';
-import Image from 'next/image';
-import { MapPin, Check } from 'lucide-react';
-import { Destination } from '@/types/destination';
-import { capitalizeCity } from '@/lib/utils';
-import { DestinationCardSkeleton } from '@/ui/DestinationCardSkeleton';
-import { DestinationBadges } from './DestinationBadges';
-import { QuickActions } from './QuickActions';
+import { useState, useRef, useEffect, memo } from "react";
+import Image from "next/image";
+import { MapPin, Check } from "lucide-react";
+import { Destination } from "@/types/destination";
+import { capitalizeCity } from "@/lib/utils";
+import { DestinationCardSkeleton } from "@/ui/DestinationCardSkeleton";
+import { DestinationBadges } from "./DestinationBadges";
+import { QuickActions } from "./QuickActions";
 
 interface DestinationCardProps {
   destination: Destination;
@@ -31,21 +31,21 @@ export const DestinationCard = memo(function DestinationCard({
   isVisited = false,
   showBadges = true,
   showQuickActions = true,
-  className = '',
+  className = "",
   onAddToTrip,
 }: DestinationCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const cardRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Intersection Observer for progressive loading
   useEffect(() => {
     if (!cardRef.current) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             setIsInView(true);
             observer.disconnect();
@@ -53,7 +53,7 @@ export const DestinationCard = memo(function DestinationCard({
         });
       },
       {
-        rootMargin: '50px', // Start loading 50px before entering viewport
+        rootMargin: "50px", // Start loading 50px before entering viewport
         threshold: 0.1,
       }
     );
@@ -73,50 +73,56 @@ export const DestinationCard = memo(function DestinationCard({
   };
 
   return (
-    <button
+    <div
       ref={cardRef}
-      onClick={handleClick}
-      type="button"
       className={`
         group relative w-full flex flex-col transition-all duration-300 ease-out
-        cursor-pointer text-left focus-ring
         hover:scale-[1.01]
         active:scale-[0.98]
         ${className}
       `}
-      aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
     >
-        {/* Image Container with Progressive Loading - 16:9 ratio */}
-        <div
-          className={`
+      {/* Main Card Action - Overlay Button */}
+      <button
+        type="button"
+        onClick={handleClick}
+        className="absolute inset-0 z-10 w-full h-full text-left cursor-pointer focus:outline-none rounded-2xl"
+        aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
+      />
+
+      {/* Image Container with Progressive Loading - 16:9 ratio */}
+      <div
+        className={`
             relative aspect-video overflow-hidden rounded-2xl
             bg-[var(--editorial-border)]
             transition-all duration-300 ease-out
             mb-3
-            ${isLoaded ? 'opacity-100' : 'opacity-0'}
+            ${isLoaded ? "opacity-100" : "opacity-0"}
           `}
-        >
+      >
         {/* Skeleton while loading */}
         {!isLoaded && isInView && (
           <div className="absolute inset-0 animate-pulse bg-[var(--editorial-border)]" />
         )}
 
         {/* Actual Image - Use thumbnail for cards, fallback to full image */}
-        {isInView && (destination.image_thumbnail || destination.image) && !imageError ? (
+        {isInView &&
+        (destination.image_thumbnail || destination.image) &&
+        !imageError ? (
           <Image
             src={destination.image_thumbnail || destination.image!}
-            alt={`${destination.name} in ${capitalizeCity(destination.city)}${destination.category ? ` - ${destination.category}` : ''}`}
+            alt={`${destination.name} in ${capitalizeCity(destination.city)}${destination.category ? ` - ${destination.category}` : ""}`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className={`
               object-cover
               transition-all duration-500 ease-out
               group-hover:scale-105
-              ${isLoaded ? 'opacity-100' : 'opacity-0'}
+              ${isLoaded ? "opacity-100" : "opacity-0"}
             `}
             quality={80}
-            loading={index < 6 ? 'eager' : 'lazy'}
-            fetchPriority={index === 0 ? 'high' : 'auto'}
+            loading={index < 6 ? "eager" : "lazy"}
+            fetchPriority={index === 0 ? "high" : "auto"}
             onLoad={() => setIsLoaded(true)}
             onError={() => {
               setImageError(true);
@@ -140,13 +146,13 @@ export const DestinationCard = memo(function DestinationCard({
           `}
         />
 
-        {/* Quick Actions - Top Right on Hover */}
+        {/* Quick Actions - Top Right on Hover/Focus */}
         {showQuickActions && destination.slug && (
           <div
             className={`
               absolute top-2 right-2 z-20
-              opacity-0 group-hover:opacity-100
-              translate-y-1 group-hover:translate-y-0
+              opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+              translate-y-1 group-hover:translate-y-0 group-focus-within:translate-y-0
               transition-all duration-200
             `}
           >
@@ -173,7 +179,7 @@ export const DestinationCard = memo(function DestinationCard({
         {showBadges && (
           <>
             {/* Michelin Stars - Bottom Left */}
-            {typeof destination.michelin_stars === 'number' &&
+            {typeof destination.michelin_stars === "number" &&
               destination.michelin_stars > 0 && (
                 <div
                   className={`
@@ -193,41 +199,44 @@ export const DestinationCard = memo(function DestinationCard({
                   <span>{destination.michelin_stars}</span>
                 </div>
               )}
-
           </>
         )}
       </div>
 
       {/* Info Section */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pointer-events-none">
         <div>
-        <h3
-          className={`
+          <h3
+            className={`
             text-sm font-medium text-[var(--editorial-text-primary)]
               line-clamp-2
             transition-colors duration-200
             group-hover:text-[var(--editorial-text-secondary)]
           `}
-        >
-          {destination.name}
-        </h3>
+          >
+            {destination.name}
+          </h3>
 
-        {/* Micro Description - Always show with fallback, stuck to title */}
-        <div className="text-xs text-[var(--editorial-text-secondary)] line-clamp-1">
-          {destination.micro_description ||
-           (destination.category && destination.city
-             ? `${destination.category} in ${capitalizeCity(destination.city)}`
-             : destination.city
-               ? `Located in ${capitalizeCity(destination.city)}`
-               : destination.category || '')}
-        </div>
-
-        {/* ML Forecasting Badges */}
-        {showBadges && destination.id && (
-          <div className="mt-2">
-            <DestinationBadges destinationId={destination.id} compact={true} showTiming={false} />
+          {/* Micro Description - Always show with fallback, stuck to title */}
+          <div className="text-xs text-[var(--editorial-text-secondary)] line-clamp-1">
+            {destination.micro_description ||
+              (destination.category && destination.city
+                ? `${destination.category} in ${capitalizeCity(destination.city)}`
+                : destination.city
+                  ? `Located in ${capitalizeCity(destination.city)}`
+                  : destination.category || "")}
           </div>
-        )}
+
+          {/* ML Forecasting Badges */}
+          {showBadges && destination.id && (
+            <div className="mt-2">
+              <DestinationBadges
+                destinationId={destination.id}
+                compact={true}
+                showTiming={false}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -238,10 +247,10 @@ export const DestinationCard = memo(function DestinationCard({
           ring-2 ring-offset-2 ring-[var(--editorial-text-primary)]
           opacity-0 focus-within:opacity-100
           transition-opacity duration-200
-          pointer-events-none
+          pointer-events-none rounded-2xl
         `}
       />
-    </button>
+    </div>
   );
 });
 
@@ -256,8 +265,8 @@ export function LazyDestinationCard(props: DestinationCardProps) {
     if (!cardRef.current) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             setShouldRender(true);
             observer.disconnect();
@@ -265,7 +274,7 @@ export function LazyDestinationCard(props: DestinationCardProps) {
         });
       },
       {
-        rootMargin: '100px', // Start loading 100px before entering viewport
+        rootMargin: "100px", // Start loading 100px before entering viewport
         threshold: 0.01,
       }
     );
@@ -287,4 +296,3 @@ export function LazyDestinationCard(props: DestinationCardProps) {
     </div>
   );
 }
-

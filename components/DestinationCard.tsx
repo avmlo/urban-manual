@@ -78,12 +78,12 @@ export const DestinationCard = memo(function DestinationCard({
       onClick={handleClick}
       type="button"
       className={`
-        group relative w-full flex flex-col transition-all duration-300 ease-out
+        destination-card
+        group relative w-full flex flex-col
         cursor-pointer text-left focus-ring
-        hover:scale-[1.01]
-        active:scale-[0.98]
         ${className}
       `}
+      style={{ animationDelay: `${Math.min(index * 0.05, 0.35)}s` }}
       aria-label={`View ${destination.name} in ${capitalizeCity(destination.city)}`}
     >
         {/* Image Container with Progressive Loading - 16:9 ratio */}

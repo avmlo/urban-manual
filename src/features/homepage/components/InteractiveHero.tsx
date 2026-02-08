@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Sparkles, Loader2, X, MapPin, ArrowRight, RefreshCw, Search, Bookmark, CheckCircle, Map } from 'lucide-react';
-import { capitalizeCity, capitalizeCategory } from '@/lib/utils';
+import { Sparkles, Loader2, X, MapPin, ArrowRight, ArrowDown, RefreshCw, Search, Bookmark, CheckCircle, Map } from 'lucide-react';
+import { capitalizeCategory } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHomepageData } from './HomepageDataProvider';
 import { Destination } from '@/types/destination';
 import Image from 'next/image';
-import { getCategoryIconComponent } from '@/lib/icons/category-icons';
+
 import { useRouter } from 'next/navigation';
 import { useTripBuilder } from '@/contexts/TripBuilderContext';
 import AddToTripButton from '@/features/trip/components/AddToTripButton';
@@ -107,17 +107,8 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-const FEATURED_CITIES = ['Taipei', 'Tokyo', 'New York', 'London'];
 
-// AI-style rotating placeholders
-const AI_PLACEHOLDERS = [
-  'Ask me anything about travel...',
-  'Where would you like to go?',
-  'Find restaurants, hotels, or hidden gems...',
-  'Try: "best cafes in Tokyo"',
-  'Try: "romantic dinner in Paris"',
-  'Try: "budget hotels near me"',
-];
+
 
 // Helper to safely normalize follow-up suggestions from API
 // Handles both string[] and ActionPatch[] formats, filtering out invalid entries
@@ -206,8 +197,6 @@ export default function InteractiveHero() {
   const { user } = useAuth();
   const {
     destinations,
-    cities,
-    categories,
     isLoading,
     selectedCity,
     selectedCategory,
@@ -224,8 +213,8 @@ export default function InteractiveHero() {
   const router = useRouter();
   const { startTrip, addToTrip, activeTrip } = useTripBuilder();
   const [localSearchTerm, setLocalSearchTerm] = useState('');
-  const [showAllCities, setShowAllCities] = useState(false);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -275,16 +264,6 @@ export default function InteractiveHero() {
     }
   }, [setSelectedCity, setSelectedCategory]);
 
-  // Rotate placeholders when input is empty and not focused
-  useEffect(() => {
-    if (localSearchTerm.trim() || isFocused || showChatResults) return;
-
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % AI_PLACEHOLDERS.length);
-    }, 3500);
-
-    return () => clearInterval(interval);
-  }, [localSearchTerm, isFocused, showChatResults]);
 
   // Keyboard shortcut: Press '/' to focus search
   useEffect(() => {
@@ -405,20 +384,7 @@ export default function InteractiveHero() {
     }
   };
 
-  // Get user's first name for greeting
-  const userName = user?.user_metadata?.name?.split(' ')[0] ||
-                   user?.email?.split('@')[0];
 
-  // Featured cities that exist in our data
-  const featuredCities = FEATURED_CITIES.filter(c =>
-    cities.some(city => city.toLowerCase() === c.toLowerCase())
-  );
-  const remainingCities = cities.filter(
-    city => !FEATURED_CITIES.some(fc => fc.toLowerCase() === city.toLowerCase())
-  );
-  const displayedCities = showAllCities
-    ? [...featuredCities, ...remainingCities]
-    : featuredCities;
 
   // Handle AI search with optional filter patch
   const handleSearch = useCallback(async (e?: React.FormEvent, queryOverride?: string, filterPatch?: Partial<SearchFilters>) => {
@@ -583,76 +549,47 @@ export default function InteractiveHero() {
     handleSearch(undefined, lastQuery, patch);
   }, [handleSearch, lastQuery]);
 
-  // Handle city filter
-  const handleCityClick = useCallback((city: string) => {
-    if (city.toLowerCase() === selectedCity.toLowerCase()) {
-      setSelectedCity('');
-    } else {
-      setSelectedCity(city);
-    }
-  }, [selectedCity, setSelectedCity]);
 
-  // Handle category filter
-  const handleCategoryClick = useCallback((category: string) => {
-    if (category.toLowerCase() === selectedCategory.toLowerCase()) {
-      setSelectedCategory('');
-    } else {
-      setSelectedCategory(category);
-    }
-  }, [selectedCategory, setSelectedCategory]);
-
-  // Get greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const destinationCount = destinations.length || '800';
-  const filteredCount = filteredDestinations.length;
-  const hasFilters = selectedCity || selectedCategory || searchTerm || michelinOnly;
+  // Featured destinations for hero image row
+  const featuredDestinations = useMemo(() => {
+    return destinations.filter(d => d.image).slice(0, 4);
+  }, [destinations]);
 
 
   return (
-    <div className="w-full pr-6 md:pr-10">
-      {/* Editorial Two-Column Layout - Of Study Inspired */}
-      <div className="grid grid-cols-1 gap-8 items-start">
+    <div className="w-full flex-1 flex flex-col">
+      {/* Main hero area - two column layout */}
+      <div className="flex-1 flex flex-col lg:flex-row">
 
-        {/* Left Column - Editorial Text */}
-        <div className="flex flex-col justify-center lg:py-12">
-          {/* Small Caps Label */}
-          <p className="text-xs uppercase tracking-widest text-[var(--editorial-text-tertiary)] mb-6">
-            Curated Travel Guide
-          </p>
-
-          {/* Main Headline - Large Serif */}
-          <h2
-            className="text-[2.5rem] md:text-[3.5rem] lg:text-[4rem] leading-[1.05] font-normal tracking-[-0.02em] text-[var(--editorial-text-primary)] mb-6"
-            style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
+        {/* Left Column - Spacious empty space */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-end pb-10">
+          <button
+            onClick={() => {
+              const contentSection = document.querySelector('[data-content-section]') || document.querySelector('main > div:nth-child(3)');
+              contentSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+            aria-label="Scroll to content"
           >
-            {userName ? `${getGreeting()}, ${userName}` : 'Discover the world\'s finest'}
+            <ArrowDown className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Right Column - Content */}
+        <div className="flex-1 lg:w-1/2 flex flex-col justify-center py-16 lg:py-0">
+          {/* Tagline */}
+          <h2 className="text-sm md:text-base font-semibold tracking-[0.05em] text-[var(--editorial-text-primary)] mb-8">
+            TRAVEL, CURATED.
           </h2>
 
-          {/* Subheadline */}
-          <p
-            className="text-sm md:text-base text-[var(--editorial-text-secondary)] mb-10 leading-relaxed max-w-md"
-            style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
-          >
-            {destinationCount}+ handpicked hotels, restaurants, and destinations across the globe.
+          {/* Description */}
+          <p className="text-sm text-[var(--editorial-text-tertiary)] leading-[1.8] mb-10 max-w-sm">
+            Urban Manual is an independent travel guide, discovering extraordinary destinations with care and precision.
           </p>
 
-          {/* Search Input - Minimal Editorial Style */}
+          {/* Search Input - Minimal underline style */}
           <form onSubmit={handleSearch} className="mb-0">
-            <div className="relative max-w-md">
-              {/* AI indicator - Animated thinking/loading */}
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none z-10">
-                {isSearching || isLoadingInstant ? (
-                  <Loader2 className={`w-4 h-4 animate-spin ${isFocused || showChatResults ? 'text-[var(--editorial-text-primary)]' : 'text-[var(--editorial-text-tertiary)]'}`} />
-                ) : (
-                  <Search className={`w-4 h-4 transition-colors duration-200 ${isFocused || showChatResults ? 'text-[var(--editorial-text-primary)]' : 'text-[var(--editorial-text-tertiary)]'}`} />
-                )}
-              </div>
+            <div className="relative max-w-sm">
               <input
                 ref={inputRef}
                 type="text"
@@ -661,30 +598,18 @@ export default function InteractiveHero() {
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setTimeout(() => setIsFocused(false), 150)}
                 onKeyDown={handleInputKeyDown}
-                placeholder={showChatResults ? 'Ask a follow-up question...' : AI_PLACEHOLDERS[placeholderIndex]}
-                className="w-full h-12 pl-11 pr-14 text-sm bg-[var(--editorial-bg-elevated)] rounded-lg
-                           border border-[var(--editorial-border)] text-[var(--editorial-text-primary)]
+                placeholder={showChatResults ? 'Ask a follow-up...' : 'Search destinations...'}
+                className="w-full pb-3 text-sm bg-transparent
+                           border-b border-[var(--editorial-border)] text-[var(--editorial-text-primary)]
                            placeholder:text-[var(--editorial-text-tertiary)]
                            focus:outline-none focus:border-[var(--editorial-text-primary)]
                            transition-all duration-200"
               />
-              <button
-                type="submit"
-                disabled={isSearching || !localSearchTerm.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center
-                           rounded-md bg-[var(--editorial-text-primary)]
-                           text-[var(--editorial-bg)]
-                           hover:opacity-90
-                           active:opacity-80
-                           disabled:opacity-50 transition-all duration-200 z-10"
-                aria-label="Search"
-              >
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="w-4 h-4" />
-                )}
-              </button>
+              {(isSearching || isLoadingInstant) && (
+                <div className="absolute right-0 top-0 flex items-center">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--editorial-text-tertiary)]" />
+                </div>
+              )}
 
               {/* Instant Search Dropdown */}
               {showInstantResults && !showChatResults && (instantResults.length > 0 || instantSuggestions.length > 0) && (
@@ -880,8 +805,8 @@ export default function InteractiveHero() {
               )}
             </div>
             {!showChatResults && !showInstantResults && (
-              <p className="mt-2 text-xs text-[var(--editorial-text-tertiary)]">
-                Press <kbd className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/5 font-mono text-xs">/</kbd> to focus • Enter to search
+              <p className="mt-3 text-xs text-[var(--editorial-text-tertiary)]">
+                Press <kbd className="font-mono text-xs">/</kbd> to focus
               </p>
             )}
           </form>
@@ -1133,174 +1058,42 @@ export default function InteractiveHero() {
 
       </div>
 
-      {/* City/Category Filters - Below the grid */}
-      {!showChatResults && (
-        <div className="pt-12 lg:pt-16">
-          <div className="w-full">
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {/* When a city is selected, show only that city with option to show all */}
-                {selectedCity ? (
-                  <>
-                    <button
-                      onClick={() => handleCityClick(selectedCity)}
-                      className="text-xs font-medium text-[var(--editorial-text-primary)] transition-colors duration-200"
-                    >
-                      {capitalizeCity(selectedCity)}
-                    </button>
-                    <button
-                      onClick={() => setSelectedCity('')}
-                      className="text-xs font-medium text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors duration-200"
-                    >
-                      Show all cities
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setSelectedCity('')}
-                      className={`text-xs font-medium transition-colors duration-200 ${
-                        !selectedCity
-                          ? 'text-[var(--editorial-text-primary)]'
-                          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                      }`}
-                    >
-                      All Cities
-                    </button>
-                    {displayedCities.map((city) => (
-                      <button
-                        key={city}
-                        onClick={() => handleCityClick(city)}
-                        className={`text-xs font-medium transition-colors duration-200 ${
-                          selectedCity.toLowerCase() === city.toLowerCase()
-                            ? 'text-[var(--editorial-text-primary)]'
-                            : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                        }`}
-                      >
-                        {capitalizeCity(city)}
-                      </button>
-                    ))}
-                    {cities.length > displayedCities.length && !showAllCities && (
-                      <button
-                        onClick={() => setShowAllCities(true)}
-                        className="text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-                      >
-                        +{cities.length - displayedCities.length} more
-                      </button>
-                    )}
-                    {showAllCities && (
-                      <button
-                        onClick={() => setShowAllCities(false)}
-                        className="text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-                      >
-                        Show less
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Category Filters with Icons */}
-            {categories.length > 0 && (
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
-                {/* When a category is selected or Michelin filter is active, show only that filter */}
-                {selectedCategory || michelinOnly ? (
-                  <>
-                    {/* Show the selected category */}
-                    {selectedCategory && (
-                      <button
-                        onClick={() => handleCategoryClick(selectedCategory)}
-                        className="flex items-center gap-1.5 font-medium text-[var(--editorial-text-primary)] transition-colors duration-200"
-                      >
-                        {(() => {
-                          const IconComponent = getCategoryIconComponent(selectedCategory);
-                          return IconComponent ? <IconComponent className="w-4 h-4" /> : null;
-                        })()}
-                        {capitalizeCategory(selectedCategory)}
-                      </button>
-                    )}
-                    {/* Show Michelin if active */}
-                    {michelinOnly && (
-                      <button
-                        onClick={() => setMichelinOnly(!michelinOnly)}
-                        className="flex items-center gap-1.5 font-medium text-[var(--editorial-text-primary)] transition-colors duration-200"
-                      >
-                        <img
-                          src="/michelin-star.svg"
-                          alt="Michelin"
-                          className="w-4 h-4"
-                        />
-                        Michelin
-                      </button>
-                    )}
-                    {/* Show all categories button */}
-                    <button
-                      onClick={() => {
-                        setSelectedCategory('');
-                        setMichelinOnly(false);
-                      }}
-                      className="font-medium text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors duration-200"
-                    >
-                      Show all categories
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setSelectedCategory('');
-                        setMichelinOnly(false);
-                      }}
-                      className={`font-medium transition-colors duration-200 ${
-                        !selectedCategory && !michelinOnly
-                          ? 'text-[var(--editorial-text-primary)]'
-                          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                      }`}
-                    >
-                      All Categories
-                    </button>
-                    {/* Michelin filter with icon */}
-                    <button
-                      onClick={() => setMichelinOnly(!michelinOnly)}
-                      className={`flex items-center gap-1.5 font-medium transition-colors duration-200 ${
-                        michelinOnly
-                          ? 'text-[var(--editorial-text-primary)]'
-                          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                      }`}
-                    >
-                      <img
-                        src="/michelin-star.svg"
-                        alt="Michelin"
-                        className="w-4 h-4"
-                      />
-                      Michelin
-                    </button>
-                    {/* Category filters with icons */}
-                    {categories.slice(0, 8).map((category) => {
-                      const IconComponent = getCategoryIconComponent(category);
-                      return (
-                        <button
-                          key={category}
-                          onClick={() => handleCategoryClick(category)}
-                          className={`flex items-center gap-1.5 font-medium transition-colors duration-200 ${
-                            selectedCategory.toLowerCase() === category.toLowerCase()
-                              ? 'text-[var(--editorial-text-primary)]'
-                              : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                          }`}
-                        >
-                          {IconComponent && <IconComponent className="w-4 h-4" />}
-                          {capitalizeCategory(category)}
-                        </button>
-                      );
-                    })}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+      {/* Bottom section - scroll arrow (mobile) + featured destination images */}
+      <div className="pb-6 lg:pb-10">
+        {/* Mobile scroll arrow */}
+        <div className="lg:hidden mb-6">
+          <button
+            onClick={() => {
+              const contentSection = document.querySelector('[data-content-section]') || document.querySelector('main > div:nth-child(3)');
+              contentSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+            aria-label="Scroll to content"
+          >
+            <ArrowDown className="w-4 h-4" />
+          </button>
         </div>
-      )}
+
+        {/* Featured destination images row */}
+        {featuredDestinations.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {featuredDestinations.map((dest) => (
+              <button
+                key={dest.id || dest.slug}
+                onClick={() => openDestination(dest)}
+                className="relative aspect-[4/3] overflow-hidden group"
+              >
+                <Image
+                  src={dest.image!}
+                  alt={dest.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

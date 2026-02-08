@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { X, ChevronLeft, Check, Loader2, Cloud } from "lucide-react";
+import { X, ChevronLeft, Check, Loader2, Cloud, AlertCircle } from "lucide-react";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/useToast";
 import { ContentManager } from '@/features/admin/components/cms';
@@ -18,7 +18,7 @@ export default function AdminDestinationsPage() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const { Dialog: ConfirmDialogComponent } = useConfirmDialog();
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
   const [editingDestination, setEditingDestination] = useState<Destination | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -41,8 +41,7 @@ export default function AdminDestinationsPage() {
 
         if (data) {
           setEditingDestination(data);
-          setShowCreateModal(true);
-          // Remove slug from URL without page reload
+          setShowEditor(true);
           if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
             url.searchParams.delete('slug');
@@ -54,22 +53,9 @@ export default function AdminDestinationsPage() {
     }
   }, [searchParams]);
 
-  // Prevent body scroll when drawer is open
-  useEffect(() => {
-    if (showCreateModal) {
-      document.documentElement.style.overflow = 'hidden';
-    } else {
-      document.documentElement.style.overflow = '';
-    }
-    return () => {
-      document.documentElement.style.overflow = '';
-    };
-  }, [showCreateModal]);
-
   const handleSaveDestination = async (data: Partial<Destination>) => {
     setIsSaving(true);
     try {
-      // Auto-set category for certain names
       if (data.name) {
         const nameLower = data.name.toLowerCase();
         if (nameLower.startsWith('apple') || nameLower.startsWith('aesop') || nameLower.startsWith('aēsop')) {
@@ -100,20 +86,18 @@ export default function AdminDestinationsPage() {
         if (error) throw error;
       }
 
-      // Close drawer and refresh list (without resetting pagination)
-      setShowCreateModal(false);
+      setShowEditor(false);
       setEditingDestination(null);
       setRefreshKey(prev => prev + 1);
       toast.success(editingDestination ? 'Destination updated' : 'Destination created');
     } catch (e: unknown) {
-      // ZERO JANK POLICY: Never expose raw error messages to users
       toast.safeError(e, 'Unable to save destination');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Autosave: debounced save for editing existing destinations
+  // Autosave
   const performAutosave = useCallback(async (data: Partial<Destination>) => {
     if (!editingDestination) return;
     setSaveState('saving');
@@ -137,7 +121,6 @@ export default function AdminDestinationsPage() {
 
       setSaveState('saved');
       setRefreshKey(prev => prev + 1);
-      // Reset to idle after showing "saved" for 2s
       if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
       savedTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2000);
     } catch {
@@ -157,16 +140,15 @@ export default function AdminDestinationsPage() {
     }, 1500);
   }, [editingDestination, performAutosave]);
 
-  // Keyboard shortcut: Escape to close drawer
+  // Keyboard shortcuts
   useEffect(() => {
-    if (!showCreateModal) return;
+    if (!showEditor) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        setShowCreateModal(false);
+        setShowEditor(false);
         setEditingDestination(null);
       }
-      // Cmd+S / Ctrl+S to force-save pending changes
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         if (pendingDataRef.current && editingDestination) {
@@ -178,9 +160,8 @@ export default function AdminDestinationsPage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showCreateModal, editingDestination, performAutosave]);
+  }, [showEditor, editingDestination, performAutosave]);
 
-  // Cleanup timers
   useEffect(() => {
     return () => {
       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
@@ -191,15 +172,92 @@ export default function AdminDestinationsPage() {
   const handleEditDestination = (destination: Destination) => {
     setEditingDestination(destination);
     setSaveState('idle');
-    setShowCreateModal(true);
+    setShowEditor(true);
   };
 
   const handleCreateNew = () => {
     setEditingDestination(null);
     setSaveState('idle');
-    setShowCreateModal(true);
+    setShowEditor(true);
   };
 
+  const closeEditor = () => {
+    setShowEditor(false);
+    setEditingDestination(null);
+  };
+
+  // ─── Three-panel Webflow-style layout when editing ───
+  if (showEditor) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white dark:bg-gray-950 flex flex-col">
+        {/* Top Bar */}
+        <div className="flex-shrink-0 h-12 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={closeEditor}
+              className="p-1.5 -ml-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500"
+              title="Back to list (Esc)"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white truncate max-w-sm">
+                {editingDestination ? editingDestination.name || 'Edit' : 'New Destination'}
+              </h2>
+              {editingDestination?.category && (
+                <span className="hidden sm:inline-flex px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[10px] font-medium rounded">
+                  {editingDestination.category}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {editingDestination && (
+              <div className="flex items-center gap-1.5 text-[11px]">
+                {saveState === 'saving' && <><Loader2 className="w-3 h-3 animate-spin text-gray-400" /><span className="text-gray-400">Saving...</span></>}
+                {saveState === 'saved' && <><Check className="w-3 h-3 text-green-500" /><span className="text-green-600 dark:text-green-400">Saved</span></>}
+                {saveState === 'error' && <><AlertCircle className="w-3 h-3 text-red-500" /><span className="text-red-500">Failed</span></>}
+                {saveState === 'idle' && <><Cloud className="w-3 h-3 text-gray-300 dark:text-gray-600" /><span className="text-gray-300 dark:text-gray-600 hidden sm:inline">Auto-saves</span></>}
+              </div>
+            )}
+            <button onClick={closeEditor} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500" title="Close">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Three-panel content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left panel: Compact items list */}
+          <div className="hidden md:flex flex-col w-72 lg:w-80 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/20">
+            <ContentManager
+              refreshTrigger={refreshKey}
+              onEditDestination={handleEditDestination}
+              onCreateNew={handleCreateNew}
+              compact
+              activeItemId={editingDestination?.id ?? null}
+            />
+          </div>
+
+          {/* Right panel: Item detail editor */}
+          <div className="flex-1 overflow-hidden">
+            <DestinationForm
+              destination={editingDestination ?? undefined}
+              toast={toast}
+              onSave={handleSaveDestination}
+              onCancel={closeEditor}
+              isSaving={isSaving}
+              onFormChange={editingDestination ? handleAutosaveChange : undefined}
+            />
+          </div>
+        </div>
+
+        <ConfirmDialogComponent />
+      </div>
+    );
+  }
+
+  // ─── Default: Full-width content manager ───
   return (
     <div className="space-y-6">
       <ContentManager
@@ -207,96 +265,6 @@ export default function AdminDestinationsPage() {
         onEditDestination={handleEditDestination}
         onCreateNew={handleCreateNew}
       />
-
-      {/* Create/Edit Drawer */}
-      {showCreateModal && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
-            onClick={() => {
-              setShowCreateModal(false);
-              setEditingDestination(null);
-            }}
-          />
-          {/* Drawer Panel */}
-          <div
-            className={`fixed right-3 top-3 bottom-3 w-[calc(100%-1.5rem)] sm:w-[520px] lg:w-[560px] bg-white dark:bg-gray-950 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden ${
-              showCreateModal ? 'translate-x-0' : 'translate-x-full'
-            }`}
-          >
-            {/* Header */}
-            <div className="flex-shrink-0 h-14 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setEditingDestination(null);
-                  }}
-                  className="p-1.5 -ml-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                  {editingDestination ? editingDestination.name || 'Edit Destination' : 'New Destination'}
-                </h2>
-              </div>
-              <div className="flex items-center gap-3">
-                {/* Save state indicator */}
-                {editingDestination && (
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    {saveState === 'saving' && (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin text-gray-400" />
-                        <span className="text-gray-400">Saving…</span>
-                      </>
-                    )}
-                    {saveState === 'saved' && (
-                      <>
-                        <Check className="w-3 h-3 text-green-500" />
-                        <span className="text-green-600 dark:text-green-400">Saved</span>
-                      </>
-                    )}
-                    {saveState === 'error' && (
-                      <span className="text-red-500">Save failed</span>
-                    )}
-                    {saveState === 'idle' && (
-                      <>
-                        <Cloud className="w-3 h-3 text-gray-300 dark:text-gray-600" />
-                        <span className="text-gray-300 dark:text-gray-600">⌘S</span>
-                      </>
-                    )}
-                  </div>
-                )}
-              <button
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    setEditingDestination(null);
-                  }}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-            {/* Form (fills remaining space) */}
-            <div className="flex-1 overflow-hidden">
-              <DestinationForm
-                destination={editingDestination ?? undefined}
-                toast={toast}
-                onSave={handleSaveDestination}
-                onCancel={() => {
-                  setShowCreateModal(false);
-                  setEditingDestination(null);
-                }}
-                isSaving={isSaving}
-                onFormChange={editingDestination ? handleAutosaveChange : undefined}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
       <ConfirmDialogComponent />
     </div>
   );

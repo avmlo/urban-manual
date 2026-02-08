@@ -1,3 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap");
+@import "tailwindcss";
+@import "../styles/layout.css";
+@import "../styles/image-system.css";
+@import "../styles/tokens.css";
+
+/* Configure dark mode to use class selector (for next-themes compatibility) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    SCROLLBAR DESIGN TOKENS
    ============================================ */
@@ -79,9 +88,6 @@
    Japanese-meets-Scandinavian minimalism
    Inspired by print magazines and conscious design
    ============================================ */
-
-/* Import serif font for editorial headlines */
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap');
 
 /* Editorial color palette CSS variables */
 :root {
@@ -251,15 +257,6 @@
   background-color: var(--editorial-bg-elevated);
   border: 1px solid var(--editorial-border-subtle);
 }
-
-@import "tailwindcss";
-
-/* Configure dark mode to use class selector (for next-themes compatibility) */
-@custom-variant dark (&:where(.dark, .dark *));
-
-@import "../styles/layout.css";
-@import "../styles/image-system.css";
-@import "../styles/tokens.css";
 
 /* Highlight animation for trip items */
 @keyframes highlightPulse {
@@ -1762,11 +1759,11 @@ html.christmas-mode.dark::before,
 }
 
 /* Back navigation uses different animation */
-::view-transition-old(root).going-back {
+.going-back::view-transition-old(root) {
   animation: view-transition-slide-out-right 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-::view-transition-new(root).going-back {
+.going-back::view-transition-new(root) {
   animation: view-transition-slide-in-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 

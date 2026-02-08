@@ -9,25 +9,63 @@ interface DestinationBadgesProps {
   showTiming?: boolean;
 }
 
+interface TrendingResponse {
+  trending: TrendingDestination[];
+}
+
+// Shared cache for trending data
+let trendingPromise: Promise<TrendingResponse> | null = null;
+let trendingTimestamp = 0;
+const CACHE_DURATION = 60000; // 1 minute
+
+// Shared fetcher function
+function getTrendingDataPromise() {
+  const now = Date.now();
+  if (trendingPromise && (now - trendingTimestamp < CACHE_DURATION)) {
+    return trendingPromise;
+  }
+
+  trendingPromise = fetch(
+    `/api/ml/forecast/trending?top_n=100&forecast_days=7`,
+    { signal: AbortSignal.timeout(3000) }
+  )
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to fetch trending data');
+      return res.json();
+    })
+    .catch(err => {
+      // Clear cache on error so we can retry later
+      trendingPromise = null;
+      throw err;
+    });
+
+  trendingTimestamp = now;
+  return trendingPromise;
+}
+
 export function DestinationBadges({ destinationId, compact = false, showTiming = true }: DestinationBadgesProps) {
   const [trendingData, setTrendingData] = useState<TrendingDestination | null>(null);
   const [peakTimes, setPeakTimes] = useState<PeakTimeRecommendation | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     async function fetchData() {
       try {
-        // Fetch trending status
-        const trendingRes = await fetch(
-          `/api/ml/forecast/trending?top_n=100&forecast_days=7`,
-          { signal: AbortSignal.timeout(3000) }
-        );
-
-        if (trendingRes.ok) {
-          const data = await trendingRes.json();
-          const found = data.trending?.find((t: TrendingDestination) => t.destination_id === destinationId);
-          if (found) {
-            setTrendingData(found);
+        // Fetch trending status using shared promise
+        try {
+          const data = await getTrendingDataPromise();
+          if (mounted && data) {
+            const found = data.trending?.find((t: TrendingDestination) => t.destination_id === destinationId);
+            if (found) {
+              setTrendingData(found);
+            }
+          }
+        } catch (error) {
+          // Ignore trending fetch errors
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('ML forecasting unavailable for destination', destinationId, error);
           }
         }
 
@@ -41,7 +79,7 @@ export function DestinationBadges({ destinationId, compact = false, showTiming =
           if (peakRes.ok) {
             const data = await peakRes.json();
             // Handle the actual API response format (peak_date, low_date, recommendation)
-            if (data.low_date && data.peak_date) {
+            if (mounted && data.low_date && data.peak_date) {
               const lowDate = new Date(data.low_date);
               const peakDate = new Date(data.peak_date);
               
@@ -72,14 +110,20 @@ export function DestinationBadges({ destinationId, compact = false, showTiming =
       } catch (error) {
         // Silently fail - badges are optional enhancements
         if (process.env.NODE_ENV === 'development') {
-          console.debug('ML forecasting unavailable for destination', destinationId);
+          console.debug('ML forecasting unavailable for destination', destinationId, error);
         }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchData();
+
+    return () => {
+      mounted = false;
+    };
   }, [destinationId, showTiming]);
 
   if (loading) return null;

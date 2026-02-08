@@ -613,15 +613,11 @@ export default function InteractiveHero() {
   const filteredCount = filteredDestinations.length;
   const hasFilters = selectedCity || selectedCategory || searchTerm || michelinOnly;
 
-  // Get featured destinations for the editorial hero
-  const featuredDestinations = useMemo(() => {
-    return destinations.slice(0, 3);
-  }, [destinations]);
 
   return (
     <div className="w-full pr-6 md:pr-10">
       {/* Editorial Two-Column Layout - Of Study Inspired */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+      <div className="grid grid-cols-1 gap-8 items-start">
 
         {/* Left Column - Editorial Text */}
         <div className="flex flex-col justify-center lg:py-12">
@@ -1135,65 +1131,6 @@ export default function InteractiveHero() {
           )}
         </div>
 
-        {/* Right Column - Featured Destinations (Of Study Style) */}
-        <div className="hidden lg:flex gap-4 items-stretch">
-          {/* Left Card - Branding/Statement */}
-          <div
-            className="flex-1 flex flex-col justify-between p-8 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]"
-            style={{ aspectRatio: '3/4' }}
-          >
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-[var(--editorial-text-tertiary)] mb-4">
-                Est. 2024
-              </p>
-            </div>
-            <div>
-              <h3
-                className="text-[1.5rem] leading-[1.2] text-[var(--editorial-text-primary)] mb-4"
-                style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
-              >
-                Urban Manual
-              </h3>
-              <p className="text-xs text-[var(--editorial-text-secondary)] leading-[1.6]">
-                A curated guide for those who appreciate the finer details of travel.
-              </p>
-            </div>
-          </div>
-
-          {/* Right Card - Featured Destination with Terracotta */}
-          {featuredDestinations[0] && (
-            <button
-              onClick={() => openDestination(featuredDestinations[0])}
-              className="flex-1 flex flex-col bg-[var(--editorial-accent)] text-white overflow-hidden group"
-              style={{ aspectRatio: '3/4' }}
-            >
-              <div className="relative flex-1 overflow-hidden">
-                {featuredDestinations[0].image && (
-                  <Image
-                    src={featuredDestinations[0].image}
-                    alt={featuredDestinations[0].name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                )}
-              </div>
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-white/70 mb-2">
-                  {featuredDestinations[0].category}
-                </p>
-                <h3
-                  className="text-[1.1rem] leading-[1.3] mb-2"
-                  style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
-                >
-                  {featuredDestinations[0].name}
-                </h3>
-                <p className="text-xs text-white/80">
-                  {capitalizeCity(featuredDestinations[0].city)}
-                </p>
-              </div>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* City/Category Filters - Below the grid */}

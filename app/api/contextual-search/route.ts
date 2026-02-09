@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { generateContext } from '@/services/gemini';
 import { getSeasonalContext } from '@/services/seasonality';
 import type { Listing } from '@/services/gemini';
-import { withErrorHandling, createSuccessResponse } from '@/lib/errors';
+import { withStandardApi, createSuccessResponse } from '@/lib/api';
 import { resolveCategory } from '@/lib/categories';
 
 function getSupabaseClient() {
@@ -222,7 +222,9 @@ async function generateContextString(
   return generateContext(query, city, modifiers, listings, seasonality);
 }
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
+export const POST = withStandardApi(
+  { rateLimit: 'search', auth: 'optional', routeName: '/api/contextual-search' },
+  async (request: NextRequest) => {
   const body = await request.json();
   const { query } = body;
 

@@ -3,39 +3,32 @@
  * GET /api/weather?lat=...&lng=...
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { fetchWeather } from '@/lib/enrichment/weather';
-import { withErrorHandling } from '@/lib/errors';
+import {
+  withStandardApi,
+  createSuccessResponse,
+  createValidationError,
+  createNotFoundError,
+} from '@/lib/api';
 
-export const GET = withErrorHandling(async (request: NextRequest) => {
-  try {
+export const GET = withStandardApi(
+  { rateLimit: 'api', auth: 'none', routeName: '/api/weather' },
+  async (request: NextRequest) => {
     const searchParams = request.nextUrl.searchParams;
     const lat = parseFloat(searchParams.get('lat') || '0');
     const lng = parseFloat(searchParams.get('lng') || '0');
 
     if (!lat || !lng) {
-      return NextResponse.json(
-        { error: 'Latitude and longitude are required' },
-        { status: 400 }
-      );
+      throw createValidationError('Latitude and longitude are required');
     }
 
     const weather = await fetchWeather(lat, lng);
 
     if (!weather) {
-      return NextResponse.json(
-        { error: 'Weather data not available' },
-        { status: 404 }
-      );
+      throw createNotFoundError('Weather data');
     }
 
-    return NextResponse.json(weather);
-  } catch (error: any) {
-    console.error('Error fetching weather:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch weather' },
-      { status: 500 }
-    );
+    return createSuccessResponse(weather);
   }
-});
-
+);

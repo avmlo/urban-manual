@@ -118,6 +118,44 @@ type Events = {
       dryRun?: boolean;
     };
   };
+
+  // Enrichment events (parallel fan-out)
+  "enrichment/destination": {
+    data: {
+      destinationId: number;
+      sources?: Array<"google" | "ai" | "exa">;
+    };
+  };
+  "enrichment/batch": {
+    data: {
+      limit?: number;
+      sources?: Array<"google" | "ai" | "exa">;
+      onlyStale?: boolean;
+    };
+  };
+
+  // Data freshness events
+  "data-freshness/audit": {
+    data: Record<string, never>;
+  };
+  "data-freshness/refresh-trends": {
+    data: Record<string, never>;
+  };
+
+  // Analytics feedback events
+  "analytics/search-feedback": {
+    data: {
+      searchSessionId: string;
+      userId?: string;
+      query: string;
+      clickedDestinationIds?: number[];
+      savedDestinationIds?: number[];
+      searchTier?: string;
+    };
+  };
+  "analytics/aggregate-quality": {
+    data: Record<string, never>;
+  };
 };
 
 /**

@@ -2698,10 +2698,10 @@ function ItemRow({
               )}
             </div>
 
-            {/* Content: icon/image + title as a chip for linked items, plain text otherwise */}
+            {/* Content: icon/image + title */}
             <div className="flex-1 min-w-0 flex items-center gap-2">
-              {item.destination_slug ? (
-                /* Linked destination: blue pill chip with small image */
+              {iconType === 'place' ? (
+                /* Place items: blue pill chip */
                 <span className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full pl-1 pr-3 py-0.5 max-w-full">
                   {image && !imageError ? (
                     <Image
@@ -2720,41 +2720,36 @@ function ItemRow({
                   <span className="text-sm font-medium truncate">{title}</span>
                 </span>
               ) : (
-                /* Regular item: small dot + title */
+                /* Non-place items: icon + title */
                 <div className="flex items-center gap-2 min-w-0">
-                  {iconType !== 'place' ? (
-                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--editorial-bg-elevated)] flex items-center justify-center">
-                      {iconType === 'hotel' ? <Hotel className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                       iconType === 'checkin' ? <DoorOpen className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                       iconType === 'checkout' ? <LogOut className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                       iconType === 'breakfast' ? <UtensilsCrossed className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                       iconType === 'train' ? <TrainIcon className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                       iconType === 'activity' ? (() => {
-                         const aType = (extraData as any).activityType;
-                         const iconClass = "w-3 h-3 text-[var(--editorial-text-tertiary)]";
-                         switch (aType) {
-                           case 'nap': return <BedDouble className={iconClass} />;
-                           case 'pool': return <Waves className={iconClass} />;
-                           case 'spa': return <Sparkles className={iconClass} />;
-                           case 'gym': return <Dumbbell className={iconClass} />;
-                           case 'breakfast-at-hotel': return <Coffee className={iconClass} />;
-                           case 'getting-ready': return <Shirt className={iconClass} />;
-                           case 'packing': case 'checkout-prep': return <Package className={iconClass} />;
-                           case 'sunset': return <Sun className={iconClass} />;
-                           case 'work': return <Briefcase className={iconClass} />;
-                           case 'call': return <Phone className={iconClass} />;
-                           case 'shopping-time': return <ShoppingBag className={iconClass} />;
-                           case 'photo-walk': return <Camera className={iconClass} />;
-                           default: return <Clock className={iconClass} />;
-                         }
-                       })() :
-                       <MapPin className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
-                      }
-                    </span>
-                  ) : (
-                    /* Small colored category dot for places */
-                    <span className="w-2 h-2 rounded-full bg-[var(--editorial-accent)] opacity-60 flex-shrink-0" />
-                  )}
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--editorial-bg-elevated)] flex items-center justify-center">
+                    {iconType === 'hotel' ? <Hotel className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                     iconType === 'checkin' ? <DoorOpen className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                     iconType === 'checkout' ? <LogOut className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                     iconType === 'breakfast' ? <UtensilsCrossed className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                     iconType === 'train' ? <TrainIcon className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                     iconType === 'activity' ? (() => {
+                       const aType = (extraData as any).activityType;
+                       const iconClass = "w-3 h-3 text-[var(--editorial-text-tertiary)]";
+                       switch (aType) {
+                         case 'nap': return <BedDouble className={iconClass} />;
+                         case 'pool': return <Waves className={iconClass} />;
+                         case 'spa': return <Sparkles className={iconClass} />;
+                         case 'gym': return <Dumbbell className={iconClass} />;
+                         case 'breakfast-at-hotel': return <Coffee className={iconClass} />;
+                         case 'getting-ready': return <Shirt className={iconClass} />;
+                         case 'packing': case 'checkout-prep': return <Package className={iconClass} />;
+                         case 'sunset': return <Sun className={iconClass} />;
+                         case 'work': return <Briefcase className={iconClass} />;
+                         case 'call': return <Phone className={iconClass} />;
+                         case 'shopping-time': return <ShoppingBag className={iconClass} />;
+                         case 'photo-walk': return <Camera className={iconClass} />;
+                         default: return <Clock className={iconClass} />;
+                       }
+                     })() :
+                     <MapPin className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
+                    }
+                  </span>
                   <p className="text-sm text-[var(--editorial-text-primary)] truncate">{title}</p>
                 </div>
               )}

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import {
-  Search, Plus, Pencil, Trash2, X, Upload, Loader2, ChevronLeft, MoreVertical,
+  Search, Plus, Pencil, Trash2, X, Upload, Loader2, ChevronLeft, ChevronRight, MoreVertical,
   Building2, MapPin, Globe, Map, AlertCircle, ExternalLink, RefreshCw, Merge, Settings2, Check, Compass
 } from 'lucide-react';
 import { Input } from '@/ui/input';
@@ -98,6 +98,8 @@ interface DataManagerProps {
   type: DataType;
 }
 
+const PAGE_SIZE = 50;
+
 const BRAND_CATEGORIES = [
   'Luxury Hotel',
   'Upper Upscale Hotel',
@@ -123,6 +125,11 @@ export function DataManager({ type }: DataManagerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Drawer state
   const [showDrawer, setShowDrawer] = useState(false);
@@ -145,6 +152,7 @@ export function DataManager({ type }: DataManagerProps) {
   const [mergePreview, setMergePreview] = useState<{ affectedCount: number } | null>(null);
   const [merging, setMerging] = useState(false);
   const [deleteAfterMerge, setDeleteAfterMerge] = useState(true);
+  const [mergeItems, setMergeItems] = useState<DataItem[]>([]);
 
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
@@ -193,9 +201,32 @@ export function DataManager({ type }: DataManagerProps) {
   const supabase = createClient({ skipValidation: true });
   const config = TYPE_CONFIG[type];
 
+  // Debounce search input – resets page to 1
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  // Fetch data when type, page, or debounced search changes
   useEffect(() => {
     fetchData();
+  }, [type, page, debouncedSearch]);
+
+  // Reset pagination + selection when switching types
+  useEffect(() => {
+    setPage(1);
+    setSearchQuery('');
+    setDebouncedSearch('');
+    setSelectedItems(new Set());
   }, [type]);
+
+  // Clear selection when navigating pages
+  useEffect(() => {
+    setSelectedItems(new Set());
+  }, [page, debouncedSearch]);
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
@@ -213,8 +244,16 @@ export function DataManager({ type }: DataManagerProps) {
     setLoading(true);
     setError(null);
     try {
-      const result = await apiRequest<{ data: DataItem[] }>('GET', { type });
+      const params: Record<string, string> = {
+        type,
+        page: String(page),
+        pageSize: String(PAGE_SIZE),
+      };
+      if (debouncedSearch) params.search = debouncedSearch;
+
+      const result = await apiRequest<{ data: DataItem[]; total: number }>('GET', params);
       setItems(result.data || []);
+      setTotalCount(result.total ?? 0);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch';
       if (message.includes('does not exist')) {
@@ -223,6 +262,7 @@ export function DataManager({ type }: DataManagerProps) {
         setError(message);
       }
       setItems([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -345,6 +385,15 @@ export function DataManager({ type }: DataManagerProps) {
     setDeleteAfterMerge(true);
     setShowMergeModal(true);
 
+    // Fetch all items for merge target selection (unpaginated)
+    try {
+      const result = await apiRequest<{ data: DataItem[] }>('GET', { type });
+      setMergeItems(result.data || []);
+    } catch {
+      // Fallback to currently loaded page
+      setMergeItems(items);
+    }
+
     // Fetch preview of affected destinations
     try {
       const res = await fetch(`/api/admin/data/merge?type=${type}&sourceId=${item.id}`);
@@ -363,6 +412,7 @@ export function DataManager({ type }: DataManagerProps) {
     setMergeTarget(null);
     setMergeSearch('');
     setMergePreview(null);
+    setMergeItems([]);
   };
 
   const handleMerge = async () => {
@@ -401,7 +451,7 @@ export function DataManager({ type }: DataManagerProps) {
 
   const getMergeTargetOptions = () => {
     const query = mergeSearch.toLowerCase();
-    return items
+    return mergeItems
       .filter((item) => item.id !== mergeSource?.id)
       .filter((item) => {
         if (!query) return true;
@@ -414,11 +464,10 @@ export function DataManager({ type }: DataManagerProps) {
   };
 
   const toggleSelectAll = () => {
-    const currentFiltered = getFilteredItems();
-    if (selectedItems.size === currentFiltered.length) {
+    if (selectedItems.size === items.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(currentFiltered.map(d => d.id)));
+      setSelectedItems(new Set(items.map(d => d.id)));
     }
   };
 
@@ -437,9 +486,8 @@ export function DataManager({ type }: DataManagerProps) {
 
     setBulkActionLoading(true);
     try {
-      for (const id of selectedItems) {
-        await apiRequest('DELETE', { type, id });
-      }
+      const ids = Array.from(selectedItems).join(',');
+      await apiRequest('DELETE', { type, ids });
       setSelectedItems(new Set());
       await fetchData();
     } catch (err: unknown) {
@@ -450,17 +498,7 @@ export function DataManager({ type }: DataManagerProps) {
     }
   };
 
-  const getFilteredItems = () => {
-    const query = searchQuery.toLowerCase();
-    return items.filter((item) => {
-      if (item.name.toLowerCase().includes(query)) return true;
-      if ('country' in item && item.country?.toLowerCase().includes(query)) return true;
-      if ('city' in item && item.city?.toLowerCase().includes(query)) return true;
-      return false;
-    });
-  };
-
-  const filteredItems = getFilteredItems();
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const Icon = config.icon;
 
   const inputClasses = "w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white";
@@ -472,7 +510,7 @@ export function DataManager({ type }: DataManagerProps) {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
-            {items.length.toLocaleString()} {type}
+            {totalCount.toLocaleString()} {type}
             {syncResult && (
               <span className="ml-2 text-green-600 dark:text-green-400">
                 (+{syncResult.inserted} new, {syncResult.existing} existing)
@@ -572,7 +610,7 @@ export function DataManager({ type }: DataManagerProps) {
               <tr className="border-b border-gray-100 dark:border-gray-800/50">
                 <th className="w-8 pl-0 pr-2 py-2">
                   <Checkbox
-                    checked={filteredItems.length > 0 && selectedItems.size === filteredItems.length}
+                    checked={items.length > 0 && selectedItems.size === items.length}
                     onCheckedChange={toggleSelectAll}
                     aria-label="Select all"
                   />
@@ -611,7 +649,7 @@ export function DataManager({ type }: DataManagerProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-800/30">
-              {filteredItems.map((item) => (
+              {items.map((item) => (
                 <tr
                   key={item.id}
                   className={cn(
@@ -771,7 +809,7 @@ export function DataManager({ type }: DataManagerProps) {
                 </tr>
               ))}
 
-              {filteredItems.length === 0 && !error && (
+              {items.length === 0 && !error && (
                 <tr>
                   <td colSpan={4} className="px-2 py-12 text-center text-[13px] text-gray-400">
                     No {type} found. {searchQuery ? 'Try a different search.' : `Add your first ${config.singular.toLowerCase()}!`}
@@ -780,6 +818,37 @@ export function DataManager({ type }: DataManagerProps) {
               )}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800/50 mt-2">
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
+                Page {page} of {totalPages}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => p - 1)}
+                  className="h-7 text-xs gap-1"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Prev
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                  className="h-7 text-xs gap-1"
+                >
+                  Next
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -33,21 +33,27 @@ export default function CMSPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [{ count: destCount }, { data: allDests }] = await Promise.all([
+        const [
+          { count: destCount, error: destErr },
+          { count: cityCount, error: cityErr },
+          { count: catCount, error: catErr },
+        ] = await Promise.all([
           supabase.from('destinations').select('*', { count: 'exact', head: true }),
-          supabase.from('destinations').select('city, category'),
+          supabase.from('destinations').select('city', { count: 'exact', head: true }).not('city', 'is', null),
+          supabase.from('destinations').select('category', { count: 'exact', head: true }).not('category', 'is', null),
         ]);
 
-        const cities = new Set(allDests?.map(d => d.city).filter(Boolean));
-        const categories = new Set(allDests?.map(d => d.category).filter(Boolean));
+        if (destErr) console.error('Failed to fetch destination count:', destErr.message);
+        if (cityErr) console.error('Failed to fetch city count:', cityErr.message);
+        if (catErr) console.error('Failed to fetch category count:', catErr.message);
 
         setStats({
           destinations: destCount || 0,
-          cities: cities.size,
-          categories: categories.size,
+          cities: cityCount || 0,
+          categories: catCount || 0,
         });
-      } catch {
-        // Keep defaults
+      } catch (err) {
+        console.error('Failed to fetch CMS stats:', err);
       }
     };
     fetchStats();

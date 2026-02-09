@@ -30,17 +30,22 @@ export function CmsCollectionsSidebar() {
 
   useEffect(() => {
     const fetchCounts = async () => {
-      const results = await Promise.all(
-        COLLECTIONS.filter(c => c.table).map(async (col) => {
-          const { count } = await supabase
-            .from(col.table)
-            .select('*', { count: 'exact', head: true });
-          return { id: col.id, count: count || 0 };
-        })
-      );
-      const countMap: Record<string, number> = {};
-      results.forEach(r => { countMap[r.id] = r.count; });
-      setCounts(countMap);
+      try {
+        const results = await Promise.all(
+          COLLECTIONS.filter(c => c.table).map(async (col) => {
+            const { count, error } = await supabase
+              .from(col.table)
+              .select('*', { count: 'exact', head: true });
+            if (error) console.error(`Failed to fetch ${col.id} count:`, error.message);
+            return { id: col.id, count: count || 0 };
+          })
+        );
+        const countMap: Record<string, number> = {};
+        results.forEach(r => { countMap[r.id] = r.count; });
+        setCounts(countMap);
+      } catch (err) {
+        console.error('Failed to fetch collection counts:', err);
+      }
     };
     fetchCounts();
   }, []);

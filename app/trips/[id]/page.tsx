@@ -374,19 +374,19 @@ export default function TripPage() {
       {/* Split-panel layout: itinerary (left) + map (right) on desktop */}
       <div className="lg:flex lg:h-screen">
         {/* LEFT PANEL - Itinerary */}
-        <div className="lg:w-[460px] xl:w-[480px] lg:flex-shrink-0 lg:overflow-y-auto lg:border-r border-[var(--editorial-border)] px-4 sm:px-6 pt-16 pb-24 sm:py-20 relative">
-          {/* Back link with trip header */}
-          <div className="flex items-center gap-3 mb-6">
-            <Link
-              href="/trips"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          </div>
+        <div className="lg:w-[460px] xl:w-[480px] lg:flex-shrink-0 lg:flex lg:flex-col lg:border-r border-[var(--editorial-border)] relative">
+          {/* STICKY HEADER - Back, title, toolbar, day tabs */}
+          <div className="flex-shrink-0 px-4 sm:px-6 pt-16 sm:pt-6 pb-0 bg-[var(--editorial-bg)] lg:border-b border-[var(--editorial-border)]">
+            {/* Back link */}
+            <div className="flex items-center gap-3 mb-4">
+              <Link
+                href="/trips"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            </div>
 
-          {/* Main content column */}
-          <div className="flex-1 min-w-0">
             {/* Header - tap to edit */}
             <TripEditorHeader
               trip={trip}
@@ -399,7 +399,7 @@ export default function TripPage() {
             />
 
             {/* Plans section header + toolbar - TRIP-inspired */}
-            <div className="mt-6 mb-4">
+            <div className="mt-4 mb-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-[var(--editorial-text-primary)]">Plans</h2>
@@ -461,6 +461,46 @@ export default function TripPage() {
               )}
             </div>
 
+            {/* Day Tabs - part of sticky header */}
+            {days.length > 0 && (
+              <div className="py-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {days.map((day) => {
+                    const isSelected = day.dayNumber === selectedDayNumber;
+                    const dayDate = day.date
+                      ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      : null;
+                    const dayWeather = day.date ? weatherByDate[day.date] : undefined;
+                    return (
+                      <button
+                        key={day.dayNumber}
+                        onClick={() => setSelectedDayNumber(day.dayNumber)}
+                        className={`flex-shrink-0 flex flex-col items-center px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                          isSelected
+                            ? 'bg-[var(--editorial-accent)] text-white'
+                            : 'bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] border border-[var(--editorial-border)]'
+                        }`}
+                      >
+                        <span>
+                          {dayDate || `Day ${day.dayNumber}`}
+                        </span>
+                        {dayWeather && (
+                          <span className={`text-xs mt-0.5 ${isSelected ? 'text-white/80' : 'text-[var(--editorial-text-tertiary)]'}`}>
+                            {dayWeather.tempMax}° {dayWeather.description.split(' ')[0]}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          {/* END STICKY HEADER */}
+
+          {/* SCROLLABLE CONTENT - Day items, bottom sections */}
+          <div className="flex-1 lg:overflow-y-auto px-4 sm:px-6 pb-24 sm:pb-20">
+
         {/* Trip Notes - expandable (mobile only, desktop uses sidebar) */}
         <div className="mt-4 lg:hidden">
           <button
@@ -497,41 +537,6 @@ export default function TripPage() {
             onOptimizeRoute={(dayNumber, optimizedItems) => reorderItems(dayNumber, optimizedItems)}
           />
         </div>
-
-        {/* Day Tabs */}
-        {days.length > 0 && (
-          <div className="sticky top-16 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 bg-[var(--editorial-bg)] mt-6">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-              {days.map((day) => {
-                const isSelected = day.dayNumber === selectedDayNumber;
-                const dayDate = day.date
-                  ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                  : null;
-                const dayWeather = day.date ? weatherByDate[day.date] : undefined;
-                return (
-                  <button
-                    key={day.dayNumber}
-                    onClick={() => setSelectedDayNumber(day.dayNumber)}
-                    className={`flex-shrink-0 flex flex-col items-center px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      isSelected
-                        ? 'bg-[var(--editorial-accent)] text-white'
-                        : 'bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] border border-[var(--editorial-border)]'
-                    }`}
-                  >
-                    <span>
-                      {dayDate || `Day ${day.dayNumber}`}
-                    </span>
-                    {dayWeather && (
-                      <span className={`text-xs mt-0.5 ${isSelected ? 'text-white/80' : 'text-[var(--editorial-text-tertiary)]'}`}>
-                        {dayWeather.tempMax}° {dayWeather.description.split(' ')[0]}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Selected Day */}
         <div className="mt-4">
@@ -634,119 +639,6 @@ export default function TripPage() {
           </div>
           {/* End main content column */}
 
-          {/* Desktop overlay panels (floating on left panel) */}
-          <AnimatePresence>
-            {sidebarAddDay !== null && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="hidden lg:block absolute inset-0 z-40 bg-[var(--editorial-bg)] overflow-y-auto p-4 pt-20"
-              >
-                <AddPlacePanel
-                  city={primaryCity}
-                  dayNumber={sidebarAddDay}
-                  onClose={() => setSidebarAddDay(null)}
-                  onAddPlace={(dest) => {
-                    addPlace(dest, sidebarAddDay);
-                    setSidebarAddDay(null);
-                  }}
-                  onAddFlight={(data) => {
-                    addFlight({
-                      type: 'flight',
-                      airline: data.airline || '',
-                      flightNumber: data.flightNumber || '',
-                      from: data.from,
-                      to: data.to,
-                      departureDate: '',
-                      departureTime: data.departureTime || '',
-                      arrivalDate: '',
-                      arrivalTime: data.arrivalTime || '',
-                      confirmationNumber: data.confirmationNumber,
-                    }, sidebarAddDay);
-                    setSidebarAddDay(null);
-                  }}
-                  onAddTrain={(data) => {
-                    addTrain({
-                      type: 'train',
-                      trainLine: data.trainLine,
-                      trainNumber: data.trainNumber,
-                      from: data.from,
-                      to: data.to,
-                      departureDate: '',
-                      departureTime: data.departureTime || '',
-                      arrivalDate: '',
-                      arrivalTime: data.arrivalTime,
-                      confirmationNumber: data.confirmationNumber,
-                    }, sidebarAddDay);
-                    setSidebarAddDay(null);
-                  }}
-                  onAddHotel={(data) => {
-                    const dayInfo = days.find(d => d.dayNumber === sidebarAddDay);
-                    const dayDate = dayInfo?.date || '';
-                    addHotel({
-                      type: 'hotel',
-                      name: data.name,
-                      address: data.address,
-                      checkInDate: data.checkInDate || dayDate,
-                      checkInTime: data.checkInTime,
-                      checkOutDate: data.checkOutDate,
-                      checkOutTime: data.checkOutTime,
-                      confirmationNumber: data.confirmationNumber,
-                      destination_slug: data.destination_slug,
-                      image: data.image,
-                      latitude: data.latitude,
-                      longitude: data.longitude,
-                    }, sidebarAddDay);
-                    setSidebarAddDay(null);
-                  }}
-                  onAddActivity={(data) => {
-                    addActivity(data as ActivityData, sidebarAddDay);
-                    setSidebarAddDay(null);
-                  }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {selectedItem && !sidebarAddDay && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="hidden lg:block absolute inset-0 z-40 bg-[var(--editorial-bg)] overflow-y-auto p-4 pt-20"
-              >
-                <DestinationBox
-                  item={selectedItem}
-                  onClose={() => setSelectedItem(null)}
-                  onTimeChange={updateItemTime}
-                  onNotesChange={updateItemNotes}
-                  onItemUpdate={(id, updates) => updateItem(id, updates)}
-                  onRemove={removeItem}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showTripSettings && !sidebarAddDay && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="hidden lg:block absolute inset-0 z-40 bg-[var(--editorial-bg)] overflow-y-auto p-4 pt-20"
-              >
-                <TripSettingsBox
-                  trip={trip}
-                  onUpdate={updateTrip}
-                  onDelete={handleDelete}
-                  onClose={() => setShowTripSettings(false)}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           {/* Bottom sections: Intelligence, Checklist, Packing List */}
           <div className="mt-8 space-y-4 pb-8">
             <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] overflow-hidden">
@@ -785,8 +677,106 @@ export default function TripPage() {
               )}
             </div>
           </div>
+          </div>
+          {/* END SCROLLABLE CONTENT */}
         </div>
         {/* END LEFT PANEL */}
+
+        {/* DETAIL PANEL - Opens as second panel when clicking a card (desktop only) */}
+        <AnimatePresence>
+          {(selectedItem || showTripSettings || sidebarAddDay !== null) && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 400, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="hidden lg:flex lg:flex-col lg:flex-shrink-0 lg:border-r border-[var(--editorial-border)] bg-[var(--editorial-bg)] overflow-hidden"
+            >
+              <div className="flex-1 overflow-y-auto p-4">
+                {sidebarAddDay !== null ? (
+                  <AddPlacePanel
+                    city={primaryCity}
+                    dayNumber={sidebarAddDay}
+                    onClose={() => setSidebarAddDay(null)}
+                    onAddPlace={(dest) => {
+                      addPlace(dest, sidebarAddDay);
+                      setSidebarAddDay(null);
+                    }}
+                    onAddFlight={(data) => {
+                      addFlight({
+                        type: 'flight',
+                        airline: data.airline || '',
+                        flightNumber: data.flightNumber || '',
+                        from: data.from,
+                        to: data.to,
+                        departureDate: '',
+                        departureTime: data.departureTime || '',
+                        arrivalDate: '',
+                        arrivalTime: data.arrivalTime || '',
+                        confirmationNumber: data.confirmationNumber,
+                      }, sidebarAddDay);
+                      setSidebarAddDay(null);
+                    }}
+                    onAddTrain={(data) => {
+                      addTrain({
+                        type: 'train',
+                        trainLine: data.trainLine,
+                        trainNumber: data.trainNumber,
+                        from: data.from,
+                        to: data.to,
+                        departureDate: '',
+                        departureTime: data.departureTime || '',
+                        arrivalDate: '',
+                        arrivalTime: data.arrivalTime,
+                        confirmationNumber: data.confirmationNumber,
+                      }, sidebarAddDay);
+                      setSidebarAddDay(null);
+                    }}
+                    onAddHotel={(data) => {
+                      const dayInfo = days.find(d => d.dayNumber === sidebarAddDay);
+                      const dayDate = dayInfo?.date || '';
+                      addHotel({
+                        type: 'hotel',
+                        name: data.name,
+                        address: data.address,
+                        checkInDate: data.checkInDate || dayDate,
+                        checkInTime: data.checkInTime,
+                        checkOutDate: data.checkOutDate,
+                        checkOutTime: data.checkOutTime,
+                        confirmationNumber: data.confirmationNumber,
+                        destination_slug: data.destination_slug,
+                        image: data.image,
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                      }, sidebarAddDay);
+                      setSidebarAddDay(null);
+                    }}
+                    onAddActivity={(data) => {
+                      addActivity(data as ActivityData, sidebarAddDay);
+                      setSidebarAddDay(null);
+                    }}
+                  />
+                ) : selectedItem ? (
+                  <DestinationBox
+                    item={selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    onTimeChange={updateItemTime}
+                    onNotesChange={updateItemNotes}
+                    onItemUpdate={(id, updates) => updateItem(id, updates)}
+                    onRemove={removeItem}
+                  />
+                ) : showTripSettings ? (
+                  <TripSettingsBox
+                    trip={trip}
+                    onUpdate={updateTrip}
+                    onDelete={handleDelete}
+                    onClose={() => setShowTripSettings(false)}
+                  />
+                ) : null}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* RIGHT PANEL - Interactive Map */}
         <div className="hidden lg:flex lg:flex-1 lg:flex-col">

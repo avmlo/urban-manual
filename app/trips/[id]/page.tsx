@@ -2655,6 +2655,174 @@ function ItemRow({
     );
   }
 
+  // Click handler shared across card types
+  const handleClick = () => {
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+    if (isDesktop && onSelect) {
+      onSelect();
+    } else {
+      onToggle();
+    }
+  };
+
+  // Status badge element (shared)
+  const statusBadge = (
+    <div className="flex items-center gap-2 flex-shrink-0">
+      {item.parsedNotes?.costEstimate && item.parsedNotes.costEstimate > 0 && (
+        <span className="text-xs text-[var(--editorial-text-tertiary)] tabular-nums">
+          {item.parsedNotes.costEstimate}{item.parsedNotes.currency ? ` ${item.parsedNotes.currency}` : ' \u20AC'}
+        </span>
+      )}
+      {item.parsedNotes?.bookingStatus && item.parsedNotes.bookingStatus !== 'walk-in' && (
+        <span className={`
+          text-[11px] font-medium px-2 py-0.5 rounded-full
+          ${item.parsedNotes.bookingStatus === 'booked'
+            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+            : item.parsedNotes.bookingStatus === 'need-to-book'
+            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+            : item.parsedNotes.bookingStatus === 'waitlist'
+            ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
+            : 'text-gray-500 bg-gray-100 dark:bg-gray-800'
+          }
+        `}>
+          {item.parsedNotes.bookingStatus === 'booked' ? 'booked'
+            : item.parsedNotes.bookingStatus === 'need-to-book' ? 'pending'
+            : item.parsedNotes.bookingStatus === 'waitlist' ? 'waitlist'
+            : item.parsedNotes.bookingStatus}
+        </span>
+      )}
+      {item.parsedNotes?.priority === 'if-time' && !item.parsedNotes?.bookingStatus && (
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800">
+          optional
+        </span>
+      )}
+    </div>
+  );
+
+  // Place card - bordered card matching hotel card style
+  if (iconType === 'place') {
+    const category = item.destination?.category || item.parsedNotes?.category || '';
+    const formattedCategory = category.replace(/_/g, ' ');
+
+    return (
+      <Reorder.Item
+        value={item}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={() => { setIsDragging(false); onDragEnd(); }}
+        className={`${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''} ${isDragging ? 'z-10' : ''}`}
+        dragListener={isEditMode}
+      >
+        <div
+          onClick={handleClick}
+          className={`
+            relative overflow-hidden rounded-2xl cursor-pointer transition-all
+            bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]
+            ${isDragging ? 'shadow-xl ring-2 ring-stone-400 dark:ring-gray-500' : 'hover:shadow-md'}
+          `}
+        >
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                {isEditMode && (
+                  <div className="flex-shrink-0 touch-none cursor-grab active:cursor-grabbing">
+                    <GripVertical className="w-4 h-4 text-gray-400 opacity-60" />
+                  </div>
+                )}
+                {/* Image or icon */}
+                {image && !imageError ? (
+                  <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
+                    <Image
+                      src={image}
+                      alt=""
+                      width={36}
+                      height={36}
+                      className="w-9 h-9 object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-9 h-9 rounded-xl bg-stone-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
+                  </div>
+                )}
+                {/* Name + subtitle */}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-stone-900 dark:text-white truncate">
+                    {title}
+                  </p>
+                  {formattedCategory && (
+                    <p className="text-xs text-[var(--editorial-text-tertiary)] truncate capitalize">
+                      {formattedCategory}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {/* Right: time + badges */}
+              <div className="text-right flex-shrink-0 ml-3">
+                {item.time && (
+                  <p className="text-sm font-semibold text-stone-900 dark:text-white tabular-nums">
+                    {formatTime(item.time)}
+                  </p>
+                )}
+                {statusBadge}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Expanded edit form - mobile only */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden lg:hidden"
+            >
+              <ItemDetails
+                item={item}
+                itemType={itemType}
+                onUpdateItem={onUpdateItem}
+                onUpdateTime={onUpdateTime}
+                onRemove={onRemove}
+                onClose={onToggle}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Reorder.Item>
+    );
+  }
+
+  // Non-place items (hotel, train, activity): flat row
+  const getIcon = () => {
+    if (iconType === 'hotel') return <Hotel className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />;
+    if (iconType === 'checkin') return <DoorOpen className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />;
+    if (iconType === 'checkout') return <LogOut className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />;
+    if (iconType === 'breakfast') return <UtensilsCrossed className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />;
+    if (iconType === 'train') return <TrainIcon className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />;
+    if (iconType === 'activity') {
+      const aType = (extraData as any).activityType;
+      const iconClass = "w-3 h-3 text-[var(--editorial-text-tertiary)]";
+      switch (aType) {
+        case 'nap': return <BedDouble className={iconClass} />;
+        case 'pool': return <Waves className={iconClass} />;
+        case 'spa': return <Sparkles className={iconClass} />;
+        case 'gym': return <Dumbbell className={iconClass} />;
+        case 'breakfast-at-hotel': return <Coffee className={iconClass} />;
+        case 'getting-ready': return <Shirt className={iconClass} />;
+        case 'packing': case 'checkout-prep': return <Package className={iconClass} />;
+        case 'sunset': return <Sun className={iconClass} />;
+        case 'work': return <Briefcase className={iconClass} />;
+        case 'call': return <Phone className={iconClass} />;
+        case 'shopping-time': return <ShoppingBag className={iconClass} />;
+        case 'photo-walk': return <Camera className={iconClass} />;
+        default: return <Clock className={iconClass} />;
+      }
+    }
+    return <MapPin className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />;
+  };
+
   return (
     <Reorder.Item
       value={item}
@@ -2669,25 +2837,15 @@ function ItemRow({
           ${isDragging ? 'shadow-lg bg-[var(--editorial-bg-elevated)] rounded-xl' : 'hover:bg-[var(--editorial-bg-elevated)]'}
           rounded-lg
         `}
-        onClick={() => {
-          const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
-          if (isDesktop && onSelect) {
-            onSelect();
-          } else {
-            onToggle();
-          }
-        }}
+        onClick={handleClick}
       >
         <div className="px-3 py-2.5">
           <div className="flex items-center gap-3">
-            {/* Drag handle - only visible in edit mode */}
             {isEditMode && (
               <div className="flex-shrink-0 touch-none cursor-grab active:cursor-grabbing">
                 <GripVertical className="w-4 h-4 text-gray-400 opacity-60" />
               </div>
             )}
-
-            {/* Time column - monospace, left-aligned like TRIP */}
             <div className="w-14 flex-shrink-0">
               {item.time ? (
                 <span className="text-[15px] font-mono tabular-nums text-[var(--editorial-text-secondary)]">
@@ -2697,100 +2855,13 @@ function ItemRow({
                 <span className="text-xs text-gray-300 dark:text-gray-600 font-mono">&nbsp;</span>
               )}
             </div>
-
-            {/* Content: icon/image + title */}
             <div className="flex-1 min-w-0 flex items-center gap-2">
-              {iconType === 'place' ? (
-                /* Place items: blue pill chip */
-                <span className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full pl-1 pr-3 py-0.5 max-w-full">
-                  {image && !imageError ? (
-                    <Image
-                      src={image}
-                      alt=""
-                      width={22}
-                      height={22}
-                      className="w-[22px] h-[22px] rounded-full object-cover flex-shrink-0"
-                      onError={() => setImageError(true)}
-                    />
-                  ) : (
-                    <span className="w-[22px] h-[22px] rounded-full bg-blue-100 dark:bg-blue-800/40 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-3 h-3" />
-                    </span>
-                  )}
-                  <span className="text-sm font-medium truncate">{title}</span>
-                </span>
-              ) : (
-                /* Non-place items: icon + title */
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--editorial-bg-elevated)] flex items-center justify-center">
-                    {iconType === 'hotel' ? <Hotel className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                     iconType === 'checkin' ? <DoorOpen className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                     iconType === 'checkout' ? <LogOut className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                     iconType === 'breakfast' ? <UtensilsCrossed className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                     iconType === 'train' ? <TrainIcon className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
-                     iconType === 'activity' ? (() => {
-                       const aType = (extraData as any).activityType;
-                       const iconClass = "w-3 h-3 text-[var(--editorial-text-tertiary)]";
-                       switch (aType) {
-                         case 'nap': return <BedDouble className={iconClass} />;
-                         case 'pool': return <Waves className={iconClass} />;
-                         case 'spa': return <Sparkles className={iconClass} />;
-                         case 'gym': return <Dumbbell className={iconClass} />;
-                         case 'breakfast-at-hotel': return <Coffee className={iconClass} />;
-                         case 'getting-ready': return <Shirt className={iconClass} />;
-                         case 'packing': case 'checkout-prep': return <Package className={iconClass} />;
-                         case 'sunset': return <Sun className={iconClass} />;
-                         case 'work': return <Briefcase className={iconClass} />;
-                         case 'call': return <Phone className={iconClass} />;
-                         case 'shopping-time': return <ShoppingBag className={iconClass} />;
-                         case 'photo-walk': return <Camera className={iconClass} />;
-                         default: return <Clock className={iconClass} />;
-                       }
-                     })() :
-                     <MapPin className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
-                    }
-                  </span>
-                  <p className="text-sm text-[var(--editorial-text-primary)] truncate">{title}</p>
-                </div>
-              )}
+              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--editorial-bg-elevated)] flex items-center justify-center">
+                {getIcon()}
+              </span>
+              <p className="text-sm text-[var(--editorial-text-primary)] truncate">{title}</p>
             </div>
-
-            {/* Right side: Cost + Status badge */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Cost estimate */}
-              {item.parsedNotes?.costEstimate && item.parsedNotes.costEstimate > 0 && (
-                <span className="text-xs text-[var(--editorial-text-tertiary)] tabular-nums">
-                  {item.parsedNotes.costEstimate}{item.parsedNotes.currency ? ` ${item.parsedNotes.currency}` : ' \u20AC'}
-                </span>
-              )}
-
-              {/* Status badge - TRIP-inspired colored pills */}
-              {item.parsedNotes?.bookingStatus && item.parsedNotes.bookingStatus !== 'walk-in' && (
-                <span className={`
-                  text-[11px] font-medium px-2 py-0.5 rounded-full
-                  ${item.parsedNotes.bookingStatus === 'booked'
-                    ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
-                    : item.parsedNotes.bookingStatus === 'need-to-book'
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
-                    : item.parsedNotes.bookingStatus === 'waitlist'
-                    ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
-                    : 'text-gray-500 bg-gray-100 dark:bg-gray-800'
-                  }
-                `}>
-                  {item.parsedNotes.bookingStatus === 'booked' ? 'booked'
-                    : item.parsedNotes.bookingStatus === 'need-to-book' ? 'pending'
-                    : item.parsedNotes.bookingStatus === 'waitlist' ? 'waitlist'
-                    : item.parsedNotes.bookingStatus}
-                </span>
-              )}
-
-              {/* Priority badge (if-time = optional) */}
-              {item.parsedNotes?.priority === 'if-time' && !item.parsedNotes?.bookingStatus && (
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800">
-                  optional
-                </span>
-              )}
-            </div>
+            {statusBadge}
           </div>
         </div>
       </div>

@@ -112,6 +112,7 @@ export default function TripPage() {
   // Map states
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [showPackingList, setShowPackingList] = useState(false);
+  const [leftPanelTab, setLeftPanelTab] = useState<'plans' | 'notes' | 'lists'>('plans');
 
   // Weather state
   const [weatherByDate, setWeatherByDate] = useState<Record<string, DayWeather>>({});
@@ -404,28 +405,38 @@ export default function TripPage() {
                 startDate={trip.start_date}
                 endDate={trip.end_date}
                 destination={primaryCity}
-                onScrollToChecklist={() => {
-                  document.getElementById('trip-checklist-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                onScrollToPackingList={() => {
-                  setShowPackingList(true);
-                  setTimeout(() => document.getElementById('trip-packing-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
-                }}
-                onOpenNotes={() => { setShowTripNotes(true); }}
+                onScrollToChecklist={() => { setLeftPanelTab('lists'); }}
+                onScrollToPackingList={() => { setLeftPanelTab('lists'); }}
+                onOpenNotes={() => { setLeftPanelTab('notes'); }}
                 onEdit={() => { setShowTripSettings(true); setSelectedItem(null); }}
                 onDelete={handleDelete}
               />
             </div>
 
-            {/* Plans section header + toolbar */}
-            <div className="mt-4 mb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold text-[var(--editorial-text-primary)]">Plans</h2>
-                  <p className="text-xs text-[var(--editorial-text-tertiary)]">Your itinerary</p>
-                </div>
+            {/* Section tabs + toolbar row */}
+            <div className="mt-4 flex items-center justify-between">
+              {/* Tabs: Plans / Notes / Lists */}
+              <div className="flex items-center gap-0">
+                {(['plans', 'notes', 'lists'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setLeftPanelTab(tab)}
+                    className={`px-3 py-1.5 text-sm font-medium transition-colors relative ${
+                      leftPanelTab === tab
+                        ? 'text-[var(--editorial-text-primary)]'
+                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
+                    }`}
+                  >
+                    {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
+                    {leftPanelTab === tab && (
+                      <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[var(--editorial-text-primary)] rounded-full" />
+                    )}
+                  </button>
+                ))}
+              </div>
 
-                {/* Toolbar icons */}
+              {/* Toolbar icons - only show on Plans tab */}
+              {leftPanelTab === 'plans' && (
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setIsEditMode(!isEditMode)}
@@ -446,14 +457,24 @@ export default function TripPage() {
                   >
                     <Settings className="w-4 h-4" />
                   </button>
-
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Day Tabs - part of sticky header */}
+            {/* Tab underline border */}
+            <div className="h-px bg-[var(--editorial-border)] mt-1" />
+          </div>
+          {/* END STICKY HEADER */}
+
+          {/* SCROLLABLE CONTENT - Tab-based */}
+          <div className="flex-1 lg:overflow-y-auto px-4 sm:px-6 pb-24 sm:pb-20">
+
+          {/* === PLANS TAB === */}
+          {leftPanelTab === 'plans' && (
+            <>
+            {/* Day date pills - moved below tabs */}
             {days.length > 0 && (
-              <div className="py-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
+              <div className="py-3">
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                   {days.map((day) => {
                     const isSelected = day.dayNumber === selectedDayNumber;
@@ -485,51 +506,9 @@ export default function TripPage() {
                 </div>
               </div>
             )}
-          </div>
-          {/* END STICKY HEADER */}
-
-          {/* SCROLLABLE CONTENT - Day items, bottom sections */}
-          <div className="flex-1 lg:overflow-y-auto px-4 sm:px-6 pb-24 sm:pb-20">
-
-        {/* Trip Notes - expandable (mobile only, desktop uses sidebar) */}
-        <div className="mt-4 lg:hidden">
-          <button
-            onClick={() => setShowTripNotes(!showTripNotes)}
-            className="text-xs text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] transition-colors"
-          >
-            {tripNotes ? 'View checklist' : 'Add checklist'}
-            <ChevronDown className={`inline w-3 h-3 ml-1 transition-transform ${showTripNotes ? 'rotate-180' : ''}`} />
-          </button>
-
-          <AnimatePresence>
-            {showTripNotes && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <TripChecklist
-                  notes={tripNotes}
-                  onSave={(notes) => updateTrip({ notes })}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Trip Intelligence - Smart Warnings & Suggestions (mobile only) */}
-        <div className="lg:hidden">
-          <TripIntelligence
-            days={days}
-            city={primaryCity}
-            weatherByDate={weatherByDate}
-            onOptimizeRoute={(dayNumber, optimizedItems) => reorderItems(dayNumber, optimizedItems)}
-          />
-        </div>
 
         {/* Selected Day */}
-        <div className="mt-4">
+        <div className="mt-1">
           {days.filter(day => day.dayNumber === selectedDayNumber).map((day) => {
             const dayDate = day.date;
             const weather = dayDate ? weatherByDate[dayDate] : undefined;
@@ -627,8 +606,8 @@ export default function TripPage() {
           </div>
         )}
 
-          {/* Bottom sections: Intelligence, Checklist, Packing List */}
-          <div className="mt-8 space-y-4 pb-8">
+          {/* Intelligence - bottom of Plans tab */}
+          <div className="mt-6">
             <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] overflow-hidden">
               <TripIntelligence
                 days={days}
@@ -638,33 +617,44 @@ export default function TripPage() {
                 compact
               />
             </div>
-
-            <div id="trip-checklist-section" className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
-              <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Checklist</h3>
-              <TripChecklist
-                notes={tripNotes}
-                onSave={(notes) => updateTrip({ notes })}
-              />
-            </div>
-
-            <div id="trip-packing-section" className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
-              <button
-                onClick={() => setShowPackingList(!showPackingList)}
-                className="w-full flex items-center justify-between"
-              >
-                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide">Packing List</h3>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showPackingList ? 'rotate-180' : ''}`} />
-              </button>
-              {showPackingList && (
-                <div className="mt-3">
-                  <PackingListPanel
-                    packingList={trip.packing_list || null}
-                    onSave={(json) => updateTrip({ packing_list: json })}
-                  />
-                </div>
-              )}
-            </div>
           </div>
+            </>
+          )}
+
+          {/* === NOTES TAB === */}
+          {leftPanelTab === 'notes' && (
+            <div className="mt-4 space-y-4">
+              <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Trip Notes</h3>
+                <TripChecklist
+                  notes={tripNotes}
+                  onSave={(notes) => updateTrip({ notes })}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* === LISTS TAB === */}
+          {leftPanelTab === 'lists' && (
+            <div className="mt-4 space-y-4">
+              <div id="trip-checklist-section" className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Checklist</h3>
+                <TripChecklist
+                  notes={tripNotes}
+                  onSave={(notes) => updateTrip({ notes })}
+                />
+              </div>
+
+              <div id="trip-packing-section" className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Packing List</h3>
+                <PackingListPanel
+                  packingList={trip.packing_list || null}
+                  onSave={(json) => updateTrip({ packing_list: json })}
+                />
+              </div>
+            </div>
+          )}
+
           </div>
           {/* END SCROLLABLE CONTENT */}
         </div>

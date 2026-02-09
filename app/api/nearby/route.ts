@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { withErrorHandling } from '@/lib/errors';
+import {
+  searchRatelimit,
+  memorySearchRatelimit,
+  enforceRateLimit,
+} from '@/lib/rate-limit';
 
 function getSupabaseClient() {
   // Use service role client for admin operations (bypasses RLS)
   // Falls back to anon key if service role is not available
   try {
     return createServiceRoleClient();
-  } catch (error) {
+  } catch (_error) {
     // If service role is not configured, log error but continue
     // The client will be a placeholder and operations will fail gracefully
     console.error('[nearby API] Service role client not available, using placeholder');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createClient } = require('@supabase/supabase-js');
     return createClient('https://placeholder.supabase.co', 'placeholder-key');
   }
@@ -31,6 +37,19 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   try {
+    // Rate limiting (IP-based as this is a public endpoint)
+    const rateLimitResponse = await enforceRateLimit({
+      request,
+      userId: null, // Public endpoint, use IP
+      message: 'Too many nearby requests',
+      limiter: searchRatelimit,
+      memoryLimiter: memorySearchRatelimit,
+    });
+
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const { searchParams } = new URL(request.url);
 
     const lat = parseFloat(searchParams.get('lat') || '0');
@@ -49,6 +68,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
     // Try using the database function first (if migration has been run)
     const supabase = getSupabaseClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let destinations: any[] = [];
     let usesFallback = false;
 
@@ -68,7 +88,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       } else {
         destinations = data || [];
       }
-    } catch (error) {
+    } catch {
       // Function doesn't exist, use fallback
       console.log('Database function error, using fallback method');
       usesFallback = true;
@@ -90,7 +110,9 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
 
       // Calculate distances for destinations that have coordinates
       destinations = (data || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((d: any) => d.latitude && d.longitude)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((d: any) => {
           const distance = calculateDistance(lat, lng, d.latitude, d.longitude);
           return {
@@ -99,7 +121,9 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
             distance_miles: distance * 0.621371
           };
         })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((d: any) => d.distance_km <= radius)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .sort((a: any, b: any) => a.distance_km - b.distance_km)
         .slice(0, limit);
     }
@@ -108,10 +132,12 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     let filtered = destinations || [];
 
     if (city) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       filtered = filtered.filter((d: any) => d.city === city);
     }
 
     if (category) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       filtered = filtered.filter((d: any) => d.category === category);
     }
 
@@ -122,6 +148,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       count: filtered.length,
       usesFallback,
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error in nearby API:', error);
     return NextResponse.json(

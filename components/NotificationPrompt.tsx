@@ -112,44 +112,44 @@ export function NotificationPrompt({ delay = POPUP_DELAY_AFTER_PREVIOUS }: Notif
     <div
       className={`
         fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50
-        bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700
-        transform transition-all duration-300 ease-out
+        bg-[var(--editorial-bg)] rounded-2xl border border-[var(--editorial-border)]
+        shadow-sm transform transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
         ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}
       `}
       role="dialog"
       aria-labelledby="notification-prompt-title"
     >
-      <div className="p-4">
+      <div className="p-5">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-            <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex-shrink-0 w-10 h-10 bg-[var(--editorial-accent)]/10 rounded-full flex items-center justify-center">
+            <Bell className="w-5 h-5 text-[var(--editorial-accent)]" />
           </div>
           <div className="flex-1 min-w-0">
             <h3
               id="notification-prompt-title"
-              className="text-sm font-semibold text-gray-900 dark:text-white"
+              className="text-sm font-semibold text-[var(--editorial-text-primary)]"
             >
               Stay updated
             </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+            <p className="mt-1 text-sm text-[var(--editorial-text-secondary)]">
               Get notified about new destinations, trip updates, and personalized recommendations.
             </p>
           </div>
           <button
             onClick={() => handleDismiss(false)}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex-shrink-0 p-1 rounded-full hover:bg-[var(--editorial-border-subtle)] transition-colors"
             aria-label="Dismiss"
           >
-            <X className="w-4 h-4 text-gray-500" />
+            <X className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
           </button>
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-3">
           <Button
             onClick={handleEnable}
             disabled={isRequesting}
             size="sm"
-            className="flex-1"
+            className="flex-1 rounded-full"
           >
             {isRequesting ? 'Enabling...' : 'Enable notifications'}
           </Button>
@@ -157,7 +157,7 @@ export function NotificationPrompt({ delay = POPUP_DELAY_AFTER_PREVIOUS }: Notif
             onClick={() => handleDismiss(true)}
             variant="ghost"
             size="sm"
-            className="text-gray-500"
+            className="rounded-full text-[var(--editorial-text-secondary)]"
           >
             Not now
           </Button>

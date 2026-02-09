@@ -374,7 +374,7 @@ export default function TripPage() {
       {/* Split-panel layout: itinerary (left) + map (right) on desktop */}
       <div className="lg:flex lg:h-screen">
         {/* LEFT PANEL - Itinerary */}
-        <div className="lg:w-[460px] xl:w-[480px] lg:flex-shrink-0 lg:flex lg:flex-col lg:border-r border-[var(--editorial-border)] relative">
+        <div className="lg:w-[380px] xl:w-[400px] lg:flex-shrink-0 lg:flex lg:flex-col lg:border-r border-[var(--editorial-border)] relative">
           {/* STICKY HEADER - Back + title, stats, toolbar, day tabs */}
           <div className="flex-shrink-0 px-4 sm:px-6 pt-16 sm:pt-6 pb-0 bg-[var(--editorial-bg)] lg:border-b border-[var(--editorial-border)]">
             {/* Top row: Back + Title + Menu */}

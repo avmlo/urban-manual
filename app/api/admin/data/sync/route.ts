@@ -32,32 +32,26 @@ export async function POST(request: NextRequest) {
         destinations?.map(d => d.brand?.trim()).filter(Boolean) || []
       )];
 
-      let inserted = 0;
-      let existing = 0;
+      // Fetch all existing brand slugs in one query
+      const { data: existingBrands } = await supabase
+        .from('brands')
+        .select('slug');
+      const existingSlugs = new Set(existingBrands?.map(b => b.slug) || []);
 
-      for (const brand of uniqueBrands) {
-        const name = toTitleCase(brand);
-        const slug = toSlug(brand);
+      const newBrands = uniqueBrands
+        .map(brand => ({ name: toTitleCase(brand), slug: toSlug(brand) }))
+        .filter(b => !existingSlugs.has(b.slug));
 
-        // Check if already exists
-        const { data: existingBrand } = await supabase
-          .from('brands')
-          .select('id')
-          .eq('slug', slug)
-          .single();
-
-        if (existingBrand) {
-          existing++;
-        } else {
-          const { error } = await supabase
-            .from('brands')
-            .insert({ name, slug });
-
-          if (!error) inserted++;
-        }
+      if (newBrands.length > 0) {
+        const { error } = await supabase.from('brands').insert(newBrands);
+        if (error) throw error;
       }
 
-      results.brands = { found: uniqueBrands.length, inserted, existing };
+      results.brands = {
+        found: uniqueBrands.length,
+        inserted: newBrands.length,
+        existing: uniqueBrands.length - newBrands.length,
+      };
     }
 
     // Sync cities
@@ -81,30 +75,30 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      let inserted = 0;
-      let existing = 0;
+      // Fetch all existing city slugs in one query
+      const { data: existingCities } = await supabase
+        .from('cities')
+        .select('slug');
+      const existingSlugs = new Set(existingCities?.map(c => c.slug) || []);
 
-      for (const city of cityMap.values()) {
-        const slug = toSlug(`${city.name}-${city.country || 'unknown'}`);
+      const newCities = [...cityMap.values()]
+        .map(city => ({
+          name: city.name,
+          country: city.country,
+          slug: toSlug(`${city.name}-${city.country || 'unknown'}`),
+        }))
+        .filter(c => !existingSlugs.has(c.slug));
 
-        const { data: existingCity } = await supabase
-          .from('cities')
-          .select('id')
-          .eq('slug', slug)
-          .single();
-
-        if (existingCity) {
-          existing++;
-        } else {
-          const { error } = await supabase
-            .from('cities')
-            .insert({ name: city.name, country: city.country, slug });
-
-          if (!error) inserted++;
-        }
+      if (newCities.length > 0) {
+        const { error } = await supabase.from('cities').insert(newCities);
+        if (error) throw error;
       }
 
-      results.cities = { found: cityMap.size, inserted, existing };
+      results.cities = {
+        found: cityMap.size,
+        inserted: newCities.length,
+        existing: cityMap.size - newCities.length,
+      };
     }
 
     // Sync countries
@@ -119,31 +113,26 @@ export async function POST(request: NextRequest) {
         destinations?.map(d => d.country?.trim()).filter(Boolean) || []
       )];
 
-      let inserted = 0;
-      let existing = 0;
+      // Fetch all existing country slugs in one query
+      const { data: existingCountries } = await supabase
+        .from('countries')
+        .select('slug');
+      const existingSlugs = new Set(existingCountries?.map(c => c.slug) || []);
 
-      for (const country of uniqueCountries) {
-        const name = toTitleCase(country);
-        const slug = toSlug(country);
+      const newCountries = uniqueCountries
+        .map(country => ({ name: toTitleCase(country), slug: toSlug(country) }))
+        .filter(c => !existingSlugs.has(c.slug));
 
-        const { data: existingCountry } = await supabase
-          .from('countries')
-          .select('id')
-          .eq('slug', slug)
-          .single();
-
-        if (existingCountry) {
-          existing++;
-        } else {
-          const { error } = await supabase
-            .from('countries')
-            .insert({ name, slug });
-
-          if (!error) inserted++;
-        }
+      if (newCountries.length > 0) {
+        const { error } = await supabase.from('countries').insert(newCountries);
+        if (error) throw error;
       }
 
-      results.countries = { found: uniqueCountries.length, inserted, existing };
+      results.countries = {
+        found: uniqueCountries.length,
+        inserted: newCountries.length,
+        existing: uniqueCountries.length - newCountries.length,
+      };
     }
 
     // Sync neighborhoods
@@ -168,30 +157,31 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      let inserted = 0;
-      let existing = 0;
+      // Fetch all existing neighborhood slugs in one query
+      const { data: existingNeighborhoods } = await supabase
+        .from('neighborhoods')
+        .select('slug');
+      const existingSlugs = new Set(existingNeighborhoods?.map(n => n.slug) || []);
 
-      for (const neighborhood of neighborhoodMap.values()) {
-        const slug = toSlug(`${neighborhood.name}-${neighborhood.city || 'unknown'}-${neighborhood.country || 'unknown'}`);
+      const newNeighborhoods = [...neighborhoodMap.values()]
+        .map(n => ({
+          name: n.name,
+          city: n.city,
+          country: n.country,
+          slug: toSlug(`${n.name}-${n.city || 'unknown'}-${n.country || 'unknown'}`),
+        }))
+        .filter(n => !existingSlugs.has(n.slug));
 
-        const { data: existingNeighborhood } = await supabase
-          .from('neighborhoods')
-          .select('id')
-          .eq('slug', slug)
-          .single();
-
-        if (existingNeighborhood) {
-          existing++;
-        } else {
-          const { error } = await supabase
-            .from('neighborhoods')
-            .insert({ name: neighborhood.name, city: neighborhood.city, country: neighborhood.country, slug });
-
-          if (!error) inserted++;
-        }
+      if (newNeighborhoods.length > 0) {
+        const { error } = await supabase.from('neighborhoods').insert(newNeighborhoods);
+        if (error) throw error;
       }
 
-      results.neighborhoods = { found: neighborhoodMap.size, inserted, existing };
+      results.neighborhoods = {
+        found: neighborhoodMap.size,
+        inserted: newNeighborhoods.length,
+        existing: neighborhoodMap.size - newNeighborhoods.length,
+      };
     }
 
     return NextResponse.json({

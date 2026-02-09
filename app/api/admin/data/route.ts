@@ -5,6 +5,15 @@ type DataType = 'brands' | 'cities' | 'countries' | 'neighborhoods' | 'architect
 
 const VALID_TYPES: DataType[] = ['brands', 'cities', 'countries', 'neighborhoods', 'architects'];
 
+// Columns eligible for ilike search per collection type
+const SEARCH_COLUMNS: Record<DataType, string[]> = {
+  brands: ['name'],
+  cities: ['name', 'country'],
+  countries: ['name'],
+  neighborhoods: ['name', 'city', 'country'],
+  architects: ['name', 'nationality'],
+};
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const type = searchParams.get('type') as DataType;
@@ -23,9 +32,45 @@ export async function GET(request: NextRequest) {
 
     // Use service role client to bypass RLS for admin operations
     const supabase = createServiceRoleClient();
-    const { data, error } = await supabase.from(type).select('*').order('name');
+
+    // Parse optional pagination params
+    const pageParam = searchParams.get('page');
+    const pageSizeParam = searchParams.get('pageSize');
+    const search = searchParams.get('search')?.trim() || '';
+    const paginate = pageParam !== null && pageSizeParam !== null;
+    const page = Math.max(1, parseInt(pageParam || '1', 10));
+    const pageSize = Math.min(100, Math.max(1, parseInt(pageSizeParam || '50', 10)));
+
+    // When paginating, request exact count; otherwise skip the overhead
+    let query = paginate
+      ? supabase.from(type).select('*', { count: 'exact' })
+      : supabase.from(type).select('*');
+
+    // Apply search filter across relevant columns
+    if (search) {
+      const escaped = search.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const columns = SEARCH_COLUMNS[type];
+      const orFilter = columns.map(col => `${col}.ilike.%${escaped}%`).join(',');
+      query = query.or(orFilter);
+    }
+
+    // Ordering
+    query = query.order('name');
+
+    // Apply pagination range
+    if (paginate) {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+    }
+
+    const { data, count, error } = await query;
 
     if (error) throw error;
+
+    if (paginate) {
+      return NextResponse.json({ data, total: count ?? 0, page, pageSize });
+    }
     return NextResponse.json({ data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to fetch';
@@ -94,9 +139,17 @@ const ARCHITECT_FIELDS = ['architect_id', 'interior_designer_id'] as const;
 export async function DELETE(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const type = searchParams.get('type') as DataType;
-  const id = searchParams.get('id');
+  const singleId = searchParams.get('id');
+  const idsParam = searchParams.get('ids');
 
-  if (!type || !VALID_TYPES.includes(type) || !id) {
+  // Support single id or comma-separated ids for bulk delete
+  const ids = idsParam
+    ? idsParam.split(',').filter(Boolean)
+    : singleId
+      ? [singleId]
+      : [];
+
+  if (!type || !VALID_TYPES.includes(type) || ids.length === 0) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 
@@ -117,7 +170,7 @@ export async function DELETE(request: NextRequest) {
         const { error: updateError } = await supabase
           .from('destinations')
           .update({ [field]: null })
-          .eq(field, id);
+          .in(field, ids);
 
         if (updateError) {
           // Detect stale trigger referencing old column name (architect → design_firm)
@@ -132,10 +185,10 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    const { error } = await supabase.from(type).delete().eq('id', id);
+    const { error } = await supabase.from(type).delete().in('id', ids);
 
     if (error) throw error;
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deleted: ids.length });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to delete';
     return NextResponse.json({ error: message }, { status: 500 });

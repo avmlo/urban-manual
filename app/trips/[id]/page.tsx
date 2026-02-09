@@ -375,30 +375,39 @@ export default function TripPage() {
       <div className="lg:flex lg:h-screen">
         {/* LEFT PANEL - Itinerary */}
         <div className="lg:w-[460px] xl:w-[480px] lg:flex-shrink-0 lg:flex lg:flex-col lg:border-r border-[var(--editorial-border)] relative">
-          {/* STICKY HEADER - Back, title, toolbar, day tabs */}
+          {/* STICKY HEADER - Back + title, stats, toolbar, day tabs */}
           <div className="flex-shrink-0 px-4 sm:px-6 pt-16 sm:pt-6 pb-0 bg-[var(--editorial-bg)] lg:border-b border-[var(--editorial-border)]">
-            {/* Back link */}
-            <div className="flex items-center gap-3 mb-4">
-              <Link
-                href="/trips"
-                className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
+            {/* Top row: Back + Title + Menu */}
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-3 min-w-0">
+                <Link
+                  href="/trips"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors flex-shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <TripEditorHeader
+                    trip={trip}
+                    primaryCity={primaryCity}
+                    totalItems={totalItems}
+                    userId={user?.id}
+                    days={days}
+                    onUpdate={updateTrip}
+                    onDelete={handleDelete}
+                  />
+                </div>
+              </div>
+              <TripQuickActions
+                tripId={tripId}
+                tripTitle={trip.title || 'My Trip'}
+                startDate={trip.start_date}
+                endDate={trip.end_date}
+                destination={primaryCity}
+              />
             </div>
 
-            {/* Header - tap to edit */}
-            <TripEditorHeader
-              trip={trip}
-              primaryCity={primaryCity}
-              totalItems={totalItems}
-              userId={user?.id}
-              days={days}
-              onUpdate={updateTrip}
-              onDelete={handleDelete}
-            />
-
-            {/* Plans section header + toolbar - TRIP-inspired */}
+            {/* Plans section header + toolbar */}
             <div className="mt-4 mb-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -428,37 +437,23 @@ export default function TripPage() {
                     <Settings className="w-4 h-4" />
                   </button>
 
-                  <TripQuickActions
-                    tripId={tripId}
-                    tripTitle={trip.title || 'My Trip'}
-                    startDate={trip.start_date}
-                    endDate={trip.end_date}
-                    destination={primaryCity}
-                  />
-
-                  {/* Add button */}
                   <button
-                    onClick={() => setSidebarAddDay(selectedDayNumber)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                    title="Add to itinerary"
+                    onClick={() => {}}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
+                    title="Filter"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Filter className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => window.open(`/api/trips/${tripId}/export/ical`, '_blank')}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
+                    title="Download"
+                  >
+                    <Download className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-
-              {/* Trip stats bar */}
-              {tripCostSummary.total > 0 && (
-                <div className="flex items-center gap-3 mt-2 text-xs text-[var(--editorial-text-tertiary)]">
-                  <span>{days.length} days</span>
-                  <span>·</span>
-                  <span>{totalItems} places</span>
-                  <span>·</span>
-                  <span className="font-medium text-[var(--editorial-text-secondary)]">
-                    {tripCostSummary.total.toLocaleString()} {tripCostSummary.currency}
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Day Tabs - part of sticky header */}
@@ -636,8 +631,6 @@ export default function TripPage() {
             </p>
           </div>
         )}
-          </div>
-          {/* End main content column */}
 
           {/* Bottom sections: Intelligence, Checklist, Packing List */}
           <div className="mt-8 space-y-4 pb-8">
@@ -1327,18 +1320,15 @@ function DaySection({
           : ''
       }`}
     >
-      {/* Day header - TRIP-inspired with item count and cost */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Day header - TRIP-inspired: item count circle + title + cost + menu */}
+      <div className="flex items-center justify-between mb-3 mt-2">
         <div className="flex items-center gap-3">
-          {/* Item count circle */}
-          <div className="w-8 h-8 rounded-full bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-[var(--editorial-text-primary)]">{items.length}</span>
+          {/* Item count circle - accent blue like TRIP */}
+          <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{items.length}</span>
           </div>
-          <h3
-            className="text-[15px] font-semibold text-[var(--editorial-text-primary)]"
-            style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
-          >
-            Day {dayNumber}{longDateDisplay ? ` - ${longDateDisplay}` : ''}
+          <h3 className="text-[15px] font-semibold text-[var(--editorial-text-primary)]">
+            Day {dayNumber}{longDateDisplay ? ` \u2013 ${longDateDisplay}` : ''}
           </h3>
           {/* Weather badge - warm styling */}
           {weather && (
@@ -2690,9 +2680,9 @@ function ItemRow({
     >
       <div
         className={`
-          relative rounded-xl overflow-hidden transition-all cursor-pointer
-          bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]
-          ${isDragging ? 'shadow-xl ring-2 ring-stone-400 dark:ring-gray-500' : 'hover:shadow-sm hover:border-gray-300 dark:hover:border-gray-600'}
+          relative transition-all cursor-pointer group
+          ${isDragging ? 'shadow-lg bg-[var(--editorial-bg-elevated)] rounded-xl' : 'hover:bg-[var(--editorial-bg-elevated)]'}
+          rounded-lg
         `}
         onClick={() => {
           const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -2703,7 +2693,7 @@ function ItemRow({
           }
         }}
       >
-        <div className="px-4 py-3">
+        <div className="px-3 py-2.5">
           <div className="flex items-center gap-3">
             {/* Drag handle - only visible in edit mode */}
             {isEditMode && (
@@ -2712,68 +2702,76 @@ function ItemRow({
               </div>
             )}
 
-            {/* Time column - TRIP-inspired left-aligned time */}
-            <div className="w-12 flex-shrink-0 text-right">
+            {/* Time column - monospace, left-aligned like TRIP */}
+            <div className="w-14 flex-shrink-0">
               {item.time ? (
-                <span className="text-sm font-mono tabular-nums text-[var(--editorial-text-secondary)]">
+                <span className="text-[15px] font-mono tabular-nums text-[var(--editorial-text-secondary)]">
                   {formatTime(item.time)}
                 </span>
               ) : (
-                <span className="text-xs text-gray-300 dark:text-gray-600">--:--</span>
+                <span className="text-xs text-gray-300 dark:text-gray-600 font-mono">&nbsp;</span>
               )}
             </div>
 
-            {/* Icon */}
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-[var(--editorial-bg)] flex-shrink-0 flex items-center justify-center">
-              {iconType === 'hotel' ? (
-                <Hotel className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
-              ) : iconType === 'checkin' ? (
-                <DoorOpen className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
-              ) : iconType === 'checkout' ? (
-                <LogOut className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
-              ) : iconType === 'breakfast' ? (
-                <UtensilsCrossed className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
-              ) : iconType === 'train' ? (
-                <TrainIcon className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
-              ) : iconType === 'activity' ? (
-                (() => {
-                  const aType = (extraData as any).activityType;
-                  switch (aType) {
-                    case 'nap': return <BedDouble className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'pool': return <Waves className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'spa': return <Sparkles className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'gym': return <Dumbbell className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'breakfast-at-hotel': return <Coffee className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'getting-ready': return <Shirt className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'packing': case 'checkout-prep': return <Package className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'sunset': return <Sun className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'work': return <Briefcase className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'call': return <Phone className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'shopping-time': return <ShoppingBag className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    case 'photo-walk': return <Camera className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                    default: return <Clock className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
-                  }
-                })()
-              ) : image && !imageError ? (
-                <Image
-                  src={image}
-                  alt=""
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
-                  onError={() => setImageError(true)}
-                />
-              ) : (
-                <MapPin className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
-              )}
-            </div>
-
-            {/* Content - title and optional link */}
-            <div className="flex-1 min-w-0">
+            {/* Content: icon/image + title as a chip for linked items, plain text otherwise */}
+            <div className="flex-1 min-w-0 flex items-center gap-2">
               {item.destination_slug ? (
-                <p className="text-sm font-medium text-[var(--editorial-accent)] truncate">{title}</p>
+                /* Linked destination: blue pill chip with small image */
+                <span className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full pl-1 pr-3 py-0.5 max-w-full">
+                  {image && !imageError ? (
+                    <Image
+                      src={image}
+                      alt=""
+                      width={22}
+                      height={22}
+                      className="w-[22px] h-[22px] rounded-full object-cover flex-shrink-0"
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <span className="w-[22px] h-[22px] rounded-full bg-blue-100 dark:bg-blue-800/40 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-3 h-3" />
+                    </span>
+                  )}
+                  <span className="text-sm font-medium truncate">{title}</span>
+                </span>
               ) : (
-                <p className="text-sm font-medium text-stone-900 dark:text-white truncate">{title}</p>
+                /* Regular item: small dot + title */
+                <div className="flex items-center gap-2 min-w-0">
+                  {iconType !== 'place' ? (
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--editorial-bg-elevated)] flex items-center justify-center">
+                      {iconType === 'hotel' ? <Hotel className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                       iconType === 'checkin' ? <DoorOpen className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                       iconType === 'checkout' ? <LogOut className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                       iconType === 'breakfast' ? <UtensilsCrossed className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                       iconType === 'train' ? <TrainIcon className="w-3 h-3 text-[var(--editorial-text-tertiary)]" /> :
+                       iconType === 'activity' ? (() => {
+                         const aType = (extraData as any).activityType;
+                         const iconClass = "w-3 h-3 text-[var(--editorial-text-tertiary)]";
+                         switch (aType) {
+                           case 'nap': return <BedDouble className={iconClass} />;
+                           case 'pool': return <Waves className={iconClass} />;
+                           case 'spa': return <Sparkles className={iconClass} />;
+                           case 'gym': return <Dumbbell className={iconClass} />;
+                           case 'breakfast-at-hotel': return <Coffee className={iconClass} />;
+                           case 'getting-ready': return <Shirt className={iconClass} />;
+                           case 'packing': case 'checkout-prep': return <Package className={iconClass} />;
+                           case 'sunset': return <Sun className={iconClass} />;
+                           case 'work': return <Briefcase className={iconClass} />;
+                           case 'call': return <Phone className={iconClass} />;
+                           case 'shopping-time': return <ShoppingBag className={iconClass} />;
+                           case 'photo-walk': return <Camera className={iconClass} />;
+                           default: return <Clock className={iconClass} />;
+                         }
+                       })() :
+                       <MapPin className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
+                      }
+                    </span>
+                  ) : (
+                    /* Small colored category dot for places */
+                    <span className="w-2 h-2 rounded-full bg-[var(--editorial-accent)] opacity-60 flex-shrink-0" />
+                  )}
+                  <p className="text-sm text-[var(--editorial-text-primary)] truncate">{title}</p>
+                </div>
               )}
             </div>
 
@@ -2781,19 +2779,19 @@ function ItemRow({
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* Cost estimate */}
               {item.parsedNotes?.costEstimate && item.parsedNotes.costEstimate > 0 && (
-                <span className="text-sm font-medium text-[var(--editorial-text-primary)] tabular-nums">
-                  {item.parsedNotes.costEstimate} {item.parsedNotes.currency || '\u20AC'}
+                <span className="text-xs text-[var(--editorial-text-tertiary)] tabular-nums">
+                  {item.parsedNotes.costEstimate}{item.parsedNotes.currency ? ` ${item.parsedNotes.currency}` : ' \u20AC'}
                 </span>
               )}
 
-              {/* Status badge - TRIP-inspired */}
+              {/* Status badge - TRIP-inspired colored pills */}
               {item.parsedNotes?.bookingStatus && item.parsedNotes.bookingStatus !== 'walk-in' && (
                 <span className={`
-                  text-xs font-medium px-2 py-0.5 rounded-md
+                  text-[11px] font-medium px-2 py-0.5 rounded-full
                   ${item.parsedNotes.bookingStatus === 'booked'
-                    ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+                    ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
                     : item.parsedNotes.bookingStatus === 'need-to-book'
-                    ? 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
                     : item.parsedNotes.bookingStatus === 'waitlist'
                     ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
                     : 'text-gray-500 bg-gray-100 dark:bg-gray-800'
@@ -2808,61 +2806,10 @@ function ItemRow({
 
               {/* Priority badge (if-time = optional) */}
               {item.parsedNotes?.priority === 'if-time' && !item.parsedNotes?.bookingStatus && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-md text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800">
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800">
                   optional
                 </span>
               )}
-
-              {/* More options button */}
-              <div className="relative" ref={actionsRef}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowActions(!showActions);
-                  }}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
-                </button>
-
-                {/* Actions dropdown */}
-                <AnimatePresence>
-                  {showActions && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-1 z-50 bg-[var(--editorial-bg-elevated)] rounded-xl shadow-lg border border-[var(--editorial-border)] overflow-hidden min-w-[140px]"
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowActions(false);
-                          onToggle();
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
-                      >
-                        <Pencil className="w-4 h-4" />
-                        Edit
-                      </button>
-                      {onRemove && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowActions(false);
-                            onRemove();
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
             </div>
           </div>
         </div>

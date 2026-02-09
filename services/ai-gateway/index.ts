@@ -1,6 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z, type ZodSchema } from 'zod';
 import { getOpenAI, OPENAI_MODEL } from '@/lib/openai';
+import {
+  CircuitBreaker,
+  getAIFallbackResponse,
+} from '@/lib/ai/circuit-breaker';
+import { recordProviderEvent } from '@/lib/observability/metrics';
 
 export type AiProvider = 'gemini' | 'openai' | 'local';
 export type AiCapability = 'json' | 'long-context' | 'low-latency';
@@ -36,19 +41,14 @@ export interface AiGatewayResponse<T = unknown> {
     output?: number;
     total?: number;
   };
+  /** True when the response came from a fallback (all providers failed) */
+  fallback?: boolean;
 }
 
 interface ProviderConfig {
   available: boolean;
   capabilities: AiCapability[];
   defaultModel?: string;
-}
-
-interface ProviderHealthState {
-  consecutiveFailures: number;
-  unhealthyUntil: number;
-  lastError?: string;
-  lastLatencyMs?: number;
 }
 
 const geminiKey =
@@ -85,11 +85,34 @@ const providerConfigs: Record<AiProvider, ProviderConfig> = {
   },
 };
 
-const providerHealth: Record<AiProvider, ProviderHealthState> = {
-  gemini: { consecutiveFailures: 0, unhealthyUntil: 0 },
-  openai: { consecutiveFailures: 0, unhealthyUntil: 0 },
-  local: { consecutiveFailures: 0, unhealthyUntil: 0 },
+// ---------------------------------------------------------------------------
+// Circuit breakers per provider (replaces simple failure counters)
+// ---------------------------------------------------------------------------
+
+const circuitBreakers: Record<AiProvider, CircuitBreaker> = {
+  gemini: new CircuitBreaker('ai:gemini', {
+    failureThreshold: 3,
+    cooldownMs: 30_000,
+    maxCooldownMs: 300_000,
+    halfOpenSuccessThreshold: 2,
+  }),
+  openai: new CircuitBreaker('ai:openai', {
+    failureThreshold: 3,
+    cooldownMs: 30_000,
+    maxCooldownMs: 300_000,
+    halfOpenSuccessThreshold: 2,
+  }),
+  local: new CircuitBreaker('ai:local', {
+    failureThreshold: 5,
+    cooldownMs: 15_000,
+    maxCooldownMs: 120_000,
+    halfOpenSuccessThreshold: 1,
+  }),
 };
+
+// ---------------------------------------------------------------------------
+// Metrics (kept for backward compatibility with getAiGatewayMetricsSnapshot)
+// ---------------------------------------------------------------------------
 
 interface ProviderMetrics {
   requests: number;
@@ -123,6 +146,10 @@ export const TextResponseSchema = z.object({
   text: z.string().min(1).max(600),
 });
 
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
 export async function routePrompt<T = unknown>(
   request: AiGatewayRequest
 ): Promise<AiGatewayResponse<T>> {
@@ -134,7 +161,15 @@ export async function routePrompt<T = unknown>(
       continue;
     }
 
-    if (!isProviderHealthy(provider)) {
+    // Use circuit breaker instead of simple health check
+    if (!circuitBreakers[provider].isAllowed) {
+      logEvent({
+        level: 'warn',
+        event: 'ai_gateway.circuit_open',
+        provider,
+        state: circuitBreakers[provider].getStatus(),
+        useCase: request.metadata?.useCase,
+      });
       continue;
     }
 
@@ -155,6 +190,7 @@ export async function routePrompt<T = unknown>(
         : undefined;
 
       recordSuccess(provider, latencyMs, result.tokens);
+      circuitBreakers[provider].recordSuccess(latencyMs);
       logEvent({
         level: 'info',
         event: 'ai_gateway.success',
@@ -172,39 +208,71 @@ export async function routePrompt<T = unknown>(
         tokens: result.tokens,
       };
     } catch (error) {
-      recordFailure(provider, error as Error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      recordFailure(provider, err);
+      circuitBreakers[provider].recordFailure(err);
       logEvent({
         level: 'error',
         event: 'ai_gateway.failure',
         provider,
-        message: (error as Error).message,
+        message: err.message,
+        circuitState: circuitBreakers[provider].getStatus().state,
         useCase: request.metadata?.useCase,
       });
     }
   }
 
+  // All providers exhausted — return graceful fallback instead of throwing
   aiGatewayMetrics.total.failures += 1;
-  throw new Error('AI gateway exhausted all providers');
+
+  const fallbackContent = getAIFallbackResponse({
+    query: request.metadata?.useCase,
+  });
+
+  logEvent({
+    level: 'error',
+    event: 'ai_gateway.all_providers_exhausted',
+    candidates,
+    circuitStates: Object.fromEntries(
+      Object.entries(circuitBreakers).map(([k, v]) => [k, v.getStatus()])
+    ),
+    useCase: request.metadata?.useCase,
+  });
+
+  // Return a fallback response so callers don't need to handle the error
+  return {
+    provider: 'local' as AiProvider,
+    output: fallbackContent,
+    latencyMs: 0,
+    fallback: true,
+  };
 }
 
 export function getAiGatewayMetricsSnapshot() {
-  return JSON.parse(JSON.stringify(aiGatewayMetrics));
+  return {
+    ...JSON.parse(JSON.stringify(aiGatewayMetrics)),
+    circuitBreakers: Object.fromEntries(
+      Object.entries(circuitBreakers).map(([k, v]) => [k, v.getStatus()])
+    ),
+  };
 }
+
+/** Expose circuit breaker status for the observability endpoint */
+export function getCircuitBreakerStatus() {
+  return Object.fromEntries(
+    Object.entries(circuitBreakers).map(([k, v]) => [k, v.getStatus()])
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
 
 function selectProviders(request: AiGatewayRequest): AiProvider[] {
   if (request.preferredProviders?.length) {
     return request.preferredProviders;
   }
   return ['openai', 'gemini', 'local'];
-}
-
-function isProviderHealthy(provider: AiProvider) {
-  const state = providerHealth[provider];
-  if (!state) return false;
-  if (state.unhealthyUntil && Date.now() < state.unhealthyUntil) {
-    return false;
-  }
-  return true;
 }
 
 function providerSupports(provider: AiProvider, required?: AiCapability[]) {
@@ -366,10 +434,7 @@ function recordSuccess(provider: AiProvider, latencyMs: number, tokens?: { input
   aiGatewayMetrics[provider].tokensIn += tokens?.input || 0;
   aiGatewayMetrics[provider].tokensOut += tokens?.output || 0;
 
-  providerHealth[provider].consecutiveFailures = 0;
-  providerHealth[provider].unhealthyUntil = 0;
-  providerHealth[provider].lastLatencyMs = latencyMs;
-  providerHealth[provider].lastError = undefined;
+  recordProviderEvent(`ai:${provider}`, { success: true, latencyMs });
 }
 
 function recordFailure(provider: AiProvider, error: Error) {
@@ -378,12 +443,7 @@ function recordFailure(provider: AiProvider, error: Error) {
   aiGatewayMetrics[provider].requests += 1;
   aiGatewayMetrics[provider].failures += 1;
 
-  providerHealth[provider].consecutiveFailures += 1;
-  providerHealth[provider].lastError = error.message;
-
-  if (providerHealth[provider].consecutiveFailures >= 3) {
-    providerHealth[provider].unhealthyUntil = Date.now() + 5 * 60 * 1000; // 5 minutes
-  }
+  recordProviderEvent(`ai:${provider}`, { success: false });
 }
 
 function logEvent(event: Record<string, unknown>) {

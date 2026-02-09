@@ -1,14 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
-  withErrorHandling,
-  createValidationError,
+  withStandardApi,
   createSuccessResponse,
-} from '@/lib/errors';
-import {
-  proxyRatelimit,
-  memoryProxyRatelimit,
-  enforceRateLimit,
-} from '@/lib/rate-limit';
+  createValidationError,
+} from '@/lib/api';
 
 const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
@@ -36,17 +31,9 @@ function getCategoryFromTypes(types: string[]): string {
   return 'Other';
 }
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  // Rate limiting for external API proxy
-  const rateLimitResponse = await enforceRateLimit({
-    request,
-    message: 'Too many Google Places requests. Please try again later.',
-    limiter: proxyRatelimit,
-    memoryLimiter: memoryProxyRatelimit,
-  });
-  if (rateLimitResponse) return rateLimitResponse;
-
-  // Validate API key early
+export const POST = withStandardApi(
+  { rateLimit: 'proxy', auth: 'none', routeName: '/api/google-places-search' },
+  async (request: NextRequest) => {
   if (!GOOGLE_API_KEY) {
     throw createValidationError('Google API Key not configured');
   }
@@ -124,7 +111,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   });
 
   return createSuccessResponse({ places });
-})
+});
 
 function priceLevelToNumber(priceLevel: string): number | null {
   const mapping: Record<string, number> = {

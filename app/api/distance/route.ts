@@ -1,12 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
-  proxyRatelimit,
-  memoryProxyRatelimit,
-  getIdentifier,
-  createRateLimitResponse,
-  isUpstashConfigured,
-} from '@/lib/rate-limit';
-import { withErrorHandling } from '@/lib/errors';
+  withStandardApi,
+  createSuccessResponse,
+  createValidationError,
+} from '@/lib/api';
 
 interface DistanceRequest {
   origins: Array<{ lat: number; lng: number; name: string }>;
@@ -22,60 +19,33 @@ interface DistanceResult {
   mode: string;
 }
 
-export const POST = withErrorHandling(async (request: NextRequest) => {
-  try {
-    // Apply rate limiting
-    const identifier = getIdentifier(request);
-    const ratelimit = isUpstashConfigured()
-      ? proxyRatelimit
-      : memoryProxyRatelimit;
-    const { success, limit, remaining, reset } =
-      await ratelimit.limit(identifier);
-
-    if (!success) {
-      return createRateLimitResponse(
-        'Rate limit exceeded. Please wait before retrying.',
-        limit,
-        remaining,
-        reset
-      );
-    }
-
+export const POST = withStandardApi(
+  { rateLimit: 'proxy', auth: 'none', routeName: '/api/distance' },
+  async (request: NextRequest) => {
     const body: DistanceRequest = await request.json();
     const { origins, destinations, mode = 'walking' } = body;
 
-    // Validate input size to prevent abuse
     if (origins.length > 25 || destinations.length > 25) {
-      return NextResponse.json(
-        { error: 'Maximum 25 origins and 25 destinations allowed' },
-        { status: 400 }
-      );
+      throw createValidationError('Maximum 25 origins and 25 destinations allowed');
     }
 
-    // Validate mode
     if (!['walking', 'driving', 'transit'].includes(mode)) {
-      return NextResponse.json(
-        { error: 'Mode must be walking, driving, or transit' },
-        { status: 400 }
-      );
+      throw createValidationError('Mode must be walking, driving, or transit');
     }
 
-    // Use server-side API key only (never expose NEXT_PUBLIC_ key for backend calls)
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
     if (!apiKey) {
       console.warn('Google Maps API key not configured, using estimates');
-      return NextResponse.json({
+      return createSuccessResponse({
         results: calculateEstimates(origins, destinations, mode),
         source: 'estimate',
       });
     }
 
-    // Format origins and destinations for Google API
     const originsStr = origins.map((o) => `${o.lat},${o.lng}`).join('|');
     const destinationsStr = destinations.map((d) => `${d.lat},${d.lng}`).join('|');
 
-    // Build URL with proper encoding
     const url = new URL(
       'https://maps.googleapis.com/maps/api/distancematrix/json'
     );
@@ -89,13 +59,12 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
     if (data.status !== 'OK') {
       console.error('Google Distance Matrix API error:', data.status);
-      return NextResponse.json({
+      return createSuccessResponse({
         results: calculateEstimates(origins, destinations, mode),
         source: 'estimate',
       });
     }
 
-    // Parse results
     const results: DistanceResult[] = [];
     data.rows.forEach((row: { elements: Array<{ status: string; distance?: { value: number }; duration?: { value: number } }> }, i: number) => {
       row.elements.forEach((element, j: number) => {
@@ -111,18 +80,12 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       });
     });
 
-    return NextResponse.json({
+    return createSuccessResponse({
       results,
       source: 'google',
     });
-  } catch (error) {
-    console.error('Distance API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to calculate distances' },
-      { status: 500 }
-    );
   }
-});
+);
 
 // Fallback: Calculate estimates based on haversine distance
 function calculateEstimates(
@@ -143,17 +106,16 @@ function calculateEstimates(
         destLng
       );
 
-      // Estimate duration based on mode
       let speed: number; // km/h
       switch (mode) {
         case 'walking':
-          speed = 5; // 5 km/h
+          speed = 5;
           break;
         case 'transit':
-          speed = 25; // 25 km/h average
+          speed = 25;
           break;
         case 'driving':
-          speed = 40; // 40 km/h in city
+          speed = 40;
           break;
         default:
           speed = 5;
@@ -164,7 +126,7 @@ function calculateEstimates(
       results.push({
         from: origin.name,
         to: dest.name,
-        distance: distance * 1000, // convert to meters
+        distance: distance * 1000,
         duration: Math.round(duration),
         mode,
       });
@@ -174,14 +136,13 @@ function calculateEstimates(
   return results;
 }
 
-// Calculate distance between two points using Haversine formula
 function haversineDistance(
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
 
@@ -193,7 +154,7 @@ function haversineDistance(
       Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
+  return R * c;
 }
 
 function toRad(degrees: number): number {

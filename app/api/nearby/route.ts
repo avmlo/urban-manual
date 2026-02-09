@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { withErrorHandling } from '@/lib/errors';
+import {
+  enforceRateLimit,
+  searchRatelimit,
+  memorySearchRatelimit
+} from '@/lib/rate-limit';
 
 function getSupabaseClient() {
   // Use service role client for admin operations (bypasses RLS)
@@ -31,6 +36,19 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
   try {
+    // 1. Rate Limiting: Prevent DoS attacks
+    const rateLimitResponse = await enforceRateLimit({
+      request,
+      userId: null, // This is a public endpoint
+      message: 'Too many nearby search requests. Please wait a moment.',
+      limiter: searchRatelimit,
+      memoryLimiter: memorySearchRatelimit
+    });
+
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const { searchParams } = new URL(request.url);
 
     const lat = parseFloat(searchParams.get('lat') || '0');

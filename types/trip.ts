@@ -378,8 +378,42 @@ export interface Trip {
   is_public: boolean; // BOOLEAN NOT NULL DEFAULT FALSE
   cover_image: string | null; // VARCHAR(500)
   notes: string | null; // TEXT (JSON with TripNotes structure)
+  share_token: string | null; // UUID for public sharing
+  packing_list: string | null; // JSON with PackingList structure
   created_at: string; // TIMESTAMP WITH TIME ZONE
   updated_at: string; // TIMESTAMP WITH TIME ZONE
+}
+
+// ============================================
+// PACKING LIST
+// ============================================
+
+export type PackingCategory = 'clothes' | 'toiletries' | 'tech' | 'documents' | 'other';
+
+export interface PackingItem {
+  id: string;
+  label: string;
+  category: PackingCategory;
+  checked: boolean;
+}
+
+export interface PackingList {
+  items: PackingItem[];
+}
+
+export function parsePackingList(json: string | null): PackingList {
+  if (!json) return { items: [] };
+  try {
+    const parsed = JSON.parse(json);
+    if (parsed && Array.isArray(parsed.items)) return parsed;
+    return { items: [] };
+  } catch {
+    return { items: [] };
+  }
+}
+
+export function stringifyPackingList(list: PackingList): string {
+  return JSON.stringify(list);
 }
 
 /**
@@ -508,6 +542,8 @@ export interface UpdateTrip {
   is_public?: boolean;
   cover_image?: string | null;
   notes?: string | null;
+  share_token?: string | null;
+  packing_list?: string | null;
 }
 
 export type ItineraryItemType = 'place' | 'flight' | 'train' | 'drive' | 'hotel' | 'breakfast' | 'event' | 'activity' | 'custom';
@@ -633,6 +669,9 @@ export interface ItineraryItemNotes {
   // Reservation details
   partySize?: number;
   bookingStatus?: 'need-to-book' | 'booked' | 'waitlist' | 'walk-in';
+  // Cost tracking
+  costEstimate?: number; // Estimated cost for this item
+  currency?: string; // ISO currency code (EUR, USD, etc.)
   // Planning & Organization
   priority?: 'must-do' | 'want-to' | 'if-time';
   visitedStatus?: 'planned' | 'visited' | 'skipped';

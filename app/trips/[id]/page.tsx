@@ -45,15 +45,16 @@ import { isFeatureEnabled } from '@/lib/feature-flags';
 import { Settings, Moon } from 'lucide-react';
 import LocalTimeDisplay from '@/features/trip/components/LocalTimeDisplay';
 import TripQuickActions from '@/features/trip/components/TripQuickActions';
+import TripInteractiveMap from '@/features/trip/components/TripInteractiveMap';
+import { Map as MapIcon, ChevronLeft as PanelLeftClose, Download, Filter } from 'lucide-react';
+import PackingListPanel from '@/features/trip/components/PackingList';
+import { parsePackingList, stringifyPackingList } from '@/types/trip';
 
 /**
- * TripPage - Completely rethought
+ * TripPage - Split-panel layout inspired by itskovacs/trip
  *
- * Philosophy:
- * - No sidebars - everything inline
- * - No buttons - things just work
- * - No forms - just type and select
- * - No modes - edit is default
+ * Desktop: Itinerary panel (left) + Interactive map (right)
+ * Mobile: Single column with map toggle
  */
 export default function TripPage() {
   const params = useParams();
@@ -108,6 +109,10 @@ export default function TripPage() {
   const [selectedItem, setSelectedItem] = useState<EnrichedItineraryItem | null>(null);
   const [sidebarAddDay, setSidebarAddDay] = useState<number | null>(null); // Which day is adding via sidebar
 
+  // Map states
+  const [showMobileMap, setShowMobileMap] = useState(false);
+  const [showPackingList, setShowPackingList] = useState(false);
+
   // Weather state
   const [weatherByDate, setWeatherByDate] = useState<Record<string, DayWeather>>({});
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -159,6 +164,53 @@ export default function TripPage() {
   // Count total items
   const totalItems = useMemo(() => {
     return days.reduce((sum, day) => sum + day.items.length, 0);
+  }, [days]);
+
+  // Compute map markers from all items with coordinates
+  const mapMarkers = useMemo(() => {
+    return days.flatMap(day =>
+      day.items
+        .filter(item => {
+          const lat = item.destination?.latitude || item.parsedNotes?.latitude;
+          const lng = item.destination?.longitude || item.parsedNotes?.longitude;
+          return lat && lng;
+        })
+        .map(item => ({
+          id: item.id,
+          name: item.title || item.destination?.name || 'Place',
+          latitude: (item.destination?.latitude || item.parsedNotes?.latitude)!,
+          longitude: (item.destination?.longitude || item.parsedNotes?.longitude)!,
+          category: item.destination?.category || item.parsedNotes?.category || 'place',
+          day: day.dayNumber,
+          image: item.destination?.image_thumbnail || item.destination?.image || item.parsedNotes?.image,
+          slug: item.destination_slug,
+        }))
+    );
+  }, [days]);
+
+  // Markers for the selected day only (highlighted on map)
+  const selectedDayMarkers = useMemo(() => {
+    return mapMarkers.filter(m => m.day === selectedDayNumber);
+  }, [mapMarkers, selectedDayNumber]);
+
+  // Compute total trip cost from item notes
+  const tripCostSummary = useMemo(() => {
+    let total = 0;
+    let currency = 'EUR';
+    const dayCosts: Record<number, number> = {};
+    for (const day of days) {
+      let dayTotal = 0;
+      for (const item of day.items) {
+        const cost = item.parsedNotes?.costEstimate;
+        if (cost && cost > 0) {
+          dayTotal += cost;
+          if (item.parsedNotes?.currency) currency = item.parsedNotes.currency;
+        }
+      }
+      dayCosts[day.dayNumber] = dayTotal;
+      total += dayTotal;
+    }
+    return { total, currency, dayCosts };
   }, [days]);
 
   // Use optimized hotel logic hook - prevents cascading recalculations
@@ -318,21 +370,23 @@ export default function TripPage() {
       onDragEnd={handleDragEnd}
     >
     <UndoProvider>
-    <main className="w-full px-4 sm:px-6 pt-16 pb-24 sm:py-20 min-h-screen bg-[var(--editorial-bg)]">
-      <div className="max-w-6xl mx-auto">
-        {/* Back link */}
-        <Link
-          href="/trips"
-          className="inline-flex items-center gap-1.5 text-xs text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors mb-6"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Trips
-        </Link>
+    <main className="w-full min-h-screen bg-[var(--editorial-bg)]">
+      {/* Split-panel layout: itinerary (left) + map (right) on desktop */}
+      <div className="lg:flex lg:h-screen">
+        {/* LEFT PANEL - Itinerary */}
+        <div className="lg:w-[460px] xl:w-[480px] lg:flex-shrink-0 lg:overflow-y-auto lg:border-r border-[var(--editorial-border)] px-4 sm:px-6 pt-16 pb-24 sm:py-20 relative">
+          {/* Back link with trip header */}
+          <div className="flex items-center gap-3 mb-6">
+            <Link
+              href="/trips"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+          </div>
 
-        {/* Desktop flex layout with sidebar */}
-        <div className="lg:flex lg:gap-8">
           {/* Main content column */}
-          <div className="flex-1 min-w-0 max-w-xl lg:max-w-none">
+          <div className="flex-1 min-w-0">
             {/* Header - tap to edit */}
             <TripEditorHeader
               trip={trip}
@@ -344,48 +398,67 @@ export default function TripPage() {
               onDelete={handleDelete}
             />
 
-            {/* Action bar: Local Time + Edit + Quick Actions + Settings */}
-            <div className="flex items-center flex-wrap gap-y-2 mt-4 mb-4">
-              <LocalTimeDisplay city={primaryCity} />
+            {/* Plans section header + toolbar - TRIP-inspired */}
+            <div className="mt-6 mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-[var(--editorial-text-primary)]">Plans</h2>
+                  <p className="text-xs text-[var(--editorial-text-tertiary)]">Your itinerary</p>
+                </div>
 
-              <div className="flex items-center ml-auto">
-                <button
-                  onClick={() => setIsEditMode(!isEditMode)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors ${
-                    isEditMode
-                      ? 'text-[var(--editorial-accent)] font-medium'
-                      : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'
-                  }`}
-                >
-                  {isEditMode ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      Done
-                    </>
-                  ) : (
-                    <>
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
-                    </>
-                  )}
-                </button>
+                {/* Toolbar icons */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                      isEditMode
+                        ? 'bg-[var(--editorial-accent)] text-white'
+                        : 'hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)]'
+                    }`}
+                    title={isEditMode ? 'Done editing' : 'Edit mode'}
+                  >
+                    {isEditMode ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+                  </button>
 
-                <TripQuickActions
-                  tripId={tripId}
-                  tripTitle={trip.title || 'My Trip'}
-                  startDate={trip.start_date}
-                  endDate={trip.end_date}
-                  destination={primaryCity}
-                />
+                  <button
+                    onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
 
-                <button
-                  onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
-                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  Settings
-                </button>
+                  <TripQuickActions
+                    tripId={tripId}
+                    tripTitle={trip.title || 'My Trip'}
+                    startDate={trip.start_date}
+                    endDate={trip.end_date}
+                    destination={primaryCity}
+                  />
+
+                  {/* Add button */}
+                  <button
+                    onClick={() => setSidebarAddDay(selectedDayNumber)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                    title="Add to itinerary"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
+
+              {/* Trip stats bar */}
+              {tripCostSummary.total > 0 && (
+                <div className="flex items-center gap-3 mt-2 text-xs text-[var(--editorial-text-tertiary)]">
+                  <span>{days.length} days</span>
+                  <span>·</span>
+                  <span>{totalItems} places</span>
+                  <span>·</span>
+                  <span className="font-medium text-[var(--editorial-text-secondary)]">
+                    {tripCostSummary.total.toLocaleString()} {tripCostSummary.currency}
+                  </span>
+                </div>
+              )}
             </div>
 
         {/* Trip Notes - expandable (mobile only, desktop uses sidebar) */}
@@ -561,11 +634,15 @@ export default function TripPage() {
           </div>
           {/* End main content column */}
 
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
-            <div className="sticky top-24 space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto pb-8">
-              {/* Add Place Panel */}
-              {sidebarAddDay !== null && (
+          {/* Desktop overlay panels (floating on left panel) */}
+          <AnimatePresence>
+            {sidebarAddDay !== null && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="hidden lg:block absolute inset-0 z-40 bg-[var(--editorial-bg)] overflow-y-auto p-4 pt-20"
+              >
                 <AddPlacePanel
                   city={primaryCity}
                   dayNumber={sidebarAddDay}
@@ -605,7 +682,6 @@ export default function TripPage() {
                     setSidebarAddDay(null);
                   }}
                   onAddHotel={(data) => {
-                    // Get the day's date for checkInDate if not provided in form
                     const dayInfo = days.find(d => d.dayNumber === sidebarAddDay);
                     const dayDate = dayInfo?.date || '';
                     addHotel({
@@ -629,10 +705,18 @@ export default function TripPage() {
                     setSidebarAddDay(null);
                   }}
                 />
-              )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              {/* Selected Item Details */}
-              {selectedItem && !sidebarAddDay && (
+          <AnimatePresence>
+            {selectedItem && !sidebarAddDay && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="hidden lg:block absolute inset-0 z-40 bg-[var(--editorial-bg)] overflow-y-auto p-4 pt-20"
+              >
                 <DestinationBox
                   item={selectedItem}
                   onClose={() => setSelectedItem(null)}
@@ -641,55 +725,148 @@ export default function TripPage() {
                   onItemUpdate={(id, updates) => updateItem(id, updates)}
                   onRemove={removeItem}
                 />
-              )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              {/* Trip Settings */}
-              {showTripSettings && !sidebarAddDay && (
+          <AnimatePresence>
+            {showTripSettings && !sidebarAddDay && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="hidden lg:block absolute inset-0 z-40 bg-[var(--editorial-bg)] overflow-y-auto p-4 pt-20"
+              >
                 <TripSettingsBox
                   trip={trip}
                   onUpdate={updateTrip}
                   onDelete={handleDelete}
                   onClose={() => setShowTripSettings(false)}
                 />
-              )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              {/* Trip Intelligence */}
-              {!sidebarAddDay && (
-                <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] overflow-hidden">
-                  <TripIntelligence
-                    days={days}
-                    city={primaryCity}
-                    weatherByDate={weatherByDate}
-                    onOptimizeRoute={(dayNumber, optimizedItems) => reorderItems(dayNumber, optimizedItems)}
-                    compact
-                  />
-                </div>
-              )}
+          {/* Bottom sections: Intelligence, Checklist, Packing List */}
+          <div className="mt-8 space-y-4 pb-8">
+            <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] overflow-hidden">
+              <TripIntelligence
+                days={days}
+                city={primaryCity}
+                weatherByDate={weatherByDate}
+                onOptimizeRoute={(dayNumber, optimizedItems) => reorderItems(dayNumber, optimizedItems)}
+                compact
+              />
+            </div>
 
-              {/* Drag & Drop Palette */}
-              {!sidebarAddDay && !selectedItem && (
-                <SidebarDestinationPalette
-                  city={primaryCity}
-                  selectedDayNumber={selectedDayNumber}
-                  onAddPlace={(dest, dayNum) => addPlace(dest, dayNum)}
-                />
-              )}
+            <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
+              <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Checklist</h3>
+              <TripChecklist
+                notes={tripNotes}
+                onSave={(notes) => updateTrip({ notes })}
+              />
+            </div>
 
-              {/* Checklist */}
-              {!sidebarAddDay && (
-                <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
-                  <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Checklist</h3>
-                  <TripChecklist
-                    notes={tripNotes}
-                    onSave={(notes) => updateTrip({ notes })}
+            <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
+              <button
+                onClick={() => setShowPackingList(!showPackingList)}
+                className="w-full flex items-center justify-between"
+              >
+                <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide">Packing List</h3>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showPackingList ? 'rotate-180' : ''}`} />
+              </button>
+              {showPackingList && (
+                <div className="mt-3">
+                  <PackingListPanel
+                    packingList={trip.packing_list || null}
+                    onSave={(json) => updateTrip({ packing_list: json })}
                   />
                 </div>
               )}
             </div>
           </div>
         </div>
-        {/* End desktop flex layout */}
+        {/* END LEFT PANEL */}
+
+        {/* RIGHT PANEL - Interactive Map */}
+        <div className="hidden lg:flex lg:flex-1 lg:flex-col">
+          {/* Map stats bar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--editorial-border)] bg-[var(--editorial-bg)]">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-1.5 text-sm text-[var(--editorial-text-secondary)]">
+                <MapIcon className="w-4 h-4" />
+                <span className="font-medium">{primaryCity || 'Map'}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-[var(--editorial-text-tertiary)]">
+              <span>Days <strong className="text-[var(--editorial-text-primary)] ml-1">{days.length}</strong></span>
+              <span>Places <strong className="text-[var(--editorial-text-primary)] ml-1">{totalItems}</strong></span>
+              {tripCostSummary.total > 0 && (
+                <span>Budget <strong className="text-[var(--editorial-text-primary)] ml-1">{tripCostSummary.total.toLocaleString()} {tripCostSummary.currency}</strong></span>
+              )}
+            </div>
+          </div>
+
+          {/* Map */}
+          <div className="flex-1 relative">
+            <TripInteractiveMap
+              days={days}
+              selectedDayNumber={selectedDayNumber}
+              tripDestination={primaryCity}
+              onMarkerClick={(itemId) => {
+                const item = days.flatMap(d => d.items).find(i => i.id === itemId);
+                if (item) handleSelectItem(item);
+              }}
+              onAddPlace={(place, dayNum) => {
+                if (place.slug) addPlace(place as any, dayNum);
+              }}
+              hasHeader
+            />
+          </div>
+        </div>
+
+        {/* Mobile map toggle button */}
+        <button
+          onClick={() => setShowMobileMap(!showMobileMap)}
+          className="lg:hidden fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)] shadow-lg flex items-center justify-center"
+        >
+          <MapIcon className="w-5 h-5" />
+        </button>
+
+        {/* Mobile fullscreen map overlay */}
+        <AnimatePresence>
+          {showMobileMap && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 z-50 bg-[var(--editorial-bg)]"
+            >
+              <div className="absolute top-4 left-4 z-10">
+                <button
+                  onClick={() => setShowMobileMap(false)}
+                  className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <TripInteractiveMap
+                days={days}
+                selectedDayNumber={selectedDayNumber}
+                tripDestination={primaryCity}
+                onMarkerClick={(itemId) => {
+                  const item = days.flatMap(d => d.items).find(i => i.id === itemId);
+                  if (item) {
+                    handleSelectItem(item);
+                    setShowMobileMap(false);
+                  }
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+      {/* End split panel layout */}
 
       {/* Saving feedback indicator */}
       <SavingFeedback status={savingStatus} />
@@ -1160,14 +1337,18 @@ function DaySection({
           : ''
       }`}
     >
-      {/* Day header - editorial style with serif */}
+      {/* Day header - TRIP-inspired with item count and cost */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
+          {/* Item count circle */}
+          <div className="w-8 h-8 rounded-full bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-semibold text-[var(--editorial-text-primary)]">{items.length}</span>
+          </div>
           <h3
-            className="text-[16px] font-normal text-[var(--editorial-text-primary)]"
+            className="text-[15px] font-semibold text-[var(--editorial-text-primary)]"
             style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
           >
-            Day {dayNumber}{longDateDisplay && `: ${longDateDisplay}`}
+            Day {dayNumber}{longDateDisplay ? ` - ${longDateDisplay}` : ''}
           </h3>
           {/* Weather badge - warm styling */}
           {weather && (
@@ -1203,6 +1384,20 @@ function DaySection({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Day cost total */}
+          {(() => {
+            const dayCost = items.reduce((sum, i) => sum + (i.parsedNotes?.costEstimate || 0), 0);
+            if (dayCost > 0) {
+              const curr = items.find(i => i.parsedNotes?.currency)?.parsedNotes?.currency || '\u20AC';
+              return (
+                <span className="text-sm font-medium text-[var(--editorial-text-secondary)] tabular-nums mr-1">
+                  {dayCost.toLocaleString()} {curr}
+                </span>
+              );
+            }
+            return null;
+          })()}
+
           {/* Optimize prompt */}
           {canOptimize && (
             <button
@@ -2505,9 +2700,9 @@ function ItemRow({
     >
       <div
         className={`
-          relative rounded-2xl overflow-hidden transition-all cursor-pointer
+          relative rounded-xl overflow-hidden transition-all cursor-pointer
           bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]
-          ${isDragging ? 'shadow-xl ring-2 ring-stone-400 dark:ring-gray-500' : 'hover:shadow-md'}
+          ${isDragging ? 'shadow-xl ring-2 ring-stone-400 dark:ring-gray-500' : 'hover:shadow-sm hover:border-gray-300 dark:hover:border-gray-600'}
         `}
         onClick={() => {
           const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -2518,7 +2713,7 @@ function ItemRow({
           }
         }}
       >
-        <div className="p-4">
+        <div className="px-4 py-3">
           <div className="flex items-center gap-3">
             {/* Drag handle - only visible in edit mode */}
             {isEditMode && (
@@ -2527,125 +2722,160 @@ function ItemRow({
               </div>
             )}
 
+            {/* Time column - TRIP-inspired left-aligned time */}
+            <div className="w-12 flex-shrink-0 text-right">
+              {item.time ? (
+                <span className="text-sm font-mono tabular-nums text-[var(--editorial-text-secondary)]">
+                  {formatTime(item.time)}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-300 dark:text-gray-600">--:--</span>
+              )}
+            </div>
+
             {/* Icon */}
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-[var(--editorial-bg-elevated)] flex-shrink-0 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-[var(--editorial-bg)] flex-shrink-0 flex items-center justify-center">
               {iconType === 'hotel' ? (
-                <Hotel className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
+                <Hotel className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
               ) : iconType === 'checkin' ? (
-                <DoorOpen className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
+                <DoorOpen className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
               ) : iconType === 'checkout' ? (
-                <LogOut className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
+                <LogOut className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
               ) : iconType === 'breakfast' ? (
-                <UtensilsCrossed className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
+                <UtensilsCrossed className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
               ) : iconType === 'train' ? (
-                <TrainIcon className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
+                <TrainIcon className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
               ) : iconType === 'activity' ? (
                 (() => {
                   const aType = (extraData as any).activityType;
                   switch (aType) {
-                    case 'nap': return <BedDouble className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'pool': return <Waves className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'spa': return <Sparkles className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'gym': return <Dumbbell className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'breakfast-at-hotel': return <Coffee className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'getting-ready': return <Shirt className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'packing': case 'checkout-prep': return <Package className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'sunset': return <Sun className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'work': return <Briefcase className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'call': return <Phone className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'shopping-time': return <ShoppingBag className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    case 'photo-walk': return <Camera className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
-                    default: return <Clock className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />;
+                    case 'nap': return <BedDouble className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'pool': return <Waves className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'spa': return <Sparkles className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'gym': return <Dumbbell className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'breakfast-at-hotel': return <Coffee className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'getting-ready': return <Shirt className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'packing': case 'checkout-prep': return <Package className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'sunset': return <Sun className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'work': return <Briefcase className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'call': return <Phone className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'shopping-time': return <ShoppingBag className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    case 'photo-walk': return <Camera className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
+                    default: return <Clock className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />;
                   }
                 })()
               ) : image && !imageError ? (
                 <Image
                   src={image}
                   alt=""
-                  width={40}
-                  height={40}
+                  width={32}
+                  height={32}
                   className="w-full h-full object-cover"
                   onError={() => setImageError(true)}
                 />
               ) : (
-                <MapPin className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
+                <MapPin className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
               )}
             </div>
 
-            {/* Content */}
+            {/* Content - title and optional link */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-stone-900 dark:text-white truncate">{title}</p>
-              <p className="text-xs text-[var(--editorial-text-tertiary)] truncate">
-                {subtitle || (item.destination?.category) || 'Place'}
-              </p>
+              {item.destination_slug ? (
+                <p className="text-sm font-medium text-[var(--editorial-accent)] truncate">{title}</p>
+              ) : (
+                <p className="text-sm font-medium text-stone-900 dark:text-white truncate">{title}</p>
+              )}
             </div>
 
-            {/* Rating badge */}
-            {rating && (
-              <div className="flex items-center gap-0.5 mr-2">
-                <span className="text-xs text-red-500">●</span>
-              </div>
-            )}
+            {/* Right side: Cost + Status badge */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Cost estimate */}
+              {item.parsedNotes?.costEstimate && item.parsedNotes.costEstimate > 0 && (
+                <span className="text-sm font-medium text-[var(--editorial-text-primary)] tabular-nums">
+                  {item.parsedNotes.costEstimate} {item.parsedNotes.currency || '\u20AC'}
+                </span>
+              )}
 
-            {/* More options button */}
-            <div className="relative" ref={actionsRef}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowActions(!showActions);
-                }}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <MoreHorizontal className="w-5 h-5 text-gray-400" />
-              </button>
+              {/* Status badge - TRIP-inspired */}
+              {item.parsedNotes?.bookingStatus && item.parsedNotes.bookingStatus !== 'walk-in' && (
+                <span className={`
+                  text-xs font-medium px-2 py-0.5 rounded-md
+                  ${item.parsedNotes.bookingStatus === 'booked'
+                    ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
+                    : item.parsedNotes.bookingStatus === 'need-to-book'
+                    ? 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800'
+                    : item.parsedNotes.bookingStatus === 'waitlist'
+                    ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
+                    : 'text-gray-500 bg-gray-100 dark:bg-gray-800'
+                  }
+                `}>
+                  {item.parsedNotes.bookingStatus === 'booked' ? 'booked'
+                    : item.parsedNotes.bookingStatus === 'need-to-book' ? 'pending'
+                    : item.parsedNotes.bookingStatus === 'waitlist' ? 'waitlist'
+                    : item.parsedNotes.bookingStatus}
+                </span>
+              )}
 
-              {/* Actions dropdown */}
-              <AnimatePresence>
-                {showActions && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-1 z-50 bg-[var(--editorial-bg-elevated)] rounded-2xl shadow-lg border border-[var(--editorial-border)] overflow-hidden min-w-[140px]"
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowActions(false);
-                        onToggle();
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+              {/* Priority badge (if-time = optional) */}
+              {item.parsedNotes?.priority === 'if-time' && !item.parsedNotes?.bookingStatus && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-md text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800">
+                  optional
+                </span>
+              )}
+
+              {/* More options button */}
+              <div className="relative" ref={actionsRef}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowActions(!showActions);
+                  }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <MoreHorizontal className="w-4 h-4 text-gray-400" />
+                </button>
+
+                {/* Actions dropdown */}
+                <AnimatePresence>
+                  {showActions && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-1 z-50 bg-[var(--editorial-bg-elevated)] rounded-xl shadow-lg border border-[var(--editorial-border)] overflow-hidden min-w-[140px]"
                     >
-                      <Pencil className="w-4 h-4" />
-                      Edit
-                    </button>
-                    {onRemove && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowActions(false);
-                          onRemove();
+                          onToggle();
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
+                        <Pencil className="w-4 h-4" />
+                        Edit
                       </button>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      {onRemove && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowActions(false);
+                            onRemove();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Edit mode drag handle indicator */}
-        {isEditMode && (
-          <div className="absolute top-2 left-2 opacity-60">
-            <GripVertical className="w-4 h-4 text-stone-400" />
-          </div>
-        )}
       </div>
 
       {/* Expanded edit form - mobile only (desktop uses sidebar) */}

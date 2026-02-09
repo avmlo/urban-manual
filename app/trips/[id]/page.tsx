@@ -404,6 +404,16 @@ export default function TripPage() {
                 startDate={trip.start_date}
                 endDate={trip.end_date}
                 destination={primaryCity}
+                onScrollToChecklist={() => {
+                  document.getElementById('trip-checklist-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                onScrollToPackingList={() => {
+                  setShowPackingList(true);
+                  setTimeout(() => document.getElementById('trip-packing-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }}
+                onOpenNotes={() => { setShowTripNotes(true); }}
+                onEdit={() => { setShowTripSettings(true); setSelectedItem(null); }}
+                onDelete={handleDelete}
               />
             </div>
 
@@ -437,21 +447,6 @@ export default function TripPage() {
                     <Settings className="w-4 h-4" />
                   </button>
 
-                  <button
-                    onClick={() => {}}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
-                    title="Filter"
-                  >
-                    <Filter className="w-4 h-4" />
-                  </button>
-
-                  <button
-                    onClick={() => window.open(`/api/trips/${tripId}/export/ical`, '_blank')}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
-                    title="Download"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             </div>
@@ -644,7 +639,7 @@ export default function TripPage() {
               />
             </div>
 
-            <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
+            <div id="trip-checklist-section" className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
               <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Checklist</h3>
               <TripChecklist
                 notes={tripNotes}
@@ -652,7 +647,7 @@ export default function TripPage() {
               />
             </div>
 
-            <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
+            <div id="trip-packing-section" className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
               <button
                 onClick={() => setShowPackingList(!showPackingList)}
                 className="w-full flex items-center justify-between"

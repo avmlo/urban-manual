@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, X, Check, Plus, Pencil } from 'lucide-react';
+import { ArrowLeft, X, CheckSquare, Diamond, Filter, Download, Plus, Calendar, MapPin as MapPinIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -33,7 +33,7 @@ import { SavingFeedback } from '@/features/trip/components/SavingFeedback';
 import { TripEditorHeader } from '@/features/trip/components/editor/TripEditorHeader';
 import { TripChecklist } from '@/features/trip/components/editor/TripChecklist';
 import { type DayWeather } from '@/lib/hooks/useWeather';
-import { Settings } from 'lucide-react';
+// Settings icon now via PrimeIcons (pi pi-cog) in Button component
 import TripQuickActions from '@/features/trip/components/TripQuickActions';
 import TripInteractiveMap from '@/features/trip/components/TripInteractiveMap';
 import { Map as MapIcon } from 'lucide-react';
@@ -42,6 +42,7 @@ import PackingListPanel from '@/features/trip/components/PackingList';
 import { TripWarnings } from '@/features/trip/components/intelligence/GapSuggestions';
 import { DragPreviewCard } from '@/features/trip/components/sidebar/DestinationPalette';
 import DaySection from '@/features/trip/components/day/DaySection';
+import TripPlacesPanel from '@/features/trip/components/TripPlacesPanel';
 
 /**
  * TripPage - Split-panel layout inspired by itskovacs/trip
@@ -91,8 +92,30 @@ export default function TripPage() {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [showTripNotes, setShowTripNotes] = useState(false);
 
-  // Day selection state (for tab view)
+  // Day selection state (for map highlighting - auto-updated by scroll observer)
   const [selectedDayNumber, setSelectedDayNumber] = useState(1);
+
+  // IntersectionObserver to track which day is in view during continuous scroll
+  useEffect(() => {
+    if (days.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const dayNum = Number(entry.target.getAttribute('data-day-number'));
+            if (dayNum && !isNaN(dayNum)) {
+              setSelectedDayNumber(dayNum);
+            }
+          }
+        }
+      },
+      { threshold: 0.3, rootMargin: '-80px 0px -60% 0px' }
+    );
+    // Observe all day sections
+    const dayElements = document.querySelectorAll('[data-day-number]');
+    dayElements.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [days.length]);
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -106,6 +129,9 @@ export default function TripPage() {
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [showPackingList, setShowPackingList] = useState(false);
   const [leftPanelTab, setLeftPanelTab] = useState<'plans' | 'notes' | 'lists'>('plans');
+
+  // Right panel tab: map view or places list
+  const [rightPanelTab, setRightPanelTab] = useState<'days' | 'places'>('days');
 
   // Weather state
   const [weatherByDate, setWeatherByDate] = useState<Record<string, DayWeather>>({});
@@ -186,6 +212,17 @@ export default function TripPage() {
   const selectedDayMarkers = useMemo(() => {
     return mapMarkers.filter(m => m.day === selectedDayNumber);
   }, [mapMarkers, selectedDayNumber]);
+
+  // Set of destination slugs already in the itinerary (for places panel "planned" state)
+  const plannedSlugs = useMemo(() => {
+    const slugs = new Set<string>();
+    for (const day of days) {
+      for (const item of day.items) {
+        if (item.destination_slug) slugs.add(item.destination_slug);
+      }
+    }
+    return slugs;
+  }, [days]);
 
   // Compute total trip cost from item notes
   const tripCostSummary = useMemo(() => {
@@ -300,9 +337,9 @@ export default function TripPage() {
     setExpandedItemId(prev => prev === itemId ? null : itemId);
   }, []);
 
-  // Handle item selection for sidebar detail view (desktop)
+  // Handle item selection for sidebar detail view (desktop) - toggle on second click
   const handleSelectItem = useCallback((item: EnrichedItineraryItem) => {
-    setSelectedItem(item);
+    setSelectedItem(prev => prev?.id === item.id ? null : item);
     setShowTripSettings(false);
   }, []);
 
@@ -406,103 +443,99 @@ export default function TripPage() {
               />
             </div>
 
-            {/* Section tabs + toolbar row */}
+            {/* Section tabs - TRIP-style pill tabs */}
             <div className="mt-4 flex items-center justify-between">
-              {/* Tabs: Plans / Notes / Lists */}
-              <div className="flex items-center gap-0">
+              {/* Pill tabs: Plans / Notes / Lists */}
+              <div className="flex items-center gap-1.5">
                 {(['plans', 'notes', 'lists'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setLeftPanelTab(tab)}
-                    className={`px-3 py-1.5 text-sm font-medium transition-colors relative ${
+                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
                       leftPanelTab === tab
-                        ? 'text-[var(--editorial-text-primary)]'
-                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                     }`}
                   >
                     {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
-                    {leftPanelTab === tab && (
-                      <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[var(--editorial-text-primary)] rounded-full" />
-                    )}
                   </button>
                 ))}
               </div>
 
-              {/* Toolbar icons - only show on Plans tab */}
-              {leftPanelTab === 'plans' && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setIsEditMode(!isEditMode)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                      isEditMode
-                        ? 'bg-[var(--editorial-accent)] text-white'
-                        : 'hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)]'
-                    }`}
-                    title={isEditMode ? 'Done editing' : 'Edit mode'}
-                  >
-                    {isEditMode ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-                  </button>
-
-                  <button
-                    onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
-                    title="Settings"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+              {/* Toolbar icons moved to Plans header */}
             </div>
 
-            {/* Tab underline border */}
-            <div className="h-px bg-[var(--editorial-border)] mt-1" />
           </div>
           {/* END STICKY HEADER */}
 
           {/* SCROLLABLE CONTENT - Tab-based */}
           <div className="flex-1 lg:overflow-y-auto px-4 sm:px-6 pb-24 sm:pb-20">
 
-          {/* === PLANS TAB === */}
+          {/* === PLANS TAB - Continuous day scroll (TRIP-style) === */}
           {leftPanelTab === 'plans' && (
             <>
-            {/* Day date pills - moved below tabs */}
-            {days.length > 0 && (
-              <div className="py-3">
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                  {days.map((day) => {
-                    const isSelected = day.dayNumber === selectedDayNumber;
-                    const dayDate = day.date
-                      ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                      : null;
-                    const dayWeather = day.date ? weatherByDate[day.date] : undefined;
-                    return (
-                      <button
-                        key={day.dayNumber}
-                        onClick={() => setSelectedDayNumber(day.dayNumber)}
-                        className={`flex-shrink-0 flex flex-col items-center px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                          isSelected
-                            ? 'bg-[var(--editorial-accent)] text-white'
-                            : 'bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] border border-[var(--editorial-border)]'
-                        }`}
-                      >
-                        <span>
-                          {dayDate || `Day ${day.dayNumber}`}
-                        </span>
-                        {dayWeather && (
-                          <span className={`text-xs mt-0.5 ${isSelected ? 'text-white/80' : 'text-[var(--editorial-text-tertiary)]'}`}>
-                            {dayWeather.tempMax}° {dayWeather.description.split(' ')[0]}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* "Plans / Your itinerary" header with action toolbar */}
+            <div className="flex items-center justify-between pt-4 pb-2">
+              <div>
+                <h2 className="text-lg font-bold text-[var(--editorial-text-primary)]">Plans</h2>
+                <p className="text-xs text-[var(--editorial-text-tertiary)]">Your itinerary</p>
               </div>
-            )}
+              <div className="flex items-center gap-0.5">
+                {/* Edit mode */}
+                <button
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                    isEditMode
+                      ? 'text-[var(--editorial-accent)]'
+                      : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)]'
+                  }`}
+                  title={isEditMode ? 'Done editing' : 'Edit mode'}
+                >
+                  <CheckSquare className="w-[18px] h-[18px]" />
+                </button>
+                {/* Optimize / suggestions */}
+                <button
+                  onClick={() => { /* future: open AI suggestions */ }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+                  title="Smart suggestions"
+                >
+                  <Diamond className="w-[18px] h-[18px]" />
+                </button>
 
-        {/* Selected Day */}
-        <div className="mt-1">
-          {days.filter(day => day.dayNumber === selectedDayNumber).map((day) => {
+                {/* Separator */}
+                <div className="w-px h-5 bg-[var(--editorial-border)] mx-1" />
+
+                {/* Filter */}
+                <button
+                  onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+                  title="Filter"
+                >
+                  <Filter className="w-[18px] h-[18px]" />
+                </button>
+                {/* Export / download */}
+                <button
+                  onClick={() => { /* future: export itinerary */ }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+                  title="Export"
+                >
+                  <Download className="w-[18px] h-[18px]" />
+                </button>
+
+                {/* Add button - dark pill */}
+                <button
+                  onClick={() => { setSidebarAddDay(selectedDayNumber); setSelectedItem(null); setShowTripSettings(false); }}
+                  className="ml-1 w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)] hover:opacity-90 transition-opacity"
+                  title="Add place"
+                >
+                  <Plus className="w-[18px] h-[18px]" />
+                </button>
+              </div>
+            </div>
+
+        {/* All days - continuous scroll */}
+        <div className="space-y-6">
+          {days.map((day) => {
             const dayDate = day.date;
             const weather = dayDate ? weatherByDate[dayDate] : undefined;
             const nightlyHotel = nightlyHotelByDay[day.dayNumber] || null;
@@ -510,8 +543,8 @@ export default function TripPage() {
             const checkInHotel = checkInHotelByDay[day.dayNumber] || null;
             const breakfastHotel = breakfastHotelByDay[day.dayNumber] || null;
             return (
+              <div key={day.dayNumber} data-day-number={day.dayNumber}>
               <DaySection
-                key={day.dayNumber}
                 dayNumber={day.dayNumber}
                 date={day.date ?? undefined}
                 items={day.items}
@@ -581,6 +614,7 @@ export default function TripPage() {
                 onAddActivity={(data) => addActivity(data, day.dayNumber)}
                 weather={weather}
               />
+              </div>
             );
           })}
         </div>
@@ -749,41 +783,61 @@ export default function TripPage() {
           )}
         </AnimatePresence>
 
-        {/* RIGHT PANEL - Interactive Map */}
-        <div className="hidden lg:flex lg:flex-1 lg:flex-col">
-          {/* Map stats bar */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--editorial-border)] bg-[var(--editorial-bg)]">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-1.5 text-sm text-[var(--editorial-text-secondary)]">
-                <MapIcon className="w-4 h-4" />
-                <span className="font-medium">{primaryCity || 'Map'}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-[var(--editorial-text-tertiary)]">
-              <span>Days <strong className="text-[var(--editorial-text-primary)] ml-1">{days.length}</strong></span>
-              <span>Places <strong className="text-[var(--editorial-text-primary)] ml-1">{totalItems}</strong></span>
-              {tripCostSummary.total > 0 && (
-                <span>Budget <strong className="text-[var(--editorial-text-primary)] ml-1">{tripCostSummary.total.toLocaleString()} {tripCostSummary.currency}</strong></span>
-              )}
-            </div>
+        {/* RIGHT PANEL - Map / Places (togglable) */}
+        <div className="hidden lg:flex lg:flex-1 lg:flex-col relative">
+          {/* Floating Days / Places toggle - overlaid on map */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <button
+              onClick={() => setRightPanelTab('days')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg shadow-md backdrop-blur-sm transition-all ${
+                rightPanelTab === 'days'
+                  ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                  : 'bg-white/90 dark:bg-black/70 text-[var(--editorial-text-secondary)] hover:bg-white dark:hover:bg-black/90'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Days
+              <strong className="ml-0.5">{days.length}</strong>
+            </button>
+            <button
+              onClick={() => setRightPanelTab('places')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg shadow-md backdrop-blur-sm transition-all ${
+                rightPanelTab === 'places'
+                  ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                  : 'bg-white/90 dark:bg-black/70 text-[var(--editorial-text-secondary)] hover:bg-white dark:hover:bg-black/90'
+              }`}
+            >
+              <MapPinIcon className="w-3.5 h-3.5" />
+              Places
+              <strong className="ml-0.5">{totalItems}</strong>
+            </button>
           </div>
 
-          {/* Map */}
-          <div className="flex-1 relative">
-            <TripInteractiveMap
-              days={days}
+          {/* Content: Map or Places list */}
+          {rightPanelTab === 'days' ? (
+            <div className="flex-1 relative">
+              <TripInteractiveMap
+                days={days}
+                selectedDayNumber={selectedDayNumber}
+                tripDestination={primaryCity}
+                onMarkerClick={(itemId) => {
+                  const item = days.flatMap(d => d.items).find(i => i.id === itemId);
+                  if (item) handleSelectItem(item);
+                }}
+                onAddPlace={(place, dayNum) => {
+                  if (place.slug) addPlace(place as unknown as Destination, dayNum);
+                }}
+                hasHeader
+              />
+            </div>
+          ) : (
+            <TripPlacesPanel
+              cities={destinations}
+              plannedSlugs={plannedSlugs}
+              onAddPlace={addPlace}
               selectedDayNumber={selectedDayNumber}
-              tripDestination={primaryCity}
-              onMarkerClick={(itemId) => {
-                const item = days.flatMap(d => d.items).find(i => i.id === itemId);
-                if (item) handleSelectItem(item);
-              }}
-              onAddPlace={(place, dayNum) => {
-                if (place.slug) addPlace(place as any, dayNum);
-              }}
-              hasHeader
             />
-          </div>
+          )}
         </div>
 
         {/* Mobile map toggle button */}

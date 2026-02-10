@@ -8,18 +8,19 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import {
-  MapPin, X, Search, Loader2, Plus, Route, Globe, Phone,
-  Clock, Plane, Hotel, Coffee, Sun, Camera,
+  MapPin, X, Search, Loader2, Globe, Phone,
+  Clock, Coffee, Sun, Camera,
   ShoppingBag, Briefcase, BedDouble, Waves, Dumbbell, Shirt,
-  Package, Sparkles, Moon, Train as TrainIcon,
+  Package, Sparkles, Moon,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
+import { Tag } from 'primereact/tag';
+import { Plus, Route, Plane, Hotel, Train as TrainIcon } from 'lucide-react';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 import type { Destination } from '@/types/destination';
 import type { ActivityData, ActivityType } from '@/types/trip';
 import type { DayWeather } from '@/lib/hooks/useWeather';
-import { NeighborhoodTags } from '@/features/trip/components/NeighborhoodBreakdown';
 import DayIntelligence from '@/features/trip/components/DayIntelligence';
 import { WeatherIcon } from '@/features/trip/components/intelligence/GapSuggestions';
 import ItemRow from '@/features/trip/components/items/ItemRow';
@@ -459,14 +460,9 @@ export default function DaySection({
     setSearchSource('curated');
   };
 
-  // Parse as local time to avoid timezone shifts
+  // Parse as local time to avoid timezone shifts - TRIP-style: "18 May"
   const dateDisplay = date
-    ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-    : null;
-
-  // Format date like "March 5th"
-  const longDateDisplay = date
-    ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+    ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
     : null;
 
   return (
@@ -479,22 +475,24 @@ export default function DaySection({
           : ''
       }`}
     >
-      {/* Day header - TRIP-inspired: item count circle + title + cost + menu */}
+      {/* Day header - TRIP-inspired: item count circle + date + cost + menu */}
       <div className="flex items-center justify-between mb-3 mt-2">
         <div className="flex items-center gap-3">
-          {/* Item count circle - accent blue like TRIP */}
-          <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{items.length}</span>
+          {/* Item count circle - neutral gray like TRIP */}
+          <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{items.length}</span>
           </div>
-          <h3 className="text-[15px] font-semibold text-[var(--editorial-text-primary)]">
-            Day {dayNumber}{longDateDisplay ? ` \u2013 ${longDateDisplay}` : ''}
-          </h3>
-          {/* Weather badge - warm styling */}
+          <div>
+            <h3 className="text-base font-semibold text-[var(--editorial-text-primary)]">
+              {dateDisplay || `Day ${dayNumber}`}
+            </h3>
+          </div>
+          {/* Weather badge - compact */}
           {weather && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-full">
               <WeatherIcon code={weather.weatherCode} className="w-3.5 h-3.5 text-[var(--editorial-accent)]" />
               <span className="text-xs text-[var(--editorial-text-secondary)]">
-                {weather.tempMax}° {weather.description}
+                {weather.tempMax}°
               </span>
             </div>
           )}
@@ -522,14 +520,14 @@ export default function DaySection({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Day cost total */}
+        <div className="flex items-center gap-3">
+          {/* Day cost total - pill badge like TRIP */}
           {(() => {
             const dayCost = items.reduce((sum, i) => sum + (i.parsedNotes?.costEstimate || 0), 0);
             if (dayCost > 0) {
               const curr = items.find(i => i.parsedNotes?.currency)?.parsedNotes?.currency || '\u20AC';
               return (
-                <span className="text-sm font-medium text-[var(--editorial-text-secondary)] tabular-nums mr-1">
+                <span className="text-sm font-medium text-[var(--editorial-text-secondary)] tabular-nums px-2.5 py-1 rounded-lg bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]">
                   {dayCost.toLocaleString()} {curr}
                 </span>
               );
@@ -537,36 +535,27 @@ export default function DaySection({
             return null;
           })()}
 
-          {/* Optimize prompt */}
-          {canOptimize && (
-            <button
-              onClick={optimizeRoute}
-              disabled={isOptimizing}
-              className="flex items-center gap-1.5 text-xs text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] transition-colors px-3 py-1 rounded-full hover:bg-[var(--editorial-border-subtle)]"
-            >
-              {isOptimizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Route className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">Optimize</span>
-            </button>
-          )}
-
-          {/* Plus button */}
+          {/* Three-dot menu */}
           <div className="relative">
             <button
               onClick={() => {
-                // Desktop: use sidebar panel
                 const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
                 if (isDesktop && onOpenSidebarAdd) {
                   onOpenSidebarAdd();
                 } else {
-                  // Mobile: use inline menu
                   setShowAddMenu(!showAddMenu);
                   setShowSearch(false);
                   setShowTransportForm(null);
                 }
               }}
-              className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] transition-colors text-[var(--editorial-text-tertiary)]"
+              title="Day actions"
             >
-              <Plus className={`w-4 h-4 sm:w-3.5 sm:h-3.5 text-[var(--editorial-text-secondary)] transition-transform ${showAddMenu || showSearch || showTransportForm ? 'rotate-45' : ''}`} />
+              {showAddMenu || showSearch || showTransportForm ? (
+                <Plus className="w-4 h-4 rotate-45 transition-transform" />
+              ) : (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+              )}
             </button>
 
             {/* Add menu dropdown (mobile only) */}
@@ -576,50 +565,63 @@ export default function DaySection({
                   initial={{ opacity: 0, scale: 0.95, y: -4 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                  className="absolute right-0 top-full mt-1 w-44 sm:w-40 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-2xl shadow-lg overflow-hidden z-20 lg:hidden"
+                  className="absolute right-0 top-full mt-1 w-48 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-2xl shadow-lg overflow-hidden z-20 lg:hidden"
                 >
+                  {canOptimize && (
+                    <>
+                      <button
+                        onClick={() => { optimizeRoute(); closeAllMenus(); }}
+                        disabled={isOptimizing}
+                        className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
+                      >
+                        <Route className="w-4 h-4" />
+                        Optimize route
+                      </button>
+                      <div className="border-t border-[var(--editorial-border)] my-1" />
+                    </>
+                  )}
                   <button
                     onClick={() => { setShowSearch(true); setSearchSource('curated'); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
                   >
-                    <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <Search className="w-4 h-4" />
                     From curation
                   </button>
                   <button
                     onClick={() => { setShowSearch(true); setSearchSource('google'); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
                   >
-                    <Globe className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <Globe className="w-4 h-4" />
                     From Google
                   </button>
                   <div className="border-t border-[var(--editorial-border)] my-1" />
                   <button
                     onClick={() => setShowTransportForm('flight')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
                   >
-                    <Plane className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <Plane className="w-4 h-4" />
                     Flight
                   </button>
                   <button
                     onClick={() => setShowTransportForm('hotel')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
                   >
-                    <Hotel className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <Hotel className="w-4 h-4" />
                     Hotel
                   </button>
                   <button
                     onClick={() => setShowTransportForm('train')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
                   >
-                    <TrainIcon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <TrainIcon className="w-4 h-4" />
                     Train
                   </button>
                   <div className="border-t border-[var(--editorial-border)] my-1" />
                   <button
                     onClick={() => setShowTransportForm('activity')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
                   >
-                    <Clock className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <Clock className="w-4 h-4" />
                     Activity
                   </button>
                 </motion.div>
@@ -810,19 +812,12 @@ export default function DaySection({
         </div>
       </div>
 
-      {/* Neighborhood tags */}
-      {items.length > 0 && (
-        <div className="mb-3">
-          <NeighborhoodTags items={items} />
-        </div>
-      )}
-
       {/* Items (including hotel activities which are now always part of orderedItems) */}
       {orderedItems.length > 0 ? (
         <Reorder.Group axis="y" values={orderedItems} onReorder={(newOrder) => {
           latestReorderRef.current = newOrder;
           setOrderedItems(newOrder);
-        }} className="space-y-0">
+        }} className="space-y-1">
           {/* Drop zone at the beginning */}
           <DropZoneBetweenItems
             dayNumber={dayNumber}
@@ -878,31 +873,40 @@ export default function DaySection({
         <TravelTime from={orderedItems[orderedItems.length - 1]} to={nightlyHotel} />
       )}
 
-      {/* Nightly hotel indicator - Clean card matching flight style */}
+      {/* Nightly hotel indicator - TRIP-style card with time pill + status */}
       {nightlyHotel && (
         <button
           onClick={() => onSelectItem?.(nightlyHotel)}
-          className="w-full mt-2 relative overflow-hidden rounded-2xl bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] hover:shadow-md transition-all text-left"
+          className="w-full mt-1 relative overflow-hidden rounded-xl bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] hover:shadow-sm transition-all text-left"
         >
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[var(--editorial-bg-elevated)] flex items-center justify-center">
-                  <Moon className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-stone-900 dark:text-white">
-                    {nightlyHotel.title || 'Hotel'}
-                  </p>
-                  <p className="text-xs text-[var(--editorial-text-tertiary)] mt-0.5">
-                    Overnight stay
-                  </p>
-                </div>
+          <div className="px-3 py-2.5">
+            <div className="flex items-center gap-3">
+              {/* Time pill */}
+              <span className="flex-shrink-0 text-xs font-mono tabular-nums text-[var(--editorial-text-secondary)] bg-[var(--editorial-bg)] border border-[var(--editorial-border)] rounded-lg px-2.5 py-1">
+                23:59
+              </span>
+              {/* Green dot for booked hotel */}
+              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+              {/* Hotel icon + name */}
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <Moon className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)] flex-shrink-0" />
+                <span className="text-sm text-[var(--editorial-text-primary)] truncate">
+                  {nightlyHotel.title || 'Hotel'}
+                </span>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-[var(--editorial-text-tertiary)] uppercase tracking-wide">
-                  Night
-                </p>
+              {/* Cost + status */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {nightlyHotel.parsedNotes?.costEstimate && nightlyHotel.parsedNotes.costEstimate > 0 && (
+                  <span className="text-xs font-medium tabular-nums text-[var(--editorial-text-secondary)] bg-[var(--editorial-bg)] border border-[var(--editorial-border)] rounded-lg px-2 py-0.5">
+                    {nightlyHotel.parsedNotes.costEstimate} {nightlyHotel.parsedNotes.currency || '\u20AC'}
+                  </span>
+                )}
+                <Tag
+                  value="booked"
+                  severity="success"
+                  rounded
+                  className="!text-[11px] !px-2 !py-0.5"
+                />
               </div>
             </div>
           </div>

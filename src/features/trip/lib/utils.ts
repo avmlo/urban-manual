@@ -6,15 +6,15 @@
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 
 /**
- * Format a time string (HH:MM) into a human-readable format (e.g. "9:00 AM")
+ * Format a time string (HH:MM) into 24h format (e.g. "09:30")
+ * Matches itskovacs/trip time pill display
  */
 export function formatTime(time: string): string {
   try {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    const d = new Date(`2000-01-01T${time}`);
+    const h = d.getHours().toString().padStart(2, '0');
+    const m = d.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
   } catch {
     return time;
   }

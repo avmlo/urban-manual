@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { MapPin, ImagePlus, Loader2, Calendar, Wallet } from 'lucide-react';
+import { MapPin, ImagePlus, Loader2, Calendar } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 
@@ -286,22 +286,6 @@ export function TripEditorHeader({
     );
   }
 
-  // Calculate total cost from items
-  const totalCost = useMemo(() => {
-    let total = 0;
-    let currency = '\u20AC';
-    for (const day of days) {
-      for (const item of day.items) {
-        const cost = item.parsedNotes?.costEstimate;
-        if (cost && cost > 0) {
-          total += cost;
-          if (item.parsedNotes?.currency) currency = item.parsedNotes.currency;
-        }
-      }
-    }
-    return { total, currency };
-  }, [days]);
-
   // Calculate number of days
   const numDays = useMemo(() => {
     if (!trip.start_date || !trip.end_date) return days.length;
@@ -310,29 +294,34 @@ export function TripEditorHeader({
     return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
   }, [trip.start_date, trip.end_date, days.length]);
 
+  // Format title as "Destination - Mon. Year" (e.g. "England - May. 2026")
+  const headerTitle = useMemo(() => {
+    if (trip.start_date) {
+      const start = new Date(trip.start_date + 'T00:00:00');
+      const month = start.toLocaleDateString('en-US', { month: 'short' });
+      const year = start.getFullYear();
+      const dest = primaryCity || trip.title;
+      return `${dest} - ${month}. ${year}`;
+    }
+    return trip.title;
+  }, [trip.title, trip.start_date, primaryCity]);
+
   return (
     <div className="group">
-      {/* Compact title - click to edit */}
+      {/* Title - click to edit */}
       <div onClick={() => setIsEditing(true)} className="cursor-pointer">
-        <h1
-          className="text-lg font-semibold text-[var(--editorial-text-primary)] group-hover:opacity-70 transition-opacity leading-tight"
-        >
-          {trip.title}
+        <h1 className="text-base font-bold text-[var(--editorial-text-primary)] group-hover:opacity-70 transition-opacity leading-tight truncate">
+          {headerTitle}
         </h1>
       </div>
 
-      {/* Icon stats row - TRIP-inspired compact stats */}
-      <div className="flex items-center gap-4 mt-1.5">
-        <div className="flex items-center gap-1.5 text-[var(--editorial-text-tertiary)]">
-          <Calendar className="w-3.5 h-3.5" />
-          <span className="text-sm">{numDays}</span>
+      {/* Stats pills row */}
+      <div className="flex items-center gap-2 mt-1.5">
+        {/* Days pill */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]">
+          <Calendar className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
+          <span className="text-xs font-medium text-[var(--editorial-text-secondary)] tabular-nums">{numDays}</span>
         </div>
-        {totalCost.total > 0 && (
-          <div className="flex items-center gap-1.5 text-[var(--editorial-text-tertiary)]">
-            <Wallet className="w-3.5 h-3.5" />
-            <span className="text-sm">{totalCost.total.toLocaleString()} {totalCost.currency}</span>
-          </div>
-        )}
       </div>
     </div>
   );

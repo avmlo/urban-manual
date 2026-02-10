@@ -28,6 +28,7 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { NativeExperienceProvider } from "@/components/NativeExperienceProvider";
 import { generateOrganizationSchema, generateWebSiteSchema } from "@/lib/metadata";
+import PrimeSSRProvider from "@/components/PrimeSSRProvider";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -245,6 +246,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-[var(--editorial-bg)] text-[var(--editorial-text-primary)]">
+        <PrimeSSRProvider>
         <MyStatsig>
           <ThemeProvider
             attribute="class"
@@ -296,6 +298,7 @@ export default function RootLayout({
             </ChristmasThemeProvider>
           </ThemeProvider>
         </MyStatsig>
+        </PrimeSSRProvider>
       </body>
     </html>
   );

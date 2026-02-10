@@ -117,20 +117,14 @@ export default function TravelTime({ from, to, onUpdateTravelMode }: TravelTimeP
   if (travelMinutes === null) return null;
 
   return (
-    <div className="flex items-center gap-3 py-2 pl-3">
-      <div className="w-6 flex flex-col items-center">
-        <div className="w-px h-2 bg-[var(--editorial-border)]" />
-        <div className="w-1.5 h-1.5 rounded-full bg-[var(--editorial-border)]" />
-        <div className="w-px h-2 bg-[var(--editorial-border)]" />
-      </div>
+    <div className="flex items-center justify-center py-0.5">
       <button
         onClick={cycleMode}
-        className="flex items-center gap-2 px-2.5 py-1 text-xs text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] rounded-md transition-all"
+        className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] rounded-md transition-all"
         title={`${duration} by ${getModeLabel()} - click to change mode`}
       >
-        <span className="p-1 bg-[var(--editorial-bg-elevated)] rounded-md">{getModeIcon()}</span>
+        {getModeIcon()}
         <span className="font-medium tabular-nums">{duration}</span>
-        {distanceDisplay && <span className="text-[var(--editorial-text-tertiary)]">({distanceDisplay})</span>}
         {specialLabel && <span className="text-[var(--editorial-accent)]">{specialLabel}</span>}
       </button>
     </div>

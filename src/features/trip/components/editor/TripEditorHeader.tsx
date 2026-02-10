@@ -310,27 +310,39 @@ export function TripEditorHeader({
     return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
   }, [trip.start_date, trip.end_date, days.length]);
 
+  // Format title as "Destination - Mon. Year" (e.g. "England - May. 2026")
+  const headerTitle = useMemo(() => {
+    if (trip.start_date) {
+      const start = new Date(trip.start_date + 'T00:00:00');
+      const month = start.toLocaleDateString('en-US', { month: 'short' });
+      const year = start.getFullYear();
+      const dest = primaryCity || trip.title;
+      return `${dest} - ${month}. ${year}`;
+    }
+    return trip.title;
+  }, [trip.title, trip.start_date, primaryCity]);
+
   return (
     <div className="group">
-      {/* Compact title - click to edit */}
+      {/* Title - click to edit */}
       <div onClick={() => setIsEditing(true)} className="cursor-pointer">
-        <h1
-          className="text-lg font-semibold text-[var(--editorial-text-primary)] group-hover:opacity-70 transition-opacity leading-tight"
-        >
-          {trip.title}
+        <h1 className="text-base font-bold text-[var(--editorial-text-primary)] group-hover:opacity-70 transition-opacity leading-tight truncate">
+          {headerTitle}
         </h1>
       </div>
 
-      {/* Icon stats row - TRIP-inspired compact stats */}
-      <div className="flex items-center gap-4 mt-1.5">
-        <div className="flex items-center gap-1.5 text-[var(--editorial-text-tertiary)]">
-          <Calendar className="w-3.5 h-3.5" />
-          <span className="text-sm">{numDays}</span>
+      {/* Stats pills row */}
+      <div className="flex items-center gap-2 mt-1.5">
+        {/* Days pill */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]">
+          <Calendar className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
+          <span className="text-xs font-medium text-[var(--editorial-text-secondary)] tabular-nums">{numDays}</span>
         </div>
+        {/* Cost pill */}
         {totalCost.total > 0 && (
-          <div className="flex items-center gap-1.5 text-[var(--editorial-text-tertiary)]">
-            <Wallet className="w-3.5 h-3.5" />
-            <span className="text-sm">{totalCost.total.toLocaleString()} {totalCost.currency}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]">
+            <Wallet className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
+            <span className="text-xs font-medium text-[var(--editorial-text-secondary)] tabular-nums">{totalCost.total.toLocaleString()} {totalCost.currency}</span>
           </div>
         )}
       </div>

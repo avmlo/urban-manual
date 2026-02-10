@@ -323,9 +323,9 @@ export default function TripPage() {
     setExpandedItemId(prev => prev === itemId ? null : itemId);
   }, []);
 
-  // Handle item selection for sidebar detail view (desktop)
+  // Handle item selection for sidebar detail view (desktop) - toggle on second click
   const handleSelectItem = useCallback((item: EnrichedItineraryItem) => {
-    setSelectedItem(item);
+    setSelectedItem(prev => prev?.id === item.id ? null : item);
     setShowTripSettings(false);
   }, []);
 

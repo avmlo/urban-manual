@@ -91,8 +91,30 @@ export default function TripPage() {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [showTripNotes, setShowTripNotes] = useState(false);
 
-  // Day selection state (for tab view)
+  // Day selection state (for map highlighting - auto-updated by scroll observer)
   const [selectedDayNumber, setSelectedDayNumber] = useState(1);
+
+  // IntersectionObserver to track which day is in view during continuous scroll
+  useEffect(() => {
+    if (days.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const dayNum = Number(entry.target.getAttribute('data-day-number'));
+            if (dayNum && !isNaN(dayNum)) {
+              setSelectedDayNumber(dayNum);
+            }
+          }
+        }
+      },
+      { threshold: 0.3, rootMargin: '-80px 0px -60% 0px' }
+    );
+    // Observe all day sections
+    const dayElements = document.querySelectorAll('[data-day-number]');
+    dayElements.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [days.length]);
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -406,114 +428,70 @@ export default function TripPage() {
               />
             </div>
 
-            {/* Section tabs + toolbar row - TRIP-inspired */}
+            {/* Section tabs - TRIP-style pill tabs */}
             <div className="mt-4 flex items-center justify-between">
-              {/* Tabs: Plans / Notes / Lists */}
-              <div className="flex items-center gap-0">
+              {/* Pill tabs: Plans / Notes / Lists */}
+              <div className="flex items-center gap-1.5">
                 {(['plans', 'notes', 'lists'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setLeftPanelTab(tab)}
-                    className={`px-3 py-1.5 text-sm font-medium transition-colors relative ${
+                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
                       leftPanelTab === tab
-                        ? 'text-[var(--editorial-text-primary)]'
-                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                     }`}
                   >
-                    <span className="flex flex-col items-start">
-                      <span>{tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}</span>
-                      {leftPanelTab === tab && tab === 'plans' && (
-                        <span className="text-[11px] font-normal text-[var(--editorial-text-tertiary)]">Your itinerary</span>
-                      )}
-                    </span>
-                    {leftPanelTab === tab && (
-                      <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[var(--editorial-text-primary)] rounded-full" />
-                    )}
+                    {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
                   </button>
                 ))}
               </div>
 
-              {/* Toolbar icons - only show on Plans tab */}
-              {leftPanelTab === 'plans' && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setIsEditMode(!isEditMode)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                      isEditMode
-                        ? 'bg-[var(--editorial-accent)] text-white'
-                        : 'hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)]'
-                    }`}
-                    title={isEditMode ? 'Done editing' : 'Edit mode'}
-                  >
-                    {isEditMode ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-                  </button>
-
-                  <button
-                    onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
-                    title="Settings"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+              {/* Toolbar icons moved to Plans header */}
             </div>
 
-            {/* Tab underline border */}
-            <div className="h-px bg-[var(--editorial-border)] mt-1" />
+            {/* Separator */}
+            <div className="h-px bg-[var(--editorial-border)] mt-2" />
           </div>
           {/* END STICKY HEADER */}
 
           {/* SCROLLABLE CONTENT - Tab-based */}
           <div className="flex-1 lg:overflow-y-auto px-4 sm:px-6 pb-24 sm:pb-20">
 
-          {/* === PLANS TAB === */}
+          {/* === PLANS TAB - Continuous day scroll (TRIP-style) === */}
           {leftPanelTab === 'plans' && (
             <>
-            {/* Day selector pills - TRIP-inspired: day number + date + cost */}
-            {days.length > 0 && (
-              <div className="py-3">
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                  {days.map((day) => {
-                    const isSelected = day.dayNumber === selectedDayNumber;
-                    const dayDate = day.date
-                      ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-                      : null;
-                    const dayCost = tripCostSummary.dayCosts[day.dayNumber] || 0;
-                    return (
-                      <button
-                        key={day.dayNumber}
-                        onClick={() => setSelectedDayNumber(day.dayNumber)}
-                        className={`flex-shrink-0 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                          isSelected
-                            ? 'bg-[var(--editorial-accent)] text-white'
-                            : 'bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] border border-[var(--editorial-border)]'
-                        }`}
-                      >
-                        {/* Day number circle */}
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                          isSelected
-                            ? 'bg-white/20 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                        }`}>
-                          {day.dayNumber}
-                        </span>
-                        <span>{dayDate || `Day ${day.dayNumber}`}</span>
-                        {dayCost > 0 && (
-                          <span className={`text-xs tabular-nums ${isSelected ? 'text-white/70' : 'text-[var(--editorial-text-tertiary)]'}`}>
-                            {dayCost.toLocaleString()} {tripCostSummary.currency}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* "Plans / Your itinerary" header with toolbar - TRIP-style */}
+            <div className="flex items-center justify-between pt-4 pb-2">
+              <div>
+                <h2 className="text-lg font-bold text-[var(--editorial-text-primary)]">Plans</h2>
+                <p className="text-xs text-[var(--editorial-text-tertiary)]">Your itinerary</p>
               </div>
-            )}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                    isEditMode
+                      ? 'bg-[var(--editorial-accent)] text-white'
+                      : 'hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)]'
+                  }`}
+                  title={isEditMode ? 'Done editing' : 'Edit mode'}
+                >
+                  {isEditMode ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
+                  title="Settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
 
-        {/* Selected Day */}
-        <div className="mt-1">
-          {days.filter(day => day.dayNumber === selectedDayNumber).map((day) => {
+        {/* All days - continuous scroll */}
+        <div className="space-y-6">
+          {days.map((day) => {
             const dayDate = day.date;
             const weather = dayDate ? weatherByDate[dayDate] : undefined;
             const nightlyHotel = nightlyHotelByDay[day.dayNumber] || null;
@@ -521,8 +499,8 @@ export default function TripPage() {
             const checkInHotel = checkInHotelByDay[day.dayNumber] || null;
             const breakfastHotel = breakfastHotelByDay[day.dayNumber] || null;
             return (
+              <div key={day.dayNumber} data-day-number={day.dayNumber}>
               <DaySection
-                key={day.dayNumber}
                 dayNumber={day.dayNumber}
                 date={day.date ?? undefined}
                 items={day.items}
@@ -592,6 +570,7 @@ export default function TripPage() {
                 onAddActivity={(data) => addActivity(data, day.dayNumber)}
                 weather={weather}
               />
+              </div>
             );
           })}
         </div>

@@ -238,13 +238,13 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 pt-6 md:pt-8 z-30 bg-[var(--editorial-bg)] w-full"
+      className="sticky top-0 py-6 md:py-8 z-30 bg-[var(--editorial-bg)] w-full"
       role="banner"
     >
       {/* Primary Nav */}
       <div className="w-full px-6 md:px-10">
         <nav
-          className="flex items-center justify-between py-4 w-full"
+          className="flex items-center justify-between w-full"
           aria-label="Main navigation"
         >
           <button

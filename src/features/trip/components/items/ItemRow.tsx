@@ -2,8 +2,9 @@
 
 /**
  * ItemRow - Renders a single itinerary item in TRIP-style row format
- * Uniform design for all item types: time pill | status dot | image/icon | title | cost | status badge | chevron
+ * Layout: time pill | status dot | image/icon | title | cost | status badge | chevron
  *
+ * Uses PrimeReact Tag for status badges (matching itskovacs/trip PrimeNG element architecture)
  * Design adapted from itskovacs/trip (MIT)
  * https://github.com/itskovacs/trip
  */
@@ -16,6 +17,7 @@ import {
   Train as TrainIcon, ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { Tag } from 'primereact/tag';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 import { formatTime } from '@/features/trip/lib/utils';
 import ItemDetails from './ItemDetails';
@@ -38,6 +40,21 @@ interface ItemRowProps {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+function getStatusSeverity(bookingStatus?: string): 'success' | 'info' | 'warn' | 'secondary' | null {
+  if (!bookingStatus || bookingStatus === 'walk-in') return null;
+  if (bookingStatus === 'booked') return 'success';
+  if (bookingStatus === 'need-to-book') return 'info';
+  if (bookingStatus === 'waitlist') return 'warn';
+  return 'secondary';
+}
+
+function getStatusLabel(bookingStatus: string): string {
+  if (bookingStatus === 'booked') return 'booked';
+  if (bookingStatus === 'need-to-book') return 'pending';
+  if (bookingStatus === 'waitlist') return 'waitlist';
+  return bookingStatus;
+}
+
 function getStatusDotColor(bookingStatus?: string): string | null {
   if (!bookingStatus) return null;
   if (bookingStatus === 'booked') return 'bg-green-500';
@@ -142,6 +159,7 @@ export default function ItemRow({
   const isPlace = iconType === 'place';
   const bookingStatus = item.parsedNotes?.bookingStatus;
   const statusDotColor = getStatusDotColor(bookingStatus);
+  const statusSeverity = getStatusSeverity(bookingStatus);
   const cost = item.parsedNotes?.costEstimate;
   const currency = item.parsedNotes?.currency || '\u20AC';
 
@@ -175,7 +193,7 @@ export default function ItemRow({
               </div>
             )}
 
-            {/* Time pill */}
+            {/* Time pill - 24h format */}
             <span className={`flex-shrink-0 text-xs font-mono tabular-nums rounded-lg px-2.5 py-1 border ${
               displayTime
                 ? 'text-[var(--editorial-text-secondary)] bg-[var(--editorial-bg)] border-[var(--editorial-border)]'
@@ -204,7 +222,7 @@ export default function ItemRow({
             )}
 
             {/* Title */}
-            <span className="text-sm text-[var(--editorial-text-primary)] truncate flex-1 min-w-0">
+            <span className="text-sm font-medium text-[var(--editorial-text-primary)] truncate flex-1 min-w-0">
               {title}
             </span>
 
@@ -215,26 +233,24 @@ export default function ItemRow({
               </span>
             )}
 
-            {/* Status badge */}
-            {bookingStatus && bookingStatus !== 'walk-in' && (
-              <span className={`flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md ${
-                bookingStatus === 'booked'
-                  ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30'
-                  : bookingStatus === 'need-to-book'
-                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
-                  : bookingStatus === 'waitlist'
-                  ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30'
-                  : 'text-gray-500 bg-gray-100 dark:bg-gray-800'
-              }`}>
-                {bookingStatus === 'booked' ? 'booked' : bookingStatus === 'need-to-book' ? 'pending' : bookingStatus === 'waitlist' ? 'waitlist' : bookingStatus}
-              </span>
+            {/* Status badge - PrimeReact Tag */}
+            {statusSeverity && bookingStatus && (
+              <Tag
+                value={getStatusLabel(bookingStatus)}
+                severity={statusSeverity}
+                rounded
+                className="!text-[11px] !px-2 !py-0.5"
+              />
             )}
 
-            {/* Priority badge (if no booking status) */}
+            {/* Priority badge - PrimeReact Tag (if no booking status) */}
             {item.parsedNotes?.priority === 'if-time' && !bookingStatus && (
-              <span className="flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800">
-                optional
-              </span>
+              <Tag
+                value="optional"
+                severity="secondary"
+                rounded
+                className="!text-[11px] !px-2 !py-0.5"
+              />
             )}
 
             {/* Chevron */}

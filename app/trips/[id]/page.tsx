@@ -3,7 +3,8 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, X, Check, Plus, Pencil } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
+import { Button } from 'primereact/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -33,7 +34,7 @@ import { SavingFeedback } from '@/features/trip/components/SavingFeedback';
 import { TripEditorHeader } from '@/features/trip/components/editor/TripEditorHeader';
 import { TripChecklist } from '@/features/trip/components/editor/TripChecklist';
 import { type DayWeather } from '@/lib/hooks/useWeather';
-import { Settings } from 'lucide-react';
+// Settings icon now via PrimeIcons (pi pi-cog) in Button component
 import TripQuickActions from '@/features/trip/components/TripQuickActions';
 import TripInteractiveMap from '@/features/trip/components/TripInteractiveMap';
 import { Map as MapIcon } from 'lucide-react';
@@ -468,24 +469,26 @@ export default function TripPage() {
                 <p className="text-xs text-[var(--editorial-text-tertiary)]">Your itinerary</p>
               </div>
               <div className="flex items-center gap-1">
-                <button
+                <Button
+                  icon={isEditMode ? 'pi pi-check' : 'pi pi-pencil'}
+                  rounded
+                  text
+                  severity={isEditMode ? 'danger' : 'secondary'}
+                  className="!w-8 !h-8"
                   onClick={() => setIsEditMode(!isEditMode)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                    isEditMode
-                      ? 'bg-[var(--editorial-accent)] text-white'
-                      : 'hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)]'
-                  }`}
-                  title={isEditMode ? 'Done editing' : 'Edit mode'}
-                >
-                  {isEditMode ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-                </button>
-                <button
+                  tooltip={isEditMode ? 'Done editing' : 'Edit mode'}
+                  tooltipOptions={{ position: 'bottom' }}
+                />
+                <Button
+                  icon="pi pi-cog"
+                  rounded
+                  text
+                  severity="secondary"
+                  className="!w-8 !h-8"
                   onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
-                  title="Settings"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
+                  tooltip="Settings"
+                  tooltipOptions={{ position: 'bottom' }}
+                />
               </div>
             </div>
 

@@ -8,13 +8,16 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import {
-  MapPin, X, Search, Loader2, Plus, Route, Globe, Phone,
-  Clock, Plane, Hotel, Coffee, Sun, Camera,
+  MapPin, X, Search, Loader2, Globe, Phone,
+  Clock, Coffee, Sun, Camera,
   ShoppingBag, Briefcase, BedDouble, Waves, Dumbbell, Shirt,
-  Package, Sparkles, Moon, Train as TrainIcon,
+  Package, Sparkles, Moon,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
+import { Menu } from 'primereact/menu';
+import { Button } from 'primereact/button';
+import { Tag } from 'primereact/tag';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 import type { Destination } from '@/types/destination';
 import type { ActivityData, ActivityType } from '@/types/trip';
@@ -125,6 +128,8 @@ export default function DaySection({
 
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const menuRef = useRef<any>(null);
 
   // Filter out hotels that are already shown as check-in/checkout cards
   const hotelCardIds = new Set([
@@ -533,101 +538,75 @@ export default function DaySection({
             return null;
           })()}
 
-          {/* Three-dot menu */}
+          {/* Three-dot menu - PrimeReact Menu */}
           <div className="relative">
-            <button
-              onClick={() => {
-                // Desktop: use sidebar panel
+            <Menu
+              ref={menuRef}
+              model={[
+                ...(canOptimize ? [
+                  {
+                    label: 'Optimize route',
+                    icon: 'pi pi-directions',
+                    disabled: isOptimizing,
+                    command: () => { optimizeRoute(); closeAllMenus(); },
+                  },
+                  { separator: true },
+                ] : []),
+                {
+                  label: 'From curation',
+                  icon: 'pi pi-search',
+                  command: () => { setShowSearch(true); setSearchSource('curated'); setShowAddMenu(false); },
+                },
+                {
+                  label: 'From Google',
+                  icon: 'pi pi-globe',
+                  command: () => { setShowSearch(true); setSearchSource('google'); setShowAddMenu(false); },
+                },
+                { separator: true },
+                {
+                  label: 'Flight',
+                  icon: 'pi pi-send',
+                  command: () => { setShowTransportForm('flight'); setShowAddMenu(false); },
+                },
+                {
+                  label: 'Hotel',
+                  icon: 'pi pi-building',
+                  command: () => { setShowTransportForm('hotel'); setShowAddMenu(false); },
+                },
+                {
+                  label: 'Train',
+                  icon: 'pi pi-car',
+                  command: () => { setShowTransportForm('train'); setShowAddMenu(false); },
+                },
+                { separator: true },
+                {
+                  label: 'Activity',
+                  icon: 'pi pi-clock',
+                  command: () => { setShowTransportForm('activity'); setShowAddMenu(false); },
+                },
+              ] as Array<{ label?: string; icon?: string; disabled?: boolean; command?: () => void; separator?: boolean }>}
+              popup
+              className="lg:hidden"
+            />
+            <Button
+              icon={showAddMenu || showSearch || showTransportForm ? 'pi pi-times' : 'pi pi-ellipsis-h'}
+              rounded
+              text
+              severity="secondary"
+              className="!w-8 !h-8"
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                 const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
                 if (isDesktop && onOpenSidebarAdd) {
                   onOpenSidebarAdd();
+                } else if (showAddMenu || showSearch || showTransportForm) {
+                  closeAllMenus();
                 } else {
-                  // Mobile: use inline menu
-                  setShowAddMenu(!showAddMenu);
-                  setShowSearch(false);
-                  setShowTransportForm(null);
+                  menuRef.current?.toggle(e as unknown as React.SyntheticEvent);
+                  setShowAddMenu(true);
                 }
               }}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] transition-colors text-[var(--editorial-text-tertiary)]"
-              title="Day actions"
-            >
-              {showAddMenu || showSearch || showTransportForm ? (
-                <Plus className="w-4 h-4 rotate-45 transition-transform" />
-              ) : (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
-              )}
-            </button>
-
-            {/* Add menu dropdown (mobile only) */}
-            <AnimatePresence>
-              {showAddMenu && !showSearch && !showTransportForm && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                  className="absolute right-0 top-full mt-1 w-48 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-2xl shadow-lg overflow-hidden z-20 lg:hidden"
-                >
-                  {/* Optimize route option */}
-                  {canOptimize && (
-                    <>
-                      <button
-                        onClick={() => { optimizeRoute(); closeAllMenus(); }}
-                        disabled={isOptimizing}
-                        className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
-                      >
-                        {isOptimizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Route className="w-4 h-4" />}
-                        Optimize route
-                      </button>
-                      <div className="border-t border-[var(--editorial-border)] my-1" />
-                    </>
-                  )}
-                  <button
-                    onClick={() => { setShowSearch(true); setSearchSource('curated'); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
-                  >
-                    <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    From curation
-                  </button>
-                  <button
-                    onClick={() => { setShowSearch(true); setSearchSource('google'); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
-                  >
-                    <Globe className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    From Google
-                  </button>
-                  <div className="border-t border-[var(--editorial-border)] my-1" />
-                  <button
-                    onClick={() => setShowTransportForm('flight')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
-                  >
-                    <Plane className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    Flight
-                  </button>
-                  <button
-                    onClick={() => setShowTransportForm('hotel')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
-                  >
-                    <Hotel className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    Hotel
-                  </button>
-                  <button
-                    onClick={() => setShowTransportForm('train')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
-                  >
-                    <TrainIcon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    Train
-                  </button>
-                  <div className="border-t border-[var(--editorial-border)] my-1" />
-                  <button
-                    onClick={() => setShowTransportForm('activity')}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 sm:px-3 sm:py-2 text-sm sm:text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors text-left"
-                  >
-                    <Clock className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    Activity
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              aria-label="Day actions"
+            />
 
             {/* Inline search panel (mobile only) */}
             <AnimatePresence>
@@ -902,9 +881,12 @@ export default function DaySection({
                     {nightlyHotel.parsedNotes.costEstimate} {nightlyHotel.parsedNotes.currency || '\u20AC'}
                   </span>
                 )}
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30">
-                  booked
-                </span>
+                <Tag
+                  value="booked"
+                  severity="success"
+                  rounded
+                  className="!text-[11px] !px-2 !py-0.5"
+                />
               </div>
             </div>
           </div>

@@ -4,12 +4,14 @@
  * HotelActivityRow - Card for hotel check-in, checkout, and breakfast activities
  * TRIP-style uniform row: time pill | status dot | icon | title | status badge
  *
+ * Uses PrimeReact Tag for status badges (matching itskovacs/trip PrimeNG element architecture)
  * Design adapted from itskovacs/trip (MIT)
  * https://github.com/itskovacs/trip
  */
 import { useState } from 'react';
 import { GripVertical, DoorOpen, Coffee, LogOut, ChevronRight } from 'lucide-react';
 import { Reorder } from 'framer-motion';
+import { Tag } from 'primereact/tag';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 import { formatTime } from '@/features/trip/lib/utils';
 
@@ -81,7 +83,7 @@ export default function HotelActivityRow({
               </div>
             )}
 
-            {/* Time pill */}
+            {/* Time pill - 24h format */}
             <span className={`flex-shrink-0 text-xs font-mono tabular-nums rounded-lg px-2.5 py-1 border ${
               details.time
                 ? 'text-[var(--editorial-text-secondary)] bg-[var(--editorial-bg)] border-[var(--editorial-border)]'
@@ -96,15 +98,18 @@ export default function HotelActivityRow({
             </span>
 
             {/* Title */}
-            <span className="text-sm text-[var(--editorial-text-primary)] truncate flex-1 min-w-0">
+            <span className="text-sm font-medium text-[var(--editorial-text-primary)] truncate flex-1 min-w-0">
               {details.label} &middot; {hotelName}
             </span>
 
-            {/* Breakfast included badge */}
+            {/* Breakfast included badge - PrimeReact Tag */}
             {activityType === 'breakfast' && item.parsedNotes?.breakfastIncluded && (
-              <span className="flex-shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-md text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30">
-                included
-              </span>
+              <Tag
+                value="included"
+                severity="success"
+                rounded
+                className="!text-[11px] !px-2 !py-0.5"
+              />
             )}
 
             {/* Chevron */}

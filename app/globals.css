@@ -252,10 +252,18 @@
   border: 1px solid var(--editorial-border-subtle);
 }
 
+@layer theme, base, primereact, components, utilities;
+
 @import "tailwindcss";
 
 /* Configure dark mode to use class selector (for next-themes compatibility) */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* PrimeReact Tailwind integration - provides primary-* color tokens */
+@import "tailwindcss-primeui";
+
+/* PrimeIcons */
+@import "primeicons/primeicons.css";
 
 @import "../styles/layout.css";
 @import "../styles/image-system.css";

@@ -1,7 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { Share2, Calendar, Printer, Copy, Check, ExternalLink, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import {
+  MoreHorizontal,
+  ListChecks,
+  Package,
+  Share2,
+  Printer,
+  StickyNote,
+  Pencil,
+  Trash2,
+  Download,
+  Copy,
+  Check,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TripQuickActionsProps {
@@ -11,11 +23,16 @@ interface TripQuickActionsProps {
   endDate?: string | null;
   destination?: string;
   className?: string;
+  onScrollToChecklist?: () => void;
+  onScrollToPackingList?: () => void;
+  onOpenNotes?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 /**
- * TripQuickActions - Floating action buttons for trip sharing and export
- * Share Trip, Export to Calendar, Print Itinerary
+ * TripQuickActions - "..." menu button with structured dropdown
+ * Organized into sections: Lists, Collaboration, Trip
  */
 export default function TripQuickActions({
   tripId,
@@ -24,180 +41,192 @@ export default function TripQuickActions({
   endDate,
   destination,
   className = '',
+  onScrollToChecklist,
+  onScrollToPackingList,
+  onOpenNotes,
+  onEdit,
+  onDelete,
 }: TripQuickActionsProps) {
-  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Generate shareable link
-  const shareUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/trips/${tripId}`
-    : '';
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
 
-  // Copy link to clipboard
-  const handleCopyLink = async () => {
+  // Share: generate token-based share link
+  const handleShare = async () => {
+    setSharing(true);
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      const res = await fetch(`/api/trips/${tripId}/share`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        const url = data.shareUrl || `${window.location.origin}/trips/shared/${data.shareToken}`;
+        setShareUrl(url);
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      // Fallback: copy current URL
+      const fallback = `${window.location.origin}/trips/${tripId}`;
+      await navigator.clipboard.writeText(fallback);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
+    } finally {
+      setSharing(false);
     }
   };
 
-  // Generate calendar export URL (Google Calendar)
-  const handleExportCalendar = () => {
-    if (!startDate) return;
-
-    setExporting(true);
-
-    // Format dates for Google Calendar
-    const formatDate = (dateStr: string) => {
-      return dateStr.replace(/-/g, '');
-    };
-
-    const start = formatDate(startDate);
-    const end = endDate ? formatDate(endDate) : start;
-
-    const calendarUrl = new URL('https://calendar.google.com/calendar/render');
-    calendarUrl.searchParams.set('action', 'TEMPLATE');
-    calendarUrl.searchParams.set('text', tripTitle);
-    calendarUrl.searchParams.set('dates', `${start}/${end}`);
-    calendarUrl.searchParams.set('details', `Trip planned with Urban Manual\n\nView itinerary: ${shareUrl}`);
-    if (destination) {
-      calendarUrl.searchParams.set('location', destination);
-    }
-
-    window.open(calendarUrl.toString(), '_blank');
-    setExporting(false);
+  // Download iCal
+  const handleDownloadIcal = () => {
+    window.open(`/api/trips/${tripId}/export/ical`, '_blank');
+    setOpen(false);
   };
 
-  // Print itinerary
+  // Print
   const handlePrint = () => {
-    window.print();
-  };
-
-  // Native share if available
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: tripTitle,
-          text: destination ? `Check out my trip to ${destination}!` : 'Check out my trip!',
-          url: shareUrl,
-        });
-      } catch (error) {
-        // User cancelled or share failed
-        setShowShareMenu(true);
-      }
-    } else {
-      setShowShareMenu(true);
-    }
+    setOpen(false);
+    setTimeout(() => window.print(), 100);
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      {/* Share Button */}
-      <div className="relative">
-        <button
-          onClick={handleNativeShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
-          title="Share trip"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Share</span>
-        </button>
-
-        {/* Share Menu Dropdown */}
-        <AnimatePresence>
-          {showShareMenu && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-40"
-                onClick={() => setShowShareMenu(false)}
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                className="absolute right-0 top-full mt-2 w-64 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-2xl shadow-lg overflow-hidden z-50"
-              >
-                <div className="flex items-center justify-between px-3 pt-3 pb-2">
-                  <p className="text-xs font-medium text-[var(--editorial-text-tertiary)] uppercase tracking-wider">
-                    Share Link
-                  </p>
-                  <button
-                    onClick={() => setShowShareMenu(false)}
-                    className="p-1 text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="px-3 pb-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={shareUrl}
-                      className="flex-1 px-2 py-1.5 text-xs bg-[var(--editorial-bg)] border border-[var(--editorial-border)] rounded-lg text-[var(--editorial-text-secondary)] truncate"
-                    />
-                    <button
-                      onClick={handleCopyLink}
-                      className="p-1.5 text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-accent)] transition-colors"
-                      title={copied ? 'Copied!' : 'Copy link'}
-                    >
-                      {copied ? (
-                        <Check className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="border-t border-[var(--editorial-border)] p-2">
-                  <button
-                    onClick={() => {
-                      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(`Check out my trip${destination ? ` to ${destination}` : ''}!`)}`, '_blank');
-                      setShowShareMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] rounded-lg transition-colors text-left"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Share on X (Twitter)
-                  </button>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Export to Calendar */}
-      {startDate && (
-        <button
-          onClick={handleExportCalendar}
-          disabled={exporting}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors disabled:opacity-50"
-          title="Add to Google Calendar"
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Export</span>
-        </button>
-      )}
-
-      {/* Print */}
+    <div className={`relative ${className}`} ref={menuRef}>
+      {/* Trigger: "..." button */}
       <button
-        onClick={handlePrint}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors print:hidden"
-        title="Print itinerary"
+        onClick={() => setOpen(!open)}
+        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-secondary)] transition-colors"
+        title="Trip menu"
       >
-        <Printer className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Print</span>
+        <MoreHorizontal className="w-5 h-5" />
       </button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-1 w-52 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-xl shadow-lg overflow-hidden z-50"
+          >
+            {/* Lists section */}
+            <div className="px-3 pt-2.5 pb-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500">Lists</p>
+            </div>
+            {onScrollToChecklist && (
+              <MenuButton
+                icon={<ListChecks className="w-4 h-4" />}
+                label="Checklist"
+                onClick={() => { onScrollToChecklist(); setOpen(false); }}
+              />
+            )}
+            {onScrollToPackingList && (
+              <MenuButton
+                icon={<Package className="w-4 h-4" />}
+                label="Packing list"
+                onClick={() => { onScrollToPackingList(); setOpen(false); }}
+              />
+            )}
+
+            {/* Collaboration section */}
+            <div className="px-3 pt-3 pb-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500">Collaboration</p>
+            </div>
+            <MenuButton
+              icon={copied ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
+              label={copied ? 'Link copied!' : sharing ? 'Sharing...' : 'Share'}
+              onClick={handleShare}
+              disabled={sharing}
+            />
+
+            {/* Trip section */}
+            <div className="px-3 pt-3 pb-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500">Trip</p>
+            </div>
+            <MenuButton
+              icon={<Printer className="w-4 h-4" />}
+              label="Pretty Print"
+              onClick={handlePrint}
+            />
+            <MenuButton
+              icon={<Download className="w-4 h-4" />}
+              label="Export to Calendar"
+              onClick={handleDownloadIcal}
+            />
+            {onOpenNotes && (
+              <MenuButton
+                icon={<StickyNote className="w-4 h-4" />}
+                label="Notes"
+                onClick={() => { onOpenNotes(); setOpen(false); }}
+              />
+            )}
+            {onEdit && (
+              <MenuButton
+                icon={<Pencil className="w-4 h-4" />}
+                label="Edit"
+                onClick={() => { onEdit(); setOpen(false); }}
+              />
+            )}
+            {onDelete && (
+              <>
+                <div className="border-t border-[var(--editorial-border)] my-1" />
+                <MenuButton
+                  icon={<Trash2 className="w-4 h-4" />}
+                  label="Delete"
+                  onClick={() => { onDelete(); setOpen(false); }}
+                  danger
+                />
+              </>
+            )}
+
+            {/* Bottom padding */}
+            <div className="h-1" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+/** Reusable menu row */
+function MenuButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors text-left ${
+        danger
+          ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+          : 'text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)]'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      <span className="flex-shrink-0 text-[var(--editorial-text-tertiary)]">{icon}</span>
+      {label}
+    </button>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { MapPin, ImagePlus, Loader2 } from 'lucide-react';
+import { MapPin, ImagePlus, Loader2, Calendar, Wallet } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 
@@ -286,48 +286,53 @@ export function TripEditorHeader({
     );
   }
 
+  // Calculate total cost from items
+  const totalCost = useMemo(() => {
+    let total = 0;
+    let currency = '\u20AC';
+    for (const day of days) {
+      for (const item of day.items) {
+        const cost = item.parsedNotes?.costEstimate;
+        if (cost && cost > 0) {
+          total += cost;
+          if (item.parsedNotes?.currency) currency = item.parsedNotes.currency;
+        }
+      }
+    }
+    return { total, currency };
+  }, [days]);
+
+  // Calculate number of days
+  const numDays = useMemo(() => {
+    if (!trip.start_date || !trip.end_date) return days.length;
+    const start = new Date(trip.start_date + 'T00:00:00');
+    const end = new Date(trip.end_date + 'T00:00:00');
+    return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  }, [trip.start_date, trip.end_date, days.length]);
+
   return (
     <div className="group">
-      {/* Static map cover */}
-      <div className="relative aspect-[3/1] rounded-xl overflow-hidden mb-4">
-        {staticMapUrl && !mapError ? (
-          <>
-            <Image
-              src={staticMapUrl}
-              alt={`Map of ${primaryCity}`}
-              fill
-              className="object-cover"
-              unoptimized
-              onError={() => setMapError(true)}
-            />
-            {/* City overlay */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[var(--editorial-bg-elevated)] rounded-full px-3 py-1.5 shadow-lg flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-[var(--editorial-accent)]" />
-              <span className="text-xs font-medium text-[var(--editorial-text-primary)]">{primaryCity}</span>
-              <span className="text-xs text-[var(--editorial-text-tertiary)]">{totalItems} pinned</span>
-            </div>
-          </>
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[var(--editorial-border-subtle)] to-[var(--editorial-border)] flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="w-8 h-8 text-[var(--editorial-accent)] mx-auto mb-1" />
-              <span className="text-xs text-[var(--editorial-text-secondary)]">{primaryCity || 'Add places to see map'}</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Title and info - click to edit */}
+      {/* Compact title - click to edit */}
       <div onClick={() => setIsEditing(true)} className="cursor-pointer">
         <h1
-          className="text-xl font-normal text-[var(--editorial-text-primary)] group-hover:opacity-70 transition-opacity"
-          style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
+          className="text-lg font-semibold text-[var(--editorial-text-primary)] group-hover:opacity-70 transition-opacity leading-tight"
         >
           {trip.title}
         </h1>
-        <p className="text-sm text-[var(--editorial-text-tertiary)] group-hover:opacity-70 transition-opacity">
-          {[primaryCity, dateDisplay, `${totalItems} ${totalItems === 1 ? 'place' : 'places'}`].filter(Boolean).join(' · ')}
-        </p>
+      </div>
+
+      {/* Icon stats row - TRIP-inspired compact stats */}
+      <div className="flex items-center gap-4 mt-1.5">
+        <div className="flex items-center gap-1.5 text-[var(--editorial-text-tertiary)]">
+          <Calendar className="w-3.5 h-3.5" />
+          <span className="text-sm">{numDays}</span>
+        </div>
+        {totalCost.total > 0 && (
+          <div className="flex items-center gap-1.5 text-[var(--editorial-text-tertiary)]">
+            <Wallet className="w-3.5 h-3.5" />
+            <span className="text-sm">{totalCost.total.toLocaleString()} {totalCost.currency}</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -123,6 +123,8 @@ export const PATCH = withErrorHandling(async (request: NextRequest, context: Rou
   if (body.is_public !== undefined) updates.is_public = body.is_public;
   if (body.cover_image !== undefined) updates.cover_image = body.cover_image;
   if (body.notes !== undefined) updates.notes = body.notes;
+  if (body.share_token !== undefined) updates.share_token = body.share_token;
+  if (body.packing_list !== undefined) updates.packing_list = body.packing_list;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { MapPin, ImagePlus, Loader2, Calendar, Wallet } from 'lucide-react';
+import { MapPin, ImagePlus, Loader2, Calendar } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 
@@ -286,22 +286,6 @@ export function TripEditorHeader({
     );
   }
 
-  // Calculate total cost from items
-  const totalCost = useMemo(() => {
-    let total = 0;
-    let currency = '\u20AC';
-    for (const day of days) {
-      for (const item of day.items) {
-        const cost = item.parsedNotes?.costEstimate;
-        if (cost && cost > 0) {
-          total += cost;
-          if (item.parsedNotes?.currency) currency = item.parsedNotes.currency;
-        }
-      }
-    }
-    return { total, currency };
-  }, [days]);
-
   // Calculate number of days
   const numDays = useMemo(() => {
     if (!trip.start_date || !trip.end_date) return days.length;
@@ -338,13 +322,6 @@ export function TripEditorHeader({
           <Calendar className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
           <span className="text-xs font-medium text-[var(--editorial-text-secondary)] tabular-nums">{numDays}</span>
         </div>
-        {/* Cost pill */}
-        {totalCost.total > 0 && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]">
-            <Wallet className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
-            <span className="text-xs font-medium text-[var(--editorial-text-secondary)] tabular-nums">{totalCost.total.toLocaleString()} {totalCost.currency}</span>
-          </div>
-        )}
       </div>
     </div>
   );

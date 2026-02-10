@@ -1,20 +1,25 @@
 'use client';
 
 /**
- * TripPlacesPanel - Right-side panel showing curated destinations for trip cities
- * Inspired by itskovacs/trip Places panel (MIT)
- * Fetches from Supabase destinations table filtered by trip cities
+ * TripPlacesPanel - City guide view for the trip right panel
+ * Shows destinations in the same grid layout as the city page,
+ * with category filters and draggable cards for adding to the itinerary.
+ *
+ * Fetches from Supabase destinations table filtered by trip cities.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import Image from 'next/image';
-import { MapPin, Search, Loader2, Filter } from 'lucide-react';
-import { Tag } from 'primereact/tag';
-import { Button } from 'primereact/button';
+import { MapPin, Check, Search, Loader2 } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { capitalizeCity } from '@/lib/utils';
 import type { Destination } from '@/types/destination';
 
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 interface TripPlacesPanelProps {
   cities: string[];
   /** Slugs of destinations already in the itinerary */
@@ -23,6 +28,9 @@ interface TripPlacesPanelProps {
   selectedDayNumber: number;
 }
 
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 export default function TripPlacesPanel({
   cities,
   plannedSlugs,
@@ -32,13 +40,13 @@ export default function TripPlacesPanel({
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<'all' | 'unplanned'>('all');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [showPlannedOverlay, setShowPlannedOverlay] = useState(false);
 
-  // Stable key for cities array (avoids re-fetching on every render)
   const citiesKey = cities.join(',');
 
-  // Fetch destinations for all trip cities
+  // Fetch destinations for all trip cities (same fields as city page)
   useEffect(() => {
     if (cities.length === 0) return;
     const fetchDestinations = async () => {
@@ -46,241 +54,375 @@ export default function TripPlacesPanel({
       const supabase = createClient();
       const { data } = await supabase
         .from('destinations')
-        .select('id, slug, name, city, country, category, image_thumbnail, image, rating, micro_description, neighborhood')
+        .select('id, slug, name, city, country, neighborhood, category, micro_description, image_thumbnail, image, rating, michelin_stars, crown')
         .in('city', cities)
-        .order('city')
-        .order('rating', { ascending: false });
+        .order('name');
       setDestinations((data as Destination[]) || []);
       setIsLoading(false);
     };
     fetchDestinations();
   }, [citiesKey]);
 
+  // Derive categories (same logic as city page: only categories with 2+ destinations)
+  const categories = useMemo(() => {
+    const cityFiltered = selectedCity
+      ? destinations.filter(d => d.city === selectedCity)
+      : destinations;
+    const counts = new Map<string, number>();
+    const originalCase = new Map<string, string>();
+    cityFiltered.forEach(d => {
+      if (d.category) {
+        const lower = d.category.toLowerCase();
+        if (!originalCase.has(lower)) originalCase.set(lower, d.category);
+        counts.set(lower, (counts.get(lower) || 0) + 1);
+      }
+    });
+    return Array.from(counts.entries())
+      .filter(([, count]) => count >= 2)
+      .map(([lower]) => originalCase.get(lower) || lower)
+      .sort((a, b) => {
+        if (a.toLowerCase() === 'others') return 1;
+        if (b.toLowerCase() === 'others') return -1;
+        return a.localeCompare(b);
+      });
+  }, [destinations, selectedCity]);
+
   // Filter destinations
   const filtered = useMemo(() => {
     let list = destinations;
-
-    // City filter
-    if (selectedCity) {
-      list = list.filter(d => d.city === selectedCity);
+    if (selectedCity) list = list.filter(d => d.city === selectedCity);
+    if (selectedCategory) {
+      const cat = selectedCategory.toLowerCase();
+      list = list.filter(d => d.category?.toLowerCase() === cat);
     }
-
-    // Planned filter
-    if (filterMode === 'unplanned') {
+    if (showPlannedOverlay) {
       list = list.filter(d => !plannedSlugs.has(d.slug));
     }
-
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(d =>
         d.name.toLowerCase().includes(q) ||
         d.category?.toLowerCase().includes(q) ||
-        d.neighborhood?.toLowerCase().includes(q)
+        d.neighborhood?.toLowerCase().includes(q) ||
+        d.micro_description?.toLowerCase().includes(q)
       );
     }
-
     return list;
-  }, [destinations, selectedCity, filterMode, searchQuery, plannedSlugs]);
+  }, [destinations, selectedCity, selectedCategory, showPlannedOverlay, searchQuery, plannedSlugs]);
 
-  // Count by status
-  const totalCount = destinations.length;
-  const unplannedCount = destinations.filter(d => !plannedSlugs.has(d.slug)).length;
+  const handleCategorySelect = useCallback((cat: string) => {
+    setSelectedCategory(prev => prev === cat ? '' : cat);
+  }, []);
+
+  const activeCityName = selectedCity
+    ? capitalizeCity(selectedCity)
+    : cities.length === 1
+      ? capitalizeCity(cities[0])
+      : null;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header: Manage + filter */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--editorial-border)]">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-[var(--editorial-text-primary)]">
-            Manage
-          </span>
-        </div>
-
-        {/* City filter pills (if multi-city trip) */}
+    <div className="flex flex-col h-full bg-[var(--editorial-bg)]">
+      {/* City guide header - matches city page style */}
+      <div className="flex-shrink-0 px-6 pt-6 pb-0">
+        {/* City tabs (multi-city) */}
         {cities.length > 1 && (
-          <div className="flex items-center gap-1.5 mb-3 overflow-x-auto">
+          <div className="flex items-center gap-1.5 mb-4 overflow-x-auto">
             <button
-              onClick={() => setSelectedCity(null)}
-              className={`px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
+              onClick={() => { setSelectedCity(null); setSelectedCategory(''); }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
                 !selectedCity
                   ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
                   : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
               }`}
             >
-              All
+              All Cities
             </button>
             {cities.map(city => (
               <button
                 key={city}
-                onClick={() => setSelectedCity(city === selectedCity ? null : city)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
+                onClick={() => { setSelectedCity(city === selectedCity ? null : city); setSelectedCategory(''); }}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all ${
                   selectedCity === city
                     ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
                     : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
                 }`}
               >
-                {city}
+                {capitalizeCity(city)}
               </button>
             ))}
           </div>
         )}
 
-        {/* Filter toggle + search */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setFilterMode(filterMode === 'all' ? 'unplanned' : 'all')}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              filterMode === 'unplanned'
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
-            }`}
-          >
-            <Filter className="w-3 h-3" />
-            Unplanned
-            {filterMode === 'unplanned' && (
-              <span className="ml-0.5 text-[10px] tabular-nums">{unplannedCount}</span>
-            )}
-          </button>
+        {/* City title + count */}
+        <div className="mb-4">
+          {activeCityName && (
+            <h2 className="text-2xl font-light text-[var(--editorial-text-primary)]">
+              {activeCityName}
+            </h2>
+          )}
+          <p className="text-xs text-[var(--editorial-text-tertiary)] mt-1">
+            {filtered.length} {filtered.length === 1 ? 'destination' : 'destinations'}
+            {showPlannedOverlay ? ' (unplanned)' : ''}
+          </p>
+        </div>
+
+        {/* Category filters - matches city page style */}
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs mb-4">
+            <button
+              onClick={() => setSelectedCategory('')}
+              className={`transition-all duration-200 ease-out ${
+                !selectedCategory
+                  ? 'font-medium text-[var(--editorial-text-primary)]'
+                  : 'font-medium text-[var(--editorial-text-primary)]/30 hover:text-[var(--editorial-text-primary)]/60'
+              }`}
+            >
+              All Categories
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => handleCategorySelect(cat)}
+                className={`transition-all duration-200 ease-out capitalize ${
+                  selectedCategory === cat
+                    ? 'font-medium text-[var(--editorial-text-primary)]'
+                    : 'font-medium text-[var(--editorial-text-primary)]/30 hover:text-[var(--editorial-text-primary)]/60'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Search + unplanned filter row */}
+        <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search places..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-lg text-[var(--editorial-text-primary)] placeholder-gray-400 outline-none focus:ring-1 focus:ring-[var(--editorial-accent)]"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-xl text-[var(--editorial-text-primary)] placeholder-gray-400 outline-none focus:ring-1 focus:ring-[var(--editorial-accent)]"
             />
           </div>
+          <button
+            onClick={() => setShowPlannedOverlay(!showPlannedOverlay)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl whitespace-nowrap transition-all ${
+              showPlannedOverlay
+                ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                : 'text-[var(--editorial-text-tertiary)] bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] hover:bg-[var(--editorial-border-subtle)]'
+            }`}
+          >
+            Unplanned
+          </button>
         </div>
       </div>
 
-      {/* Destination list */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Destination grid - matches city page UniversalGrid */}
+      <div className="flex-1 overflow-y-auto px-6 pb-6">
         {isLoading ? (
-          <div className="py-12 text-center">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400 mx-auto" />
-            <p className="text-xs text-gray-400 mt-2">Loading places...</p>
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-12 text-center">
-            <MapPin className="w-5 h-5 text-gray-300 mx-auto mb-2" />
+          <div className="text-center py-20">
+            <MapPin className="w-6 h-6 text-gray-300 mx-auto mb-2" />
             <p className="text-xs text-gray-400">
-              {searchQuery ? 'No matching places' : `No places found for ${cities.join(', ')}`}
+              {searchQuery ? 'No matching places' : 'No destinations found'}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-[var(--editorial-border)]">
-            {filtered.map(destination => (
-              <PlaceRow
-                key={destination.id}
+          <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+            {filtered.map((destination, index) => (
+              <DraggableDestinationCard
+                key={destination.slug || destination.id}
                 destination={destination}
+                index={index}
                 isPlanned={plannedSlugs.has(destination.slug)}
+                selectedDayNumber={selectedDayNumber}
                 onAdd={() => onAddPlace(destination, selectedDayNumber)}
               />
             ))}
           </div>
         )}
       </div>
-
-      {/* Footer count */}
-      <div className="flex-shrink-0 px-4 py-2 border-t border-[var(--editorial-border)] text-xs text-[var(--editorial-text-tertiary)]">
-        {filtered.length} of {totalCount} places
-        {filterMode === 'unplanned' && ` \u00B7 ${unplannedCount} unplanned`}
-      </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// PlaceRow - Single destination row in the places panel
+// DraggableDestinationCard - City guide card with drag support
+// Matches the DestinationCard from components/DestinationCard.tsx
+// but wrapped with useDraggable for trip integration
 // ---------------------------------------------------------------------------
-function PlaceRow({
+const DraggableDestinationCard = memo(function DraggableDestinationCard({
   destination,
+  index,
   isPlanned,
+  selectedDayNumber,
   onAdd,
 }: {
   destination: Destination;
+  index: number;
   isPlanned: boolean;
+  selectedDayNumber: number;
   onAdd: () => void;
 }) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [showAddFeedback, setShowAddFeedback] = useState(false);
+
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `places-panel-${destination.id}`,
-    data: { destination, source: 'places-panel' },
+    id: `guide-card-${destination.id}`,
+    data: { destination, source: 'guide-panel' },
   });
 
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.4 : 1 }
+  const dragStyle = transform
+    ? {
+        transform: CSS.Translate.toString(transform),
+        zIndex: 100,
+        opacity: 0.85,
+      }
     : undefined;
 
-  const hasImage = destination.image_thumbnail || destination.image;
+  const hasImage = (destination.image_thumbnail || destination.image) && !imageError;
+
+  const handleClick = () => {
+    // Don't trigger if dragging
+    if (transform) return;
+
+    if (!isPlanned) {
+      onAdd();
+      // Show add feedback animation
+      setShowAddFeedback(true);
+      setTimeout(() => setShowAddFeedback(false), 1200);
+    }
+  };
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={dragStyle}
       {...listeners}
       {...attributes}
-      className={`flex items-start gap-3 px-4 py-3 cursor-grab active:cursor-grabbing hover:bg-[var(--editorial-border-subtle)] transition-colors ${
-        isDragging ? 'z-50 shadow-lg bg-[var(--editorial-bg-elevated)]' : ''
-      } ${isPlanned ? 'opacity-50' : ''}`}
+      onClick={handleClick}
+      className={`
+        group relative w-full flex flex-col cursor-grab active:cursor-grabbing
+        transition-all duration-300 ease-out
+        ${isDragging ? 'shadow-2xl scale-105 rotate-1' : 'hover:scale-[1.01]'}
+        ${isPlanned ? 'opacity-60' : ''}
+      `}
     >
-      {/* Image */}
-      <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
+      {/* Image - 16:9 ratio, matching DestinationCard */}
+      <div
+        className={`
+          relative aspect-video overflow-hidden rounded-2xl
+          bg-[var(--editorial-border)]
+          transition-all duration-300 ease-out
+          mb-3
+          ${isLoaded ? 'opacity-100' : 'opacity-0'}
+          ${isDragging ? 'ring-2 ring-[var(--editorial-accent)] shadow-lg' : ''}
+        `}
+      >
+        {/* Loading skeleton */}
+        {!isLoaded && (
+          <div className="absolute inset-0 animate-pulse bg-[var(--editorial-border)]" />
+        )}
+
+        {/* Image */}
         {hasImage ? (
           <Image
-            src={destination.image_thumbnail || destination.image || ''}
-            alt={destination.name}
-            width={56}
-            height={56}
-            className="w-full h-full object-cover"
+            src={destination.image_thumbnail || destination.image!}
+            alt={`${destination.name}`}
+            fill
+            sizes="(max-width: 1280px) 50vw, 33vw"
+            className={`
+              object-cover
+              transition-all duration-500 ease-out
+              group-hover:scale-105
+              ${isLoaded ? 'opacity-100' : 'opacity-0'}
+            `}
+            quality={80}
+            loading={index < 6 ? 'eager' : 'lazy'}
+            onLoad={() => setIsLoaded(true)}
+            onError={() => { setImageError(true); setIsLoaded(true); }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <MapPin className="w-5 h-5 text-gray-400" />
+          <div className="w-full h-full flex items-center justify-center text-[var(--editorial-text-tertiary)]">
+            <MapPin className="h-8 w-8 opacity-20" />
+          </div>
+        )}
+
+        {/* Hover gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+        {/* "Add to Day X" overlay on hover */}
+        {!isPlanned && !isDragging && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+            <span className="px-3 py-1.5 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full text-xs font-medium text-[var(--editorial-text-primary)] shadow-sm">
+              + Add to Day {selectedDayNumber}
+            </span>
+          </div>
+        )}
+
+        {/* Planned check badge - center */}
+        {isPlanned && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
+            <Check className="w-5 h-5 text-[var(--editorial-text-primary)] stroke-[3]" />
+          </div>
+        )}
+
+        {/* Michelin stars badge */}
+        {typeof destination.michelin_stars === 'number' && destination.michelin_stars > 0 && (
+          <div className="absolute bottom-2 left-2 z-10 px-2.5 py-1 text-[var(--editorial-text-primary)] text-xs font-medium bg-white/95 backdrop-blur-sm rounded-full flex items-center gap-1.5 shadow-sm">
+            <img src="/michelin-star.svg" alt="Michelin star" className="h-3.5 w-3.5" />
+            <span>{destination.michelin_stars}</span>
+          </div>
+        )}
+
+        {/* Drag indicator on hover */}
+        {!isDragging && !isPlanned && (
+          <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="w-7 h-7 rounded-full bg-white/90 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
+              <i className="pi pi-arrows-alt text-xs text-gray-600 dark:text-gray-300" />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[var(--editorial-text-primary)] truncate">
+      {/* Info section - matches DestinationCard */}
+      <div className="flex-1 flex flex-col">
+        <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] line-clamp-2 transition-colors duration-200 group-hover:text-[var(--editorial-text-secondary)]">
           {destination.name}
-        </p>
-        <p className="text-xs text-[var(--editorial-text-tertiary)] truncate mt-0.5">
-          {destination.micro_description || destination.neighborhood || destination.city}
-        </p>
-        <div className="mt-1.5">
-          <Tag
-            value={destination.category}
-            severity="info"
-            rounded
-            className="!text-[10px] !px-2 !py-0.5"
-          />
+        </h3>
+        <div className="text-xs text-[var(--editorial-text-secondary)] line-clamp-1">
+          {destination.micro_description ||
+           (destination.category && destination.city
+             ? `${destination.category} in ${capitalizeCity(destination.city)}`
+             : destination.city
+               ? `Located in ${capitalizeCity(destination.city)}`
+               : destination.category || '')}
         </div>
       </div>
 
-      {/* Add button (click to add to current day) */}
-      {!isPlanned && (
-        <Button
-          icon="pi pi-plus"
-          rounded
-          text
-          severity="secondary"
-          className="!w-7 !h-7 flex-shrink-0 mt-1"
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            onAdd();
-          }}
-          tooltip={`Add to Day ${1}`}
-          tooltipOptions={{ position: 'left' }}
-        />
-      )}
-      {isPlanned && (
-        <span className="flex-shrink-0 mt-2">
-          <i className="pi pi-check text-green-500 text-xs" />
-        </span>
-      )}
+      {/* Add feedback animation */}
+      <AnimatePresence>
+        {showAddFeedback && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 0 }}
+            animate={{ opacity: 1, scale: 1, y: -8 }}
+            exit={{ opacity: 0, scale: 0.8, y: -16 }}
+            className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+          >
+            <div className="px-4 py-2 bg-green-500 text-white rounded-xl text-xs font-semibold shadow-lg">
+              <Check className="w-3.5 h-3.5 inline mr-1.5" />
+              Added to Day {selectedDayNumber}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+});

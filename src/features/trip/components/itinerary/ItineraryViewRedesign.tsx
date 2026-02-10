@@ -31,6 +31,7 @@ import ItineraryMinimalRow, { BreakfastRow, CheckoutRow, CheckInRow, NightStayRo
 import TravelConnector, { InteractiveTravelConnector } from './TravelConnector';
 import GapSuggestion, { CompactGapIndicator } from './GapSuggestion';
 import DayHeader, { DayNavigation } from './DayHeader';
+import TripDesktopHeader from './TripDesktopHeader';
 
 interface ItineraryViewRedesignProps {
   days: TripDay[];
@@ -48,6 +49,11 @@ interface ItineraryViewRedesignProps {
   activeItemId?: string | null;
   allHotels?: EnrichedItineraryItem[];
   showDayNavigation?: boolean;
+  /** Trip metadata for desktop header */
+  tripTitle?: string;
+  startDate?: string;
+  endDate?: string;
+  travelerCount?: number;
   className?: string;
 }
 
@@ -171,6 +177,10 @@ export default function ItineraryViewRedesign({
   activeItemId,
   allHotels = [],
   showDayNavigation = true,
+  tripTitle,
+  startDate,
+  endDate,
+  travelerCount,
   className = '',
 }: ItineraryViewRedesignProps) {
   // DnD sensors
@@ -277,6 +287,17 @@ export default function ItineraryViewRedesign({
 
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Persistent Desktop Header - trip-wide metrics */}
+      {(startDate || endDate || travelerCount) && (
+        <TripDesktopHeader
+          days={days}
+          tripTitle={tripTitle}
+          startDate={startDate}
+          endDate={endDate}
+          travelerCount={travelerCount}
+        />
+      )}
+
       {/* Day Navigation */}
       {showDayNavigation && days.length > 1 && (
         <DayNavigation

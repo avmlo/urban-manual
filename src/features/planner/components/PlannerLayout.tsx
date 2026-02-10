@@ -80,7 +80,7 @@ export default function PlannerLayout({
   );
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-950">
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-white dark:bg-gray-950">
       {/* Header with Day Tabs and View Toggle */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
         {/* Day Navigation */}
@@ -162,12 +162,12 @@ export default function PlannerLayout({
         />
       )}
 
-      {/* Split Screen Content */}
+      {/* Split Screen Content - independent scroll regions */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Timeline Panel (35% on desktop per v2.1.0 spec) */}
+        {/* Timeline Panel (35% on desktop) - independently scrollable */}
         <div
           className={`
-            flex-shrink-0 border-r border-gray-200 dark:border-gray-800 overflow-hidden
+            flex-shrink-0 border-r border-gray-200 dark:border-gray-800 overflow-y-auto overscroll-contain
             ${mobileView === 'timeline' ? 'w-full' : 'hidden'}
             md:block md:w-[35%]
           `}
@@ -187,10 +187,10 @@ export default function PlannerLayout({
           )}
         </div>
 
-        {/* Map Panel (65% on desktop per v2.1.0 spec) */}
+        {/* Map Panel (65% on desktop) - persistent background layer */}
         <div
           className={`
-            flex-1 overflow-hidden
+            flex-1 overflow-hidden relative z-0
             ${mobileView === 'map' ? 'w-full' : 'hidden'}
             md:block md:w-[65%]
           `}

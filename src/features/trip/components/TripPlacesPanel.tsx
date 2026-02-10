@@ -386,7 +386,7 @@ const DraggableDestinationCard = memo(function DraggableDestinationCard({
         {!isDragging && !isPlanned && (
           <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <div className="w-7 h-7 rounded-full bg-white/90 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
-              <i className="pi pi-arrows-alt text-xs text-gray-600 dark:text-gray-300" />
+              <svg className="w-3 h-3 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
             </div>
           </div>
         )}

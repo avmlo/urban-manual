@@ -3,8 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, X } from 'lucide-react';
-import { Button } from 'primereact/button';
+import { ArrowLeft, X, CheckSquare, Diamond, Filter, Download, Plus, Calendar, MapPin as MapPinIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -477,33 +476,62 @@ export default function TripPage() {
           {/* === PLANS TAB - Continuous day scroll (TRIP-style) === */}
           {leftPanelTab === 'plans' && (
             <>
-            {/* "Plans / Your itinerary" header with toolbar - TRIP-style */}
+            {/* "Plans / Your itinerary" header with action toolbar */}
             <div className="flex items-center justify-between pt-4 pb-2">
               <div>
                 <h2 className="text-lg font-bold text-[var(--editorial-text-primary)]">Plans</h2>
                 <p className="text-xs text-[var(--editorial-text-tertiary)]">Your itinerary</p>
               </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  icon={isEditMode ? 'pi pi-check' : 'pi pi-pencil'}
-                  rounded
-                  text
-                  severity={isEditMode ? 'danger' : 'secondary'}
-                  className="!w-8 !h-8"
+              <div className="flex items-center gap-0.5">
+                {/* Edit mode */}
+                <button
                   onClick={() => setIsEditMode(!isEditMode)}
-                  tooltip={isEditMode ? 'Done editing' : 'Edit mode'}
-                  tooltipOptions={{ position: 'bottom' }}
-                />
-                <Button
-                  icon="pi pi-cog"
-                  rounded
-                  text
-                  severity="secondary"
-                  className="!w-8 !h-8"
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                    isEditMode
+                      ? 'text-[var(--editorial-accent)]'
+                      : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)]'
+                  }`}
+                  title={isEditMode ? 'Done editing' : 'Edit mode'}
+                >
+                  <CheckSquare className="w-[18px] h-[18px]" />
+                </button>
+                {/* Optimize / suggestions */}
+                <button
+                  onClick={() => { /* future: open AI suggestions */ }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+                  title="Smart suggestions"
+                >
+                  <Diamond className="w-[18px] h-[18px]" />
+                </button>
+
+                {/* Separator */}
+                <div className="w-px h-5 bg-[var(--editorial-border)] mx-1" />
+
+                {/* Filter */}
+                <button
                   onClick={() => { setShowTripSettings(true); setSelectedItem(null); }}
-                  tooltip="Settings"
-                  tooltipOptions={{ position: 'bottom' }}
-                />
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+                  title="Filter"
+                >
+                  <Filter className="w-[18px] h-[18px]" />
+                </button>
+                {/* Export / download */}
+                <button
+                  onClick={() => { /* future: export itinerary */ }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
+                  title="Export"
+                >
+                  <Download className="w-[18px] h-[18px]" />
+                </button>
+
+                {/* Add button - dark pill */}
+                <button
+                  onClick={() => { setSidebarAddDay(selectedDayNumber); setSelectedItem(null); setShowTripSettings(false); }}
+                  className="ml-1 w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)] hover:opacity-90 transition-opacity"
+                  title="Add place"
+                >
+                  <Plus className="w-[18px] h-[18px]" />
+                </button>
               </div>
             </div>
 
@@ -775,7 +803,7 @@ export default function TripPage() {
                     : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
                 }`}
               >
-                <i className="pi pi-calendar text-[10px]" />
+                <Calendar className="w-3.5 h-3.5" />
                 Days
                 <strong className="ml-0.5">{days.length}</strong>
               </button>
@@ -787,7 +815,7 @@ export default function TripPage() {
                     : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
                 }`}
               >
-                <i className="pi pi-map-marker text-[10px]" />
+                <MapPinIcon className="w-3.5 h-3.5" />
                 Places
                 <strong className="ml-0.5">{totalItems}</strong>
               </button>

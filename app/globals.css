@@ -262,9 +262,6 @@
 /* PrimeReact Tailwind integration - provides primary-* color tokens */
 @import "tailwindcss-primeui";
 
-/* PrimeIcons */
-@import "primeicons/primeicons.css";
-
 @import "../styles/layout.css";
 @import "../styles/image-system.css";
 @import "../styles/tokens.css";

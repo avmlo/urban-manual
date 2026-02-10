@@ -43,6 +43,7 @@ import PackingListPanel from '@/features/trip/components/PackingList';
 import { TripWarnings } from '@/features/trip/components/intelligence/GapSuggestions';
 import { DragPreviewCard } from '@/features/trip/components/sidebar/DestinationPalette';
 import DaySection from '@/features/trip/components/day/DaySection';
+import TripPlacesPanel from '@/features/trip/components/TripPlacesPanel';
 
 /**
  * TripPage - Split-panel layout inspired by itskovacs/trip
@@ -130,6 +131,9 @@ export default function TripPage() {
   const [showPackingList, setShowPackingList] = useState(false);
   const [leftPanelTab, setLeftPanelTab] = useState<'plans' | 'notes' | 'lists'>('plans');
 
+  // Right panel tab: map view or places list
+  const [rightPanelTab, setRightPanelTab] = useState<'days' | 'places'>('days');
+
   // Weather state
   const [weatherByDate, setWeatherByDate] = useState<Record<string, DayWeather>>({});
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -209,6 +213,17 @@ export default function TripPage() {
   const selectedDayMarkers = useMemo(() => {
     return mapMarkers.filter(m => m.day === selectedDayNumber);
   }, [mapMarkers, selectedDayNumber]);
+
+  // Set of destination slugs already in the itinerary (for places panel "planned" state)
+  const plannedSlugs = useMemo(() => {
+    const slugs = new Set<string>();
+    for (const day of days) {
+      for (const item of day.items) {
+        if (item.destination_slug) slugs.add(item.destination_slug);
+      }
+    }
+    return slugs;
+  }, [days]);
 
   // Compute total trip cost from item notes
   const tripCostSummary = useMemo(() => {
@@ -742,41 +757,73 @@ export default function TripPage() {
           )}
         </AnimatePresence>
 
-        {/* RIGHT PANEL - Interactive Map */}
+        {/* RIGHT PANEL - Map / Places (togglable) */}
         <div className="hidden lg:flex lg:flex-1 lg:flex-col">
-          {/* Map stats bar */}
+          {/* Stats bar with Days / Places toggle */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--editorial-border)] bg-[var(--editorial-bg)]">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-1.5 text-sm text-[var(--editorial-text-secondary)]">
-                <MapIcon className="w-4 h-4" />
-                <span className="font-medium">{primaryCity || 'Map'}</span>
-              </div>
+            <div className="flex items-center gap-1.5 text-sm text-[var(--editorial-text-secondary)]">
+              <MapIcon className="w-4 h-4" />
+              <span className="font-medium">{primaryCity || 'Map'}</span>
             </div>
-            <div className="flex items-center gap-4 text-xs text-[var(--editorial-text-tertiary)]">
-              <span>Days <strong className="text-[var(--editorial-text-primary)] ml-1">{days.length}</strong></span>
-              <span>Places <strong className="text-[var(--editorial-text-primary)] ml-1">{totalItems}</strong></span>
+            <div className="flex items-center gap-2">
+              {/* Days / Places tab toggle */}
+              <button
+                onClick={() => setRightPanelTab('days')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                  rightPanelTab === 'days'
+                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                    : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
+                }`}
+              >
+                <i className="pi pi-calendar text-[10px]" />
+                Days
+                <strong className="ml-0.5">{days.length}</strong>
+              </button>
+              <button
+                onClick={() => setRightPanelTab('places')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                  rightPanelTab === 'places'
+                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                    : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
+                }`}
+              >
+                <i className="pi pi-map-marker text-[10px]" />
+                Places
+                <strong className="ml-0.5">{totalItems}</strong>
+              </button>
               {tripCostSummary.total > 0 && (
-                <span>Budget <strong className="text-[var(--editorial-text-primary)] ml-1">{tripCostSummary.total.toLocaleString()} {tripCostSummary.currency}</strong></span>
+                <span className="text-xs text-[var(--editorial-text-tertiary)] ml-2">
+                  <strong className="text-[var(--editorial-text-primary)]">{tripCostSummary.total.toLocaleString()} {tripCostSummary.currency}</strong>
+                </span>
               )}
             </div>
           </div>
 
-          {/* Map */}
-          <div className="flex-1 relative">
-            <TripInteractiveMap
-              days={days}
+          {/* Content: Map or Places list */}
+          {rightPanelTab === 'days' ? (
+            <div className="flex-1 relative">
+              <TripInteractiveMap
+                days={days}
+                selectedDayNumber={selectedDayNumber}
+                tripDestination={primaryCity}
+                onMarkerClick={(itemId) => {
+                  const item = days.flatMap(d => d.items).find(i => i.id === itemId);
+                  if (item) handleSelectItem(item);
+                }}
+                onAddPlace={(place, dayNum) => {
+                  if (place.slug) addPlace(place as unknown as Destination, dayNum);
+                }}
+                hasHeader
+              />
+            </div>
+          ) : (
+            <TripPlacesPanel
+              cities={destinations}
+              plannedSlugs={plannedSlugs}
+              onAddPlace={addPlace}
               selectedDayNumber={selectedDayNumber}
-              tripDestination={primaryCity}
-              onMarkerClick={(itemId) => {
-                const item = days.flatMap(d => d.items).find(i => i.id === itemId);
-                if (item) handleSelectItem(item);
-              }}
-              onAddPlace={(place, dayNum) => {
-                if (place.slug) addPlace(place as any, dayNum);
-              }}
-              hasHeader
             />
-          </div>
+          )}
         </div>
 
         {/* Mobile map toggle button */}

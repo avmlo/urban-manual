@@ -362,7 +362,7 @@ export default function TripPage() {
   // Show loader while auth or trip is loading
   if (authLoading || loading) {
     return (
-      <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="h-[calc(100dvh-76px)] md:h-[calc(100dvh-84px)] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="max-w-xl"><PageLoader /></div>
       </main>
     );
@@ -371,7 +371,7 @@ export default function TripPage() {
   // If not authenticated, the useEffect will redirect - show loader in meantime
   if (!user) {
     return (
-      <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="h-[calc(100dvh-76px)] md:h-[calc(100dvh-84px)] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="max-w-xl"><PageLoader /></div>
       </main>
     );
@@ -379,7 +379,7 @@ export default function TripPage() {
 
   if (!trip) {
     return (
-      <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="h-[calc(100dvh-76px)] md:h-[calc(100dvh-84px)] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="text-center">
           <p className="text-[var(--editorial-text-secondary)] mb-4">Trip not found</p>
           <Link href="/trips" className="text-[var(--editorial-text-primary)] hover:opacity-70">Back to trips</Link>
@@ -400,7 +400,7 @@ export default function TripPage() {
       onDragEnd={handleDragEnd}
     >
     <UndoProvider>
-    <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)]">
+    <main className="h-[calc(100dvh-76px)] md:h-[calc(100dvh-84px)] overflow-hidden bg-[var(--editorial-bg)]">
       {/* Full-viewport application shell: itinerary (left) + map (right) on desktop */}
       <div className="flex h-full">
         {/* LEFT PANEL - Itinerary (scrolls independently) */}

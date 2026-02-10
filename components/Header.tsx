@@ -238,7 +238,7 @@ export function Header() {
 
   return (
     <header
-      className="mt-6 md:mt-8 relative z-30 bg-[var(--editorial-bg)] w-full"
+      className="sticky top-0 pt-6 md:pt-8 z-30 bg-[var(--editorial-bg)] w-full"
       role="banner"
     >
       {/* Primary Nav */}

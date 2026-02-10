@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, X, CheckSquare, Diamond, Filter, Download, Plus, Calendar, MapPin as MapPinIcon } from 'lucide-react';
+import { X, CheckSquare, Diamond, Filter, Download, Plus, Calendar, MapPin as MapPinIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
@@ -30,11 +30,9 @@ import DestinationBox from '@/features/trip/components/DestinationBox';
 import AddPlacePanel from '@/features/trip/components/AddPlacePanel';
 import { UndoProvider } from '@/features/trip/components/UndoToast';
 import { SavingFeedback } from '@/features/trip/components/SavingFeedback';
-import { TripEditorHeader } from '@/features/trip/components/editor/TripEditorHeader';
 import { TripChecklist } from '@/features/trip/components/editor/TripChecklist';
 import { type DayWeather } from '@/lib/hooks/useWeather';
 // Settings icon now via PrimeIcons (pi pi-cog) in Button component
-import TripQuickActions from '@/features/trip/components/TripQuickActions';
 import TripInteractiveMap from '@/features/trip/components/TripInteractiveMap';
 import { Map as MapIcon } from 'lucide-react';
 import PackingListPanel from '@/features/trip/components/PackingList';
@@ -43,7 +41,7 @@ import { TripWarnings } from '@/features/trip/components/intelligence/GapSuggest
 import { DragPreviewCard } from '@/features/trip/components/sidebar/DestinationPalette';
 import DaySection from '@/features/trip/components/day/DaySection';
 import TripPlacesPanel from '@/features/trip/components/TripPlacesPanel';
-import TripDesktopHeader from '@/features/trip/components/itinerary/TripDesktopHeader';
+import TripToolbar from '@/features/trip/components/itinerary/TripToolbar';
 
 /**
  * TripPage - Split-panel layout inspired by itskovacs/trip
@@ -407,72 +405,48 @@ export default function TripPage() {
       <div className="flex h-full">
         {/* LEFT PANEL - Itinerary (scrolls independently) */}
         <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col lg:border-r border-[var(--editorial-border)] relative z-10 bg-[var(--editorial-bg)]">
-          {/* STICKY HEADER - tabs first, then title row */}
-          <div className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-0">
-            {/* Row 1: Section tabs - TRIP-style pill tabs */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-1.5">
-                {(['plans', 'notes', 'lists'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setLeftPanelTab(tab)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
-                      leftPanelTab === tab
-                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
-                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
-                    }`}
-                  >
-                    {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Row 2: Back + Title + Menu */}
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-3 min-w-0">
-                <Link
-                  href="/trips"
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors flex-shrink-0"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <TripEditorHeader
-                    trip={trip}
-                    primaryCity={primaryCity}
-                    totalItems={totalItems}
-                    userId={user?.id}
-                    days={days}
-                    onUpdate={updateTrip}
-                    onDelete={handleDelete}
-                  />
-                </div>
-              </div>
-              <TripQuickActions
-                tripId={tripId}
-                tripTitle={trip.title || 'My Trip'}
-                startDate={trip.start_date}
-                endDate={trip.end_date}
-                destination={primaryCity}
-                onScrollToChecklist={() => { setLeftPanelTab('lists'); }}
-                onScrollToPackingList={() => { setLeftPanelTab('lists'); }}
-                onOpenNotes={() => { setLeftPanelTab('notes'); }}
-                onEdit={() => { setShowTripSettings(true); setSelectedItem(null); }}
-                onDelete={handleDelete}
-              />
-            </div>
-
-          </div>
-          {/* END STICKY HEADER */}
-
-          {/* PERSISTENT DESKTOP HEADER - trip-wide metrics (desktop only) */}
-          <TripDesktopHeader
+          {/* APP TOOLBAR - pinned utility header */}
+          <TripToolbar
+            tripId={tripId}
+            tripTitle={trip.title || 'My Trip'}
+            primaryCity={primaryCity}
+            startDate={trip.start_date}
+            endDate={trip.end_date}
             days={days}
-            tripTitle={trip.title || undefined}
-            startDate={trip.start_date || undefined}
-            endDate={trip.end_date || undefined}
+            status={trip.status || 'planning'}
+            onEdit={() => { setShowTripSettings(true); setSelectedItem(null); }}
+            onShare={async () => {
+              try {
+                const res = await fetch(`/api/trips/${tripId}/share`, { method: 'POST' });
+                if (res.ok) {
+                  const data = await res.json();
+                  const url = data.shareUrl || `${window.location.origin}/trips/shared/${data.shareToken}`;
+                  await navigator.clipboard.writeText(url);
+                }
+              } catch {
+                await navigator.clipboard.writeText(`${window.location.origin}/trips/${tripId}`);
+              }
+            }}
+            onExportIcal={() => window.open(`/api/trips/${tripId}/export/ical`, '_blank')}
+            onSettings={() => { setShowTripSettings(true); setSelectedItem(null); }}
           />
+
+          {/* SECTION TABS - below toolbar */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 flex-shrink-0 border-b border-[var(--editorial-border)]/50">
+            {(['plans', 'notes', 'lists'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setLeftPanelTab(tab)}
+                className={`px-3.5 py-1 text-xs font-medium rounded-full transition-all ${
+                  leftPanelTab === tab
+                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                    : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
+                }`}
+              >
+                {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
+              </button>
+            ))}
+          </div>
 
           {/* SCROLLABLE CONTENT - Tab-based (independent scroll region) */}
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 pb-6">

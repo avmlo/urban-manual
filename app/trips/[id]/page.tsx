@@ -364,7 +364,7 @@ export default function TripPage() {
   // Show loader while auth or trip is loading
   if (authLoading || loading) {
     return (
-      <main className="h-screen w-screen overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="max-w-xl"><PageLoader /></div>
       </main>
     );
@@ -373,7 +373,7 @@ export default function TripPage() {
   // If not authenticated, the useEffect will redirect - show loader in meantime
   if (!user) {
     return (
-      <main className="h-screen w-screen overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="max-w-xl"><PageLoader /></div>
       </main>
     );
@@ -381,7 +381,7 @@ export default function TripPage() {
 
   if (!trip) {
     return (
-      <main className="h-screen w-screen overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="text-center">
           <p className="text-[var(--editorial-text-secondary)] mb-4">Trip not found</p>
           <Link href="/trips" className="text-[var(--editorial-text-primary)] hover:opacity-70">Back to trips</Link>
@@ -402,13 +402,13 @@ export default function TripPage() {
       onDragEnd={handleDragEnd}
     >
     <UndoProvider>
-    <main className="h-screen w-screen overflow-hidden bg-[var(--editorial-bg)]">
+    <main className="fixed inset-0 z-[60] overflow-hidden bg-[var(--editorial-bg)]">
       {/* Full-viewport application shell: itinerary (left) + map (right) on desktop */}
       <div className="flex h-full">
         {/* LEFT PANEL - Itinerary (scrolls independently) */}
         <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col lg:border-r border-[var(--editorial-border)] relative z-10 bg-[var(--editorial-bg)]">
           {/* STICKY HEADER - tabs first, then title row */}
-          <div className="flex-shrink-0 px-4 sm:px-6 pt-16 sm:pt-5 pb-0">
+          <div className="flex-shrink-0 px-4 sm:px-6 pt-4 pb-0">
             {/* Row 1: Section tabs - TRIP-style pill tabs */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
@@ -475,7 +475,7 @@ export default function TripPage() {
           />
 
           {/* SCROLLABLE CONTENT - Tab-based (independent scroll region) */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 pb-24 sm:pb-20">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 pb-6">
 
           {/* === PLANS TAB - Continuous day scroll (TRIP-style) === */}
           {leftPanelTab === 'plans' && (

@@ -407,9 +407,28 @@ export default function TripPage() {
       <div className="flex h-full">
         {/* LEFT PANEL - Itinerary (scrolls independently) */}
         <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col lg:border-r border-[var(--editorial-border)] relative z-10 bg-[var(--editorial-bg)]">
-          {/* STICKY HEADER - Back + title, stats, toolbar, day tabs */}
-          <div className="flex-shrink-0 px-4 sm:px-6 pt-16 sm:pt-5 pb-0 bg-[var(--editorial-bg)] border-b border-[var(--editorial-border)]">
-            {/* Top row: Back + Title + Menu */}
+          {/* STICKY HEADER - tabs first, then title row */}
+          <div className="flex-shrink-0 px-4 sm:px-6 pt-16 sm:pt-5 pb-0">
+            {/* Row 1: Section tabs - TRIP-style pill tabs */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                {(['plans', 'notes', 'lists'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setLeftPanelTab(tab)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
+                      leftPanelTab === tab
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
+                    }`}
+                  >
+                    {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Row 2: Back + Title + Menu */}
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-3 min-w-0">
                 <Link
@@ -442,28 +461,6 @@ export default function TripPage() {
                 onEdit={() => { setShowTripSettings(true); setSelectedItem(null); }}
                 onDelete={handleDelete}
               />
-            </div>
-
-            {/* Section tabs - TRIP-style pill tabs */}
-            <div className="mt-4 flex items-center justify-between">
-              {/* Pill tabs: Plans / Notes / Lists */}
-              <div className="flex items-center gap-1.5">
-                {(['plans', 'notes', 'lists'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setLeftPanelTab(tab)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
-                      leftPanelTab === tab
-                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
-                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
-                    }`}
-                  >
-                    {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
-                  </button>
-                ))}
-              </div>
-
-              {/* Toolbar icons moved to Plans header */}
             </div>
 
           </div>
@@ -510,9 +507,6 @@ export default function TripPage() {
                 >
                   <Diamond className="w-[18px] h-[18px]" />
                 </button>
-
-                {/* Separator */}
-                <div className="w-px h-5 bg-[var(--editorial-border)] mx-1" />
 
                 {/* Filter */}
                 <button

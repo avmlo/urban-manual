@@ -465,8 +465,6 @@ export default function TripPage() {
               {/* Toolbar icons moved to Plans header */}
             </div>
 
-            {/* Separator */}
-            <div className="h-px bg-[var(--editorial-border)] mt-2" />
           </div>
           {/* END STICKY HEADER */}
 
@@ -786,45 +784,33 @@ export default function TripPage() {
         </AnimatePresence>
 
         {/* RIGHT PANEL - Map / Places (togglable) */}
-        <div className="hidden lg:flex lg:flex-1 lg:flex-col">
-          {/* Stats bar with Days / Places toggle */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--editorial-border)] bg-[var(--editorial-bg)]">
-            <div className="flex items-center gap-1.5 text-sm text-[var(--editorial-text-secondary)]">
-              <MapIcon className="w-4 h-4" />
-              <span className="font-medium">{primaryCity || 'Map'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Days / Places tab toggle */}
-              <button
-                onClick={() => setRightPanelTab('days')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  rightPanelTab === 'days'
-                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
-                    : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                Days
-                <strong className="ml-0.5">{days.length}</strong>
-              </button>
-              <button
-                onClick={() => setRightPanelTab('places')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  rightPanelTab === 'places'
-                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
-                    : 'text-[var(--editorial-text-tertiary)] hover:bg-[var(--editorial-border-subtle)]'
-                }`}
-              >
-                <MapPinIcon className="w-3.5 h-3.5" />
-                Places
-                <strong className="ml-0.5">{totalItems}</strong>
-              </button>
-              {tripCostSummary.total > 0 && (
-                <span className="text-xs text-[var(--editorial-text-tertiary)] ml-2">
-                  <strong className="text-[var(--editorial-text-primary)]">{tripCostSummary.total.toLocaleString()} {tripCostSummary.currency}</strong>
-                </span>
-              )}
-            </div>
+        <div className="hidden lg:flex lg:flex-1 lg:flex-col relative">
+          {/* Floating Days / Places toggle - overlaid on map */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <button
+              onClick={() => setRightPanelTab('days')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg shadow-md backdrop-blur-sm transition-all ${
+                rightPanelTab === 'days'
+                  ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                  : 'bg-white/90 dark:bg-black/70 text-[var(--editorial-text-secondary)] hover:bg-white dark:hover:bg-black/90'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Days
+              <strong className="ml-0.5">{days.length}</strong>
+            </button>
+            <button
+              onClick={() => setRightPanelTab('places')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg shadow-md backdrop-blur-sm transition-all ${
+                rightPanelTab === 'places'
+                  ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                  : 'bg-white/90 dark:bg-black/70 text-[var(--editorial-text-secondary)] hover:bg-white dark:hover:bg-black/90'
+              }`}
+            >
+              <MapPinIcon className="w-3.5 h-3.5" />
+              Places
+              <strong className="ml-0.5">{totalItems}</strong>
+            </button>
           </div>
 
           {/* Content: Map or Places list */}

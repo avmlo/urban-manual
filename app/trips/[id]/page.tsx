@@ -431,21 +431,39 @@ export default function TripPage() {
             onSettings={() => { setShowTripSettings(true); setSelectedItem(null); }}
           />
 
-          {/* SECTION TABS - below toolbar */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 flex-shrink-0 border-b border-[var(--editorial-border)]/50">
-            {(['plans', 'notes', 'lists'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setLeftPanelTab(tab)}
-                className={`px-3.5 py-1 text-xs font-medium rounded-full transition-all ${
-                  leftPanelTab === tab
-                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
-                    : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
-                }`}
-              >
-                {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
-              </button>
-            ))}
+          {/* SECTION TABS + date/items metadata - single row */}
+          <div className="flex items-center px-3 py-1.5 flex-shrink-0 border-b border-[var(--editorial-border)]/50">
+            {/* Left: pill tabs */}
+            <div className="flex items-center gap-1.5">
+              {(['plans', 'notes', 'lists'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setLeftPanelTab(tab)}
+                  className={`px-3.5 py-1 text-xs font-medium rounded-full transition-all ${
+                    leftPanelTab === tab
+                      ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                      : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
+                  }`}
+                >
+                  {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
+                </button>
+              ))}
+            </div>
+            {/* Right: date range · days · items */}
+            <div className="ml-auto flex items-center gap-1 text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">
+              {trip.start_date && (
+                <>
+                  <span>
+                    {new Date(trip.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {trip.end_date && ` – ${new Date(trip.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                  </span>
+                  <span className="text-[var(--editorial-border)]">&middot;</span>
+                </>
+              )}
+              <span>{days.length}d</span>
+              <span className="text-[var(--editorial-border)]">&middot;</span>
+              <span>{totalItems}</span>
+            </div>
           </div>
 
           {/* SCROLLABLE CONTENT - Tab-based (independent scroll region) */}

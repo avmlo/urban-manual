@@ -406,7 +406,7 @@ export default function TripPage() {
               />
             </div>
 
-            {/* Section tabs + toolbar row */}
+            {/* Section tabs + toolbar row - TRIP-inspired */}
             <div className="mt-4 flex items-center justify-between">
               {/* Tabs: Plans / Notes / Lists */}
               <div className="flex items-center gap-0">
@@ -420,7 +420,12 @@ export default function TripPage() {
                         : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
                     }`}
                   >
-                    {tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}
+                    <span className="flex flex-col items-start">
+                      <span>{tab === 'plans' ? 'Plans' : tab === 'notes' ? 'Notes' : 'Lists'}</span>
+                      {leftPanelTab === tab && tab === 'plans' && (
+                        <span className="text-[11px] font-normal text-[var(--editorial-text-tertiary)]">Your itinerary</span>
+                      )}
+                    </span>
                     {leftPanelTab === tab && (
                       <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[var(--editorial-text-primary)] rounded-full" />
                     )}
@@ -465,32 +470,38 @@ export default function TripPage() {
           {/* === PLANS TAB === */}
           {leftPanelTab === 'plans' && (
             <>
-            {/* Day date pills - moved below tabs */}
+            {/* Day selector pills - TRIP-inspired: day number + date + cost */}
             {days.length > 0 && (
               <div className="py-3">
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                   {days.map((day) => {
                     const isSelected = day.dayNumber === selectedDayNumber;
                     const dayDate = day.date
-                      ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
                       : null;
-                    const dayWeather = day.date ? weatherByDate[day.date] : undefined;
+                    const dayCost = tripCostSummary.dayCosts[day.dayNumber] || 0;
                     return (
                       <button
                         key={day.dayNumber}
                         onClick={() => setSelectedDayNumber(day.dayNumber)}
-                        className={`flex-shrink-0 flex flex-col items-center px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                        className={`flex-shrink-0 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                           isSelected
                             ? 'bg-[var(--editorial-accent)] text-white'
                             : 'bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] border border-[var(--editorial-border)]'
                         }`}
                       >
-                        <span>
-                          {dayDate || `Day ${day.dayNumber}`}
+                        {/* Day number circle */}
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          isSelected
+                            ? 'bg-white/20 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        }`}>
+                          {day.dayNumber}
                         </span>
-                        {dayWeather && (
-                          <span className={`text-xs mt-0.5 ${isSelected ? 'text-white/80' : 'text-[var(--editorial-text-tertiary)]'}`}>
-                            {dayWeather.tempMax}° {dayWeather.description.split(' ')[0]}
+                        <span>{dayDate || `Day ${day.dayNumber}`}</span>
+                        {dayCost > 0 && (
+                          <span className={`text-xs tabular-nums ${isSelected ? 'text-white/70' : 'text-[var(--editorial-text-tertiary)]'}`}>
+                            {dayCost.toLocaleString()} {tripCostSummary.currency}
                           </span>
                         )}
                       </button>

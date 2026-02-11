@@ -75,7 +75,7 @@ export const collectionTools: Tool[] = [
           description: "Include full destination details (default: true)",
         },
       },
-      required: ["list_id"],
+      required: ["collection_id"],
     },
   },
   {
@@ -97,7 +97,7 @@ export const collectionTools: Tool[] = [
           description: "Optional personal notes about this destination",
         },
       },
-      required: ["list_id", "destination_slug"],
+      required: ["collection_id", "destination_slug"],
     },
   },
   {
@@ -115,7 +115,7 @@ export const collectionTools: Tool[] = [
           description: "Destination slug to remove",
         },
       },
-      required: ["list_id", "destination_slug"],
+      required: ["collection_id", "destination_slug"],
     },
   },
   {
@@ -129,7 +129,7 @@ export const collectionTools: Tool[] = [
           description: "Collection ID to delete",
         },
       },
-      required: ["list_id"],
+      required: ["collection_id"],
     },
   },
   {

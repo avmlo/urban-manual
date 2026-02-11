@@ -105,12 +105,37 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
   if (username !== undefined) updateData.username = username;
   if (is_public !== undefined) updateData.is_public = is_public;
 
-  // Update the profile
-  const { data: updatedProfile, error: updateError } = await supabase
+  // Check if profile exists, then update or insert
+  const { data: existingProfile } = await supabase
     .from('user_profiles')
-    .upsert(updateData, { onConflict: 'user_id' })
-    .select()
-    .single();
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  let updatedProfile;
+  let updateError;
+
+  if (existingProfile) {
+    // Profile exists — update it
+    const { user_id: _, ...fieldsToUpdate } = updateData;
+    const result = await supabase
+      .from('user_profiles')
+      .update(fieldsToUpdate)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    updatedProfile = result.data;
+    updateError = result.error;
+  } else {
+    // No profile yet — insert it
+    const result = await supabase
+      .from('user_profiles')
+      .insert(updateData)
+      .select()
+      .single();
+    updatedProfile = result.data;
+    updateError = result.error;
+  }
 
   if (updateError) {
     throw handleSupabaseError(updateError);

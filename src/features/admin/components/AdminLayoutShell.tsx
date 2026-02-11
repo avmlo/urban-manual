@@ -86,9 +86,9 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
                   <CmsCollectionsSidebar />
                 </div>
               </div>
-              {/* Main Content - scrolls independently */}
-              <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain">
-                <div className="px-4 sm:px-6 md:px-8 py-4">
+              {/* Main Content - fills height, ContentManager handles its own scroll */}
+              <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+                <div className="flex-1 min-h-0 flex flex-col px-4 sm:px-6 md:px-8 py-4">
                   {children}
                 </div>
               </div>

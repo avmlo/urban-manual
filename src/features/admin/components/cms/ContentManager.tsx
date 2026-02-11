@@ -588,9 +588,9 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full min-h-0">
+      {/* Header Bar - pinned top */}
+      <div className="flex-shrink-0 flex items-center justify-between pb-3">
         <div>
           <p className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">
             {totalCount.toLocaleString()} destinations
@@ -605,8 +605,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="pb-2 space-y-3">
+      {/* Toolbar - pinned top */}
+      <div className="flex-shrink-0 pb-3 space-y-3">
         {/* Search + View Toggle */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-xs">
@@ -1049,48 +1049,51 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
         </div>
       )}
 
-      {/* Content Area */}
-      {loading ? (
-        <LoadingState viewMode={viewMode} />
-      ) : destinations.length === 0 ? (
-        <EmptyState hasFilters={hasActiveFilters} onClearFilters={clearFilters} />
-      ) : viewMode === 'grid' ? (
-        <GridView
-          destinations={destinations}
-          selectedItems={selectedItems}
-          toggleSelect={toggleSelect}
-          onEdit={onEditDestination}
-          activeDropdown={activeDropdown}
-          setActiveDropdown={setActiveDropdown}
-          handleDelete={handleDelete}
-          handleDuplicate={handleDuplicate}
-        />
-      ) : (
-        <TableView
-          destinations={destinations}
-          selectedItems={selectedItems}
-          toggleSelect={toggleSelect}
-          toggleSelectAll={toggleSelectAll}
-          onEdit={onEditDestination}
-          activeDropdown={activeDropdown}
-          setActiveDropdown={setActiveDropdown}
-          handleDelete={handleDelete}
-          handleDuplicate={handleDuplicate}
-          handleSort={handleSort}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          visibleColumns={visibleColumns}
-        />
-      )}
+      {/* Content Area - scrollable middle */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        {loading ? (
+          <LoadingState viewMode={viewMode} />
+        ) : destinations.length === 0 ? (
+          <EmptyState hasFilters={hasActiveFilters} onClearFilters={clearFilters} />
+        ) : viewMode === 'grid' ? (
+          <GridView
+            destinations={destinations}
+            selectedItems={selectedItems}
+            toggleSelect={toggleSelect}
+            onEdit={onEditDestination}
+            activeDropdown={activeDropdown}
+            setActiveDropdown={setActiveDropdown}
+            handleDelete={handleDelete}
+            handleDuplicate={handleDuplicate}
+          />
+        ) : (
+          <TableView
+            destinations={destinations}
+            selectedItems={selectedItems}
+            toggleSelect={toggleSelect}
+            toggleSelectAll={toggleSelectAll}
+            onEdit={onEditDestination}
+            activeDropdown={activeDropdown}
+            setActiveDropdown={setActiveDropdown}
+            handleDelete={handleDelete}
+            handleDuplicate={handleDuplicate}
+            handleSort={handleSort}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            visibleColumns={visibleColumns}
+          />
+        )}
+      </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4" role="navigation" aria-label="Pagination">
+      {/* Pagination - pinned bottom, always visible */}
+      {totalCount > 0 && (
+        <div className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[var(--editorial-border)]/50" role="navigation" aria-label="Pagination">
           <div className="flex items-center gap-3 order-2 sm:order-1">
             <p className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">
               {((page - 1) * itemsPerPage) + 1}–{Math.min(page * itemsPerPage, totalCount)} of {totalCount.toLocaleString()}
             </p>
           </div>
+          {totalPages > 1 && (
           <div className="flex items-center gap-0.5 order-1 sm:order-2">
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
@@ -1140,6 +1143,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
+          )}
         </div>
       )}
     </div>

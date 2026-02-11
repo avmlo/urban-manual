@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   Loader2, X, Upload, Link2, Search, MapPin, Star, Crown, ChevronDown, ImageIcon,
-  Globe, Phone, Instagram, ExternalLink, Building2, Compass, Calendar, Tag, DollarSign
+  Globe, Phone, Instagram, ExternalLink, Building2, Compass, Calendar, Tag, DollarSign,
+  RefreshCw, Clock, MessageSquare, CheckCircle, XCircle, AlertCircle
 } from 'lucide-react';
 import { htmlToPlainText } from '@/lib/sanitize';
 import GooglePlacesAutocomplete from '@/components/GooglePlacesAutocomplete';
@@ -43,6 +44,25 @@ const PRICE_LEVELS = [
   { value: 3, label: '$$$ - Expensive' },
   { value: 4, label: '$$$$ - Very Expensive' },
 ];
+
+interface GoogleData {
+  place_id: string | null;
+  user_ratings_total: number | null;
+  opening_hours: {
+    open_now?: boolean;
+    weekday_text?: string[];
+    periods?: unknown[];
+  } | null;
+  reviews: Array<{
+    author_name: string;
+    rating: number | null;
+    text: string;
+    time: string | null;
+    relative_time: string;
+  }>;
+  business_status: string | null;
+  google_name: string | null;
+}
 
 interface DropdownOptions {
   cities: string[];
@@ -126,6 +146,8 @@ export function DestinationForm({
   const [isLoadingDropdowns, setIsLoadingDropdowns] = useState(true);
   const [tagInput, setTagInput] = useState('');
   const [isEnriching, setIsEnriching] = useState(false);
+  const [googleData, setGoogleData] = useState<GoogleData | null>(null);
+  const [fetchingGoogleData, setFetchingGoogleData] = useState(false);
   const formInitializedRef = useRef(false);
 
   // Notify parent of form changes (for autosave)
@@ -182,6 +204,7 @@ export function DestinationForm({
       });
       setImagePreview(destination.image || null);
       setImageFile(null);
+      setGoogleData(null);
 
       if (destination.parent_destination_id) {
         (async () => {
@@ -217,6 +240,7 @@ export function DestinationForm({
       setImagePreview(null);
       setImageFile(null);
       setSelectedParent(null);
+      setGoogleData(null);
     }
   }, [destination]);
 
@@ -380,19 +404,32 @@ export function DestinationForm({
         ...prev,
         name: data.name || prev.name,
         city: data.city || prev.city,
+        country: data.country || prev.country,
+        neighborhood: data.neighborhood || prev.neighborhood,
         category: data.category || prev.category,
         description: htmlToPlainText(data.description || prev.description),
         content: htmlToPlainText(data.content || prev.content),
+        editorial_summary: data.editorial_summary || prev.editorial_summary,
         image: data.image || prev.image,
         formatted_address: data.formatted_address || prev.formatted_address,
         phone_number: data.phone_number || prev.phone_number,
         website: data.website || prev.website,
+        google_maps_url: data.google_maps_url || prev.google_maps_url,
         rating: data.rating || prev.rating,
         price_level: data.price_level || prev.price_level,
         latitude: data.latitude || prev.latitude,
         longitude: data.longitude || prev.longitude,
       }));
       if (data.image) setImagePreview(data.image);
+      // Store Google-specific data for the Data tab
+      setGoogleData({
+        place_id: data.place_id || null,
+        user_ratings_total: data.user_ratings_total || null,
+        opening_hours: data.opening_hours || null,
+        reviews: data.reviews || [],
+        business_status: data.business_status || null,
+        google_name: data.google_name || null,
+      });
       toast.success('Auto-filled from Google Places');
     } catch (error) {
       console.error('Fetch Google error:', error);
@@ -462,6 +499,57 @@ export function DestinationForm({
     }
   };
 
+  const fetchGoogleForDataTab = async () => {
+    if (!formData.name.trim()) {
+      toast.warning('Please enter a name first');
+      return;
+    }
+    setFetchingGoogleData(true);
+    try {
+      const supabase = createClient({ skipValidation: true });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('Not authenticated');
+
+      const res = await fetch('/api/fetch-google-place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          name: formData.name,
+          city: formData.city,
+          placeId: destination?.place_id || undefined,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch from Google');
+      const data = await res.json();
+
+      setGoogleData({
+        place_id: data.place_id || null,
+        user_ratings_total: data.user_ratings_total || null,
+        opening_hours: data.opening_hours || null,
+        reviews: data.reviews || [],
+        business_status: data.business_status || null,
+        google_name: data.google_name || null,
+      });
+
+      // Update editable data fields
+      setFormData(prev => ({
+        ...prev,
+        rating: data.rating ?? prev.rating,
+        price_level: data.price_level ?? prev.price_level,
+        google_maps_url: data.google_maps_url || prev.google_maps_url,
+      }));
+
+      toast.success('Fetched latest Google data');
+    } catch (error) {
+      console.error('Fetch Google data error:', error);
+      toast.safeError ? toast.safeError(error, 'Unable to fetch Google data') : toast.error('Unable to fetch Google data');
+    } finally {
+      setFetchingGoogleData(false);
+    }
+  };
+
   const handlePlaceSelect = async (placeDetails: { placeId?: string }) => {
     if (!placeDetails.placeId) return;
     setFetchingGoogle(true);
@@ -484,17 +572,32 @@ export function DestinationForm({
         ...prev,
         name: data.name || prev.name,
         city: data.city || prev.city,
+        country: data.country || prev.country,
+        neighborhood: data.neighborhood || prev.neighborhood,
         category: data.category || prev.category,
         description: htmlToPlainText(data.description || ''),
         content: htmlToPlainText(data.content || ''),
+        editorial_summary: data.editorial_summary || prev.editorial_summary,
         image: data.image || prev.image,
         formatted_address: data.formatted_address || prev.formatted_address,
         phone_number: data.phone_number || prev.phone_number,
         website: data.website || prev.website,
+        google_maps_url: data.google_maps_url || prev.google_maps_url,
+        rating: data.rating || prev.rating,
+        price_level: data.price_level || prev.price_level,
         latitude: data.latitude || prev.latitude,
         longitude: data.longitude || prev.longitude,
       }));
       if (data.image) setImagePreview(data.image);
+      // Store Google-specific data for the Data tab
+      setGoogleData({
+        place_id: data.place_id || null,
+        user_ratings_total: data.user_ratings_total || null,
+        opening_hours: data.opening_hours || null,
+        reviews: data.reviews || [],
+        business_status: data.business_status || null,
+        google_name: data.google_name || null,
+      });
       toast.success('Auto-filled from Google Places');
     } catch (error) {
       console.error('Error:', error);
@@ -1030,11 +1133,31 @@ export function DestinationForm({
           </div>
         )}
 
-        {/* Data Tab (Read-only enrichment) */}
+        {/* Data Tab (Google data + enrichment) */}
         {activeTab === 'data' && (
           <div className="p-5 space-y-5">
+            {/* Fetch from Google Button */}
+            <button
+              type="button"
+              onClick={fetchGoogleForDataTab}
+              disabled={fetchingGoogleData || !formData.name.trim()}
+              className="w-full flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center">
+                  <Globe className="h-4 w-4 text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-medium">Fetch Google Data</div>
+                  <div className="text-xs text-gray-500">Pull latest info from Google Places API</div>
+                </div>
+              </div>
+              {fetchingGoogleData ? <Loader2 className="h-4 w-4 animate-spin text-blue-500" /> : <RefreshCw className="h-4 w-4 text-blue-500" />}
+            </button>
+
+            {/* Rating & Price Level */}
             <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-              <p className="text-xs text-gray-500 mb-3">This data is typically populated from Google Places API enrichment.</p>
+              <p className="text-xs text-gray-500 mb-3">Editable data from Google Places API.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClasses}>Rating</label>
@@ -1059,15 +1182,108 @@ export function DestinationForm({
                 </div>
               </div>
             </div>
+
+            {/* Google Data Panel */}
+            {googleData && (
+              <div className="space-y-4">
+                {/* Business Status */}
+                {googleData.business_status && (
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    {googleData.business_status === 'OPERATIONAL' ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : googleData.business_status === 'CLOSED_TEMPORARILY' ? (
+                      <AlertCircle className="h-4 w-4 text-amber-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className="text-sm">
+                      {googleData.business_status === 'OPERATIONAL' ? 'Open' :
+                       googleData.business_status === 'CLOSED_TEMPORARILY' ? 'Temporarily Closed' :
+                       googleData.business_status === 'CLOSED_PERMANENTLY' ? 'Permanently Closed' :
+                       googleData.business_status.replace(/_/g, ' ').toLowerCase()}
+                    </span>
+                    {googleData.google_name && googleData.google_name !== formData.name && (
+                      <span className="text-xs text-gray-400 ml-auto">Google: {googleData.google_name}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Opening Hours */}
+                {googleData.opening_hours && googleData.opening_hours.weekday_text && googleData.opening_hours.weekday_text.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Opening Hours</span>
+                      {googleData.opening_hours.open_now !== undefined && (
+                        <span className={cn("ml-auto text-xs px-2 py-0.5 rounded-full",
+                          googleData.opening_hours.open_now
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                        )}>
+                          {googleData.opening_hours.open_now ? 'Open Now' : 'Closed'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="px-4 py-2 space-y-1">
+                      {googleData.opening_hours.weekday_text.map((day, i) => (
+                        <div key={i} className="text-xs text-gray-600 dark:text-gray-400 py-0.5">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reviews */}
+                {googleData.reviews && googleData.reviews.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                      <MessageSquare className="h-4 w-4 text-gray-500" />
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Google Reviews</span>
+                      {googleData.user_ratings_total && (
+                        <span className="ml-auto text-xs text-gray-400">
+                          {googleData.user_ratings_total.toLocaleString()} total ratings
+                        </span>
+                      )}
+                    </div>
+                    <div className="divide-y divide-gray-200 dark:divide-gray-800">
+                      {googleData.reviews.slice(0, 5).map((review, i) => (
+                        <div key={i} className="px-4 py-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{review.author_name}</span>
+                            <div className="flex items-center gap-1">
+                              {review.rating && (
+                                <div className="flex items-center gap-0.5">
+                                  <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                                  <span className="text-xs text-gray-500">{review.rating}</span>
+                                </div>
+                              )}
+                              {review.relative_time && (
+                                <span className="text-xs text-gray-400 ml-1">{review.relative_time}</span>
+                              )}
+                            </div>
+                          </div>
+                          {review.text && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-3">{review.text}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Metadata */}
             {destination && (
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                   <span className="text-gray-500">Place ID</span>
-                  <span className="font-mono text-xs">{destination.place_id || '—'}</span>
+                  <span className="font-mono text-xs max-w-[200px] truncate">{googleData?.place_id || destination.place_id || '—'}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                   <span className="text-gray-500">User Ratings Total</span>
-                  <span>{destination.user_ratings_total?.toLocaleString() || '—'}</span>
+                  <span>{googleData?.user_ratings_total?.toLocaleString() || destination.user_ratings_total?.toLocaleString() || '—'}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800">
                   <span className="text-gray-500">Views</span>
@@ -1081,6 +1297,15 @@ export function DestinationForm({
                   <span className="text-gray-500">Last Enriched</span>
                   <span>{destination.last_enriched_at ? new Date(destination.last_enriched_at).toLocaleDateString() : '—'}</span>
                 </div>
+                {formData.google_maps_url && (
+                  <div className="pt-2">
+                    <a href={formData.google_maps_url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                      <ExternalLink className="h-4 w-4" />
+                      View on Google Maps
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </div>

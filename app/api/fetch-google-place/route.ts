@@ -63,7 +63,7 @@ async function findPlaceId(query: string, name?: string, city?: string): Promise
 async function getPlaceDetails(placeId: string, minimal: boolean = false) {
   if (!GOOGLE_API_KEY) return null;
 
-  // Build field mask - skip photos in minimal mode for faster response
+  // Build field mask - skip photos and reviews in minimal mode for faster response
   const fields = [
     'displayName',
     'formattedAddress',
@@ -79,11 +79,14 @@ async function getPlaceDetails(placeId: string, minimal: boolean = false) {
     'types',
     'primaryTypeDisplayName',
     'location',
+    'googleMapsUri',
+    'businessStatus',
   ];
 
-  // Only request photos if not in minimal mode
+  // Only request photos and reviews if not in minimal mode
   if (!minimal) {
     fields.push('photos');
+    fields.push('reviews');
   }
 
   // Use Places API (New) - Place Details
@@ -128,6 +131,15 @@ async function getPlaceDetails(placeId: string, minimal: boolean = false) {
         lng: place.location.longitude,
       },
     } : null,
+    google_maps_uri: place.googleMapsUri || null,
+    business_status: place.businessStatus || null,
+    reviews: place.reviews ? place.reviews.slice(0, 5).map((r: any) => ({
+      author_name: r.authorAttribution?.displayName || '',
+      rating: r.rating || null,
+      text: r.text?.text || '',
+      time: r.publishTime || null,
+      relative_time: r.relativePublishTimeDescription || '',
+    })) : null,
   };
 }
 
@@ -211,31 +223,41 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     throw createNotFoundError('Place details');
   }
 
-  // Extract city from address components (more reliable) or formatted address
+  // Extract city, country, and neighborhood from address components
   let extractedCity = city;
-  if (!extractedCity && details.address_components) {
-    // Try to find city from address components
+  let extractedCountry = '';
+  let extractedNeighborhood = '';
+
+  if (details.address_components) {
     for (const component of details.address_components) {
-      if (component.types?.includes('locality')) {
-        extractedCity = component.longText || component.shortText || extractedCity;
-        break;
+      const types = component.types || [];
+      // City
+      if (!extractedCity && types.includes('locality')) {
+        extractedCity = component.longText || component.shortText || '';
+      }
+      // Country
+      if (types.includes('country')) {
+        extractedCountry = component.longText || component.shortText || '';
+      }
+      // Neighborhood
+      if (!extractedNeighborhood && (types.includes('neighborhood') || types.includes('sublocality') || types.includes('sublocality_level_1'))) {
+        extractedNeighborhood = component.longText || component.shortText || '';
       }
     }
-    // Fallback to administrative_area_level_1 if locality not found
+    // Fallback city to administrative_area_level_1 if locality not found
     if (!extractedCity) {
       for (const component of details.address_components) {
         if (component.types?.includes('administrative_area_level_1')) {
-          extractedCity = component.longText || component.shortText || extractedCity;
+          extractedCity = component.longText || component.shortText || '';
           break;
         }
       }
     }
   }
-  // Last resort: extract from formatted address
+  // Last resort: extract city from formatted address
   if (!extractedCity && details.formatted_address) {
     const addressParts = details.formatted_address.split(',').map((p: string) => p.trim());
     if (addressParts.length >= 2) {
-      // Usually city is second-to-last (before country) or third-to-last
       extractedCity = addressParts[addressParts.length - 3] || addressParts[addressParts.length - 2] || '';
     }
   }
@@ -285,20 +307,27 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     }
   }
 
+  // Build Google Maps URL from place_id or use the one from API
+  const googleMapsUrl = details.google_maps_uri || `https://www.google.com/maps/place/?q=place_id:${finalPlaceId}`;
+
   // Build response with form-friendly data
   const editorialSummary = htmlToPlainText(details.editorial_summary?.overview || '');
   const result = {
     name: details.name || name,
     city: extractedCity || city || '',
+    country: extractedCountry,
+    neighborhood: extractedNeighborhood,
     category: category,
     description: editorialSummary,
     content: editorialSummary,
+    editorial_summary: editorialSummary,
     image: imageUrl,
     address: details.formatted_address || '',
     formatted_address: details.formatted_address || '',
-    phone: details.international_phone_number || '',
+    phone_number: details.international_phone_number || '',
     website: details.website || '',
     rating: details.rating || null,
+    user_ratings_total: details.user_ratings_total || null,
     price_level: details.price_level || null,
     opening_hours: details.current_opening_hours || details.opening_hours || null,
     place_types: details.types || [],
@@ -307,6 +336,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     latitude: details.geometry?.location?.lat || null,
     longitude: details.geometry?.location?.lng || null,
     place_id: finalPlaceId,
+    google_maps_url: googleMapsUrl,
+    google_name: details.name || '',
+    business_status: details.business_status || null,
+    reviews: details.reviews || [],
   };
 
   return createSuccessResponse(result);

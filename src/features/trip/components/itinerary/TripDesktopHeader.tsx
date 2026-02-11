@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { DollarSign, Route, Users, Calendar } from 'lucide-react';
+import { Route, Users, Calendar } from 'lucide-react';
 import type { TripDay } from '@/lib/hooks/useTripEditor';
 
 interface TripDesktopHeaderProps {
@@ -11,14 +11,6 @@ interface TripDesktopHeaderProps {
   endDate?: string;
   travelerCount?: number;
 }
-
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
-  EUR: '\u20AC',
-  GBP: '\u00A3',
-  JPY: '\u00A5',
-  CHF: 'CHF',
-};
 
 /**
  * TripDesktopHeader - Persistent utility header for the itinerary pane.
@@ -32,24 +24,6 @@ export default function TripDesktopHeader({
   endDate,
   travelerCount,
 }: TripDesktopHeaderProps) {
-  // Compute total budget from all items
-  const { totalCost, currency } = useMemo(() => {
-    let total = 0;
-    let detectedCurrency = 'EUR';
-    for (const day of days) {
-      for (const item of day.items) {
-        const cost = item.parsedNotes?.costEstimate;
-        if (cost && cost > 0) {
-          total += cost;
-          if (item.parsedNotes?.currency) {
-            detectedCurrency = item.parsedNotes.currency;
-          }
-        }
-      }
-    }
-    return { totalCost: total, currency: detectedCurrency };
-  }, [days]);
-
   // Compute total distance across all days (sum of travel distances between items)
   const totalDistanceKm = useMemo(() => {
     let total = 0;
@@ -85,8 +59,6 @@ export default function TripDesktopHeader({
     return fmt(startDate);
   }, [startDate, endDate]);
 
-  const symbol = CURRENCY_SYMBOLS[currency] || currency;
-
   return (
     <div className="hidden lg:flex items-center gap-3 px-4 py-2 bg-[var(--editorial-bg-elevated)] border-b border-[var(--editorial-border)] flex-shrink-0">
       {/* Date range */}
@@ -104,21 +76,6 @@ export default function TripDesktopHeader({
 
       {/* Metrics row */}
       <div className="flex items-center gap-2.5">
-        {/* Budget */}
-        {totalCost > 0 && (
-          <div
-            className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[11px] font-medium tabular-nums"
-            title={`Total budget: ${symbol}${totalCost.toLocaleString()}`}
-          >
-            <DollarSign className="w-3 h-3" />
-            <span>
-              {totalCost >= 10000
-                ? `${(totalCost / 1000).toFixed(1)}k`
-                : totalCost.toLocaleString()}
-            </span>
-          </div>
-        )}
-
         {/* Distance */}
         {totalDistanceKm > 0 && (
           <div

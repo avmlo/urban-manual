@@ -40,8 +40,6 @@ export default function ItineraryCard({
     notes?.ticketConfirmation ||
     notes?.confirmation
   );
-  const costEstimate = notes?.costEstimate;
-  const currency = notes?.currency;
   const bookingStatus = notes?.bookingStatus;
   const partySize = notes?.partySize;
 
@@ -112,8 +110,6 @@ export default function ItineraryCard({
       {/* Logistical micro-indicators - positioned at bottom-right of each card */}
       <LogisticalIndicators
         hasAttachments={hasAttachments}
-        costEstimate={costEstimate}
-        currency={currency}
         bookingStatus={bookingStatus}
         partySize={partySize}
         className="absolute bottom-2 right-2"

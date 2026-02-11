@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Route,
-  DollarSign,
   Share2,
   Download,
   Settings,
@@ -25,7 +24,6 @@ interface TripToolbarProps {
   days: TripDay[];
   status?: 'planning' | 'upcoming' | 'ongoing' | 'completed';
   travelerCount?: number;
-  budgetLimit?: number;
   onEdit?: () => void;
   onShare?: () => void;
   onExportIcal?: () => void;
@@ -34,11 +32,6 @@ interface TripToolbarProps {
 }
 
 // ─── Constants ──────────────────────────────────────────────────
-
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$', EUR: '\u20AC', GBP: '\u00A3', JPY: '\u00A5', CHF: 'CHF',
-  AUD: 'A$', CAD: 'C$',
-};
 
 const STATUS_STYLES: Record<string, string> = {
   planning: 'bg-amber-100/80 dark:bg-amber-900/25 text-amber-700 dark:text-amber-400',
@@ -65,7 +58,6 @@ export default function TripToolbar({
   days,
   status = 'planning',
   travelerCount,
-  budgetLimit,
   onEdit,
   onShare,
   onExportIcal,
@@ -73,21 +65,6 @@ export default function TripToolbar({
   className = '',
 }: TripToolbarProps) {
   // ── Computed stats ──
-
-  const { totalCost, currency } = useMemo(() => {
-    let total = 0;
-    let detected = 'EUR';
-    for (const day of days) {
-      for (const item of day.items) {
-        const cost = item.parsedNotes?.costEstimate;
-        if (cost && cost > 0) {
-          total += cost;
-          if (item.parsedNotes?.currency) detected = item.parsedNotes.currency;
-        }
-      }
-    }
-    return { totalCost: total, currency: detected };
-  }, [days]);
 
   const totalDistanceKm = useMemo(() => {
     let total = 0;
@@ -99,19 +76,6 @@ export default function TripToolbar({
     }
     return Math.round(total);
   }, [days]);
-
-  const symbol = CURRENCY_SYMBOLS[currency] || currency;
-
-  // Format budget string
-  const budgetStr = useMemo(() => {
-    if (totalCost <= 0) return null;
-    const fmt = (n: number) =>
-      n >= 10000 ? `${(n / 1000).toFixed(1)}k` : n.toLocaleString();
-    if (budgetLimit && budgetLimit > 0) {
-      return `${symbol}${fmt(totalCost)} / ${symbol}${fmt(budgetLimit)}`;
-    }
-    return `${symbol}${fmt(totalCost)}`;
-  }, [totalCost, budgetLimit, symbol]);
 
   // Format distance
   const distStr = useMemo(() => {
@@ -174,14 +138,6 @@ export default function TripToolbar({
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-[11px] font-medium tabular-nums leading-none">
             <Route className="w-3 h-3" />
             {distStr}
-          </span>
-        )}
-
-        {/* Budget */}
-        {budgetStr && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[11px] font-medium tabular-nums leading-none">
-            <DollarSign className="w-3 h-3" />
-            {budgetStr}
           </span>
         )}
 

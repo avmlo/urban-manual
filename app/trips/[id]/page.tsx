@@ -223,26 +223,6 @@ export default function TripPage() {
     return slugs;
   }, [days]);
 
-  // Compute total trip cost from item notes
-  const tripCostSummary = useMemo(() => {
-    let total = 0;
-    let currency = 'EUR';
-    const dayCosts: Record<number, number> = {};
-    for (const day of days) {
-      let dayTotal = 0;
-      for (const item of day.items) {
-        const cost = item.parsedNotes?.costEstimate;
-        if (cost && cost > 0) {
-          dayTotal += cost;
-          if (item.parsedNotes?.currency) currency = item.parsedNotes.currency;
-        }
-      }
-      dayCosts[day.dayNumber] = dayTotal;
-      total += dayTotal;
-    }
-    return { total, currency, dayCosts };
-  }, [days]);
-
   // Use optimized hotel logic hook - prevents cascading recalculations
   // when non-hotel items are added/removed/reordered
   const {

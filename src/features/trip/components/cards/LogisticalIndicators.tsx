@@ -1,14 +1,10 @@
 'use client';
 
-import { Paperclip, DollarSign, Users } from 'lucide-react';
+import { Paperclip, Users } from 'lucide-react';
 
 interface LogisticalIndicatorsProps {
   /** Whether the item has attached documents/confirmations */
   hasAttachments?: boolean;
-  /** Cost estimate for the item */
-  costEstimate?: number;
-  /** Currency code (EUR, USD, etc.) */
-  currency?: string;
   /** Booking status indicator */
   bookingStatus?: 'need-to-book' | 'booked' | 'waitlist' | 'walk-in';
   /** Party size for group indicators */
@@ -17,32 +13,18 @@ interface LogisticalIndicatorsProps {
   className?: string;
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
-  EUR: '\u20AC',
-  GBP: '\u00A3',
-  JPY: '\u00A5',
-  CHF: 'CHF',
-  AUD: 'A$',
-  CAD: 'C$',
-};
-
 /**
  * LogisticalIndicators - High-contrast micro-badges for non-AI logistical data.
  * Renders only the indicators that have data, staying compact and unobtrusive.
  */
 export default function LogisticalIndicators({
   hasAttachments,
-  costEstimate,
-  currency = 'EUR',
   bookingStatus,
   partySize,
   className = '',
 }: LogisticalIndicatorsProps) {
-  const hasAny = hasAttachments || (costEstimate && costEstimate > 0) || (partySize && partySize > 1);
+  const hasAny = hasAttachments || (partySize && partySize > 1);
   if (!hasAny) return null;
-
-  const symbol = CURRENCY_SYMBOLS[currency] || currency;
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
@@ -53,19 +35,6 @@ export default function LogisticalIndicators({
           title="Has attachments"
         >
           <Paperclip className="w-3 h-3" />
-        </span>
-      )}
-
-      {/* Cost badge */}
-      {costEstimate != null && costEstimate > 0 && (
-        <span
-          className="inline-flex items-center gap-0.5 px-1.5 h-5 rounded bg-emerald-100/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-medium tabular-nums"
-          title={`${symbol}${costEstimate.toLocaleString()}`}
-        >
-          <DollarSign className="w-2.5 h-2.5" />
-          {costEstimate >= 1000
-            ? `${(costEstimate / 1000).toFixed(1)}k`
-            : costEstimate.toLocaleString()}
         </span>
       )}
 

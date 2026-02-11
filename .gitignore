@@ -181,3 +181,7 @@ public/icon-original.jpg
 
 # Static data exports (use Supabase as source of truth)
 public/destinations.json
+
+# Payload CMS generated files
+types/payload-types.ts
+app/(payload)/admin/importMap.js

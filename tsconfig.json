@@ -23,6 +23,7 @@
       }
     ],
     "paths": {
+      "@payload-config": ["./payload.config.ts"],
       "@/*": ["./*"],
       "@/ui": ["./src/ui"],
       "@/ui/*": ["./src/ui/*"],

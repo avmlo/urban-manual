@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { withPayload } from "@payloadcms/next/withPayload";
 import withPWAInit from "@ducanh2912/next-pwa";
 
 const cspDirectives = [
@@ -17,8 +18,8 @@ const cspDirectives = [
   "font-src 'self' data: https://fonts.gstatic.com",
   "connect-src 'self' https://*.supabase.co https://*.supabase.in https://maps.googleapis.com https://api.openai.com https://*.upstash.io https://*.googleapis.com https://cdn.jsdelivr.net https://googleads.g.doubleclick.net https://*.doubleclick.net https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://fundingchoicesmessages.google.com https://*.sentry.io https://*.ingest.sentry.io https://*.apple-mapkit.com https://*.ls.apple.com https://*.apple.com https://cdn.apple-mapkit.com https://*.mzstatic.com https://*.geo.apple.com https://*.cdn-apple.com https://featureassets.org https://prodregistryv2.org https://api.open-meteo.com https://geocoding-api.open-meteo.com https://analytics.google.com https://*.google-analytics.com",
   "worker-src 'self' blob:",
-  "child-src 'none'",
-  "frame-ancestors 'none'",
+  "child-src 'self'",
+  "frame-ancestors 'self'",
   "form-action 'self'",
   "base-uri 'self'",
   "manifest-src 'self'",
@@ -29,7 +30,7 @@ const cspDirectives = [
 ]
 
 const securityHeaders: { key: string; value: string }[] = [
-  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-XSS-Protection', value: '1; mode=block' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
@@ -298,4 +299,5 @@ const sentryConfig = withSentryConfig(pwaConfig, {
   project: "sentry-red-park",
 });
 
-export default sentryConfig;
+// Wrap with Payload CMS (outermost wrapper)
+export default withPayload(sentryConfig);

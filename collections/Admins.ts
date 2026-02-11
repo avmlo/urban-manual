@@ -1,8 +1,17 @@
 import type { CollectionConfig } from "payload";
+import { supabaseAuthStrategy } from "@/lib/auth/supabase-payload-strategy";
 
 export const Admins: CollectionConfig = {
   slug: "admins",
-  auth: true,
+  auth: {
+    disableLocalStrategy: true,
+    strategies: [
+      {
+        name: "supabase",
+        authenticate: supabaseAuthStrategy,
+      },
+    ],
+  },
   admin: {
     useAsTitle: "email",
     group: "System",
@@ -15,13 +24,23 @@ export const Admins: CollectionConfig = {
   },
   fields: [
     {
+      name: "supabaseId",
+      type: "text",
+      required: true,
+      unique: true,
+      admin: {
+        readOnly: true,
+        description: "Supabase Auth user ID (auto-synced)",
+      },
+    },
+    {
       name: "name",
       type: "text",
     },
     {
       name: "role",
       type: "select",
-      defaultValue: "editor",
+      defaultValue: "admin",
       required: true,
       options: [
         { label: "Admin", value: "admin" },

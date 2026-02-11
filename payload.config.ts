@@ -73,6 +73,7 @@ export default buildConfig({
       },
       beforeDashboard: ["/payload-views/DashboardView"],
       afterNavLinks: ["/payload-views/CustomNavLinks"],
+      beforeLogin: ["/payload-views/LoginView"],
     },
   },
 
@@ -80,25 +81,5 @@ export default buildConfig({
 
   typescript: {
     outputFile: "./types/payload-types.ts",
-  },
-
-  async onInit(payload) {
-    const admins = await payload.find({
-      collection: "admins",
-      limit: 1,
-    });
-
-    if (admins.totalDocs === 0) {
-      await payload.create({
-        collection: "admins",
-        data: {
-          email: "admin@urbanmanual.co",
-          password: process.env.PAYLOAD_ADMIN_PASSWORD || "change-me-immediately",
-          name: "Admin",
-          role: "admin",
-        },
-      });
-      payload.logger.info("Seeded initial admin user: admin@urbanmanual.co");
-    }
   },
 });

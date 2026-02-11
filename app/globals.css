@@ -1916,3 +1916,32 @@ html.christmas-mode.dark::before,
     display: none;
   }
 }
+
+/* ============================================
+   LOVABLY PAGE STYLES
+   When .lovably-page is present, hide the
+   existing site header/footer and take over
+   the full viewport.
+   ============================================ */
+
+/* Hide existing Urban Manual header and footer when Lovably page is active */
+body:has(.lovably-page) > * > * > * > * > * > * > * > header,
+body:has(.lovably-page) > * > * > * > * > * > * > * > * > * > * > footer:last-of-type {
+  display: none !important;
+}
+
+/* Ensure the Lovably page takes full width and has smooth scrolling */
+html:has(.lovably-page) {
+  scroll-behavior: smooth;
+}
+
+/* Selection color for Lovably page */
+.lovably-page ::selection {
+  background: #1A1A1A;
+  color: #FAF9F6;
+}
+
+/* Smooth scroll anchor offset for fixed nav */
+.lovably-page [id] {
+  scroll-margin-top: 80px;
+}

@@ -51,10 +51,11 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
   return (
     <>
     <CommandPalette />
-    <main className="w-full min-h-screen bg-[var(--editorial-bg)]">
-      {/* Sticky toolbar header - mirrors trip detail toolbar */}
-      <div className="sticky top-0 z-40 flex items-center gap-2 px-4 sm:px-6 md:px-10 h-12 bg-[var(--editorial-bg)]/95 backdrop-blur-md border-b border-[var(--editorial-border)]/50">
-        <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
+    {/* Full-viewport app shell, matching /trips layout: toolbar + content fill remaining height */}
+    <main className="h-[calc(100dvh-68px)] md:h-[calc(100dvh-84px)] overflow-hidden bg-[var(--editorial-bg)] flex flex-col">
+      {/* Toolbar header - mirrors trip detail toolbar */}
+      <div className="flex-shrink-0 flex items-center gap-2 px-4 sm:px-6 md:px-10 h-11 bg-[var(--editorial-bg)]/95 backdrop-blur-md border-b border-[var(--editorial-border)]/50">
+        <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-sm font-semibold text-[var(--editorial-text-primary)]">Admin</h1>
             <AdminNav />
@@ -74,22 +75,30 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-10">
-        {/* Content - CMS pages get a sidebar */}
+      {/* Content area - fills remaining height, panels scroll independently */}
+      <div className="flex-1 overflow-hidden">
         <AdminToastProvider>
           {isCmsPage ? (
-            <div className="flex gap-0" style={{ minHeight: 'calc(100vh - 200px)' }}>
-              {/* Collections Sidebar - hidden on mobile */}
-              <div className="hidden md:block flex-shrink-0">
-                <CmsCollectionsSidebar />
+            <div className="flex h-full">
+              {/* Collections Sidebar - hidden on mobile, scrolls independently */}
+              <div className="hidden md:block flex-shrink-0 overflow-y-auto overscroll-contain">
+                <div className="py-4 pl-4 sm:pl-6 md:pl-10">
+                  <CmsCollectionsSidebar />
+                </div>
               </div>
-              {/* Main Content */}
-              <div className="flex-1 min-w-0">
-                {children}
+              {/* Main Content - scrolls independently */}
+              <div className="flex-1 min-w-0 overflow-y-auto overscroll-contain">
+                <div className="px-4 sm:px-6 md:px-8 py-4">
+                  {children}
+                </div>
               </div>
             </div>
           ) : (
-            children
+            <div className="h-full overflow-y-auto overscroll-contain">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-6">
+                {children}
+              </div>
+            </div>
           )}
         </AdminToastProvider>
       </div>

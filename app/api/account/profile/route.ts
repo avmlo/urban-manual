@@ -108,7 +108,7 @@ export const PUT = withErrorHandling(async (request: NextRequest) => {
   // Update the profile
   const { data: updatedProfile, error: updateError } = await supabase
     .from('user_profiles')
-    .upsert(updateData)
+    .upsert(updateData, { onConflict: 'user_id' })
     .select()
     .single();
 

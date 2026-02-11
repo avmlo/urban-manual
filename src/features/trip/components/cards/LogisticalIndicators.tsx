@@ -23,7 +23,7 @@ export default function LogisticalIndicators({
   partySize,
   className = '',
 }: LogisticalIndicatorsProps) {
-  const hasAny = hasAttachments || (partySize && partySize > 1);
+  const hasAny = hasAttachments || (partySize && partySize > 1) || (bookingStatus && bookingStatus !== 'booked');
   if (!hasAny) return null;
 
   return (

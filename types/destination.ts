@@ -66,6 +66,14 @@ export interface Destination {
   timezone_id?: string | null;
   primary_photo_url?: string | null;
   photo_count?: number | null;
+  // Google Places Atmosphere data (AI summaries, features, amenities)
+  generative_summary?: string | null;
+  review_summary?: string | null;
+  neighborhood_summary?: string | null;
+  google_atmosphere_json?: Record<string, unknown> | null;
+  accessibility_options_json?: Record<string, unknown> | null;
+  price_range_json?: Record<string, unknown> | null;
+  secondary_opening_hours_json?: Record<string, unknown> | null;
   // Geolocation fields
   latitude?: number | null;
   longitude?: number | null;

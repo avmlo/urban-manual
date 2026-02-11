@@ -45,6 +45,34 @@ const PRICE_LEVELS = [
   { value: 4, label: '$$$$ - Very Expensive' },
 ];
 
+interface GoogleAtmosphere {
+  dine_in?: boolean | null;
+  delivery?: boolean | null;
+  takeout?: boolean | null;
+  curbside_pickup?: boolean | null;
+  reservable?: boolean | null;
+  serves_breakfast?: boolean | null;
+  serves_brunch?: boolean | null;
+  serves_lunch?: boolean | null;
+  serves_dinner?: boolean | null;
+  serves_dessert?: boolean | null;
+  serves_coffee?: boolean | null;
+  serves_beer?: boolean | null;
+  serves_wine?: boolean | null;
+  serves_cocktails?: boolean | null;
+  serves_vegetarian_food?: boolean | null;
+  outdoor_seating?: boolean | null;
+  live_music?: boolean | null;
+  good_for_children?: boolean | null;
+  good_for_groups?: boolean | null;
+  good_for_watching_sports?: boolean | null;
+  menu_for_children?: boolean | null;
+  allows_dogs?: boolean | null;
+  restroom?: boolean | null;
+  parking_options?: Record<string, boolean> | null;
+  payment_options?: Record<string, boolean> | null;
+}
+
 interface GoogleData {
   place_id: string | null;
   user_ratings_total: number | null;
@@ -52,6 +80,10 @@ interface GoogleData {
     open_now?: boolean;
     weekday_text?: string[];
     periods?: unknown[];
+  } | null;
+  secondary_opening_hours: {
+    open_now?: boolean;
+    weekday_text?: string[];
   } | null;
   reviews: Array<{
     author_name: string;
@@ -62,6 +94,18 @@ interface GoogleData {
   }>;
   business_status: string | null;
   google_name: string | null;
+  // AI-powered summaries
+  generative_summary: string | null;
+  review_summary: string | null;
+  neighborhood_summary: string | null;
+  // Atmosphere data
+  atmosphere: GoogleAtmosphere | null;
+  // Accessibility
+  accessibility_options: Record<string, boolean> | null;
+  // Price range
+  price_range: Record<string, unknown> | null;
+  // Auto-generated tag suggestions
+  suggested_tags: string[];
 }
 
 interface DropdownOptions {
@@ -72,6 +116,41 @@ interface DropdownOptions {
   architects: string[];
 }
 
+
+// Small pill component for boolean feature display
+function FeaturePill({ label, value }: { label: string; value: boolean }) {
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1 px-2 py-1 rounded text-xs",
+      value
+        ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+        : "bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
+    )}>
+      {value ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+      {label}
+    </span>
+  );
+}
+
+// Helper to build GoogleData from API response
+function buildGoogleData(data: any): GoogleData {
+  return {
+    place_id: data.place_id || null,
+    user_ratings_total: data.user_ratings_total || null,
+    opening_hours: data.opening_hours || null,
+    secondary_opening_hours: data.secondary_opening_hours || null,
+    reviews: data.reviews || [],
+    business_status: data.business_status || null,
+    google_name: data.google_name || null,
+    generative_summary: data.generative_summary || null,
+    review_summary: data.review_summary || null,
+    neighborhood_summary: data.neighborhood_summary || null,
+    atmosphere: data.atmosphere || null,
+    accessibility_options: data.accessibility_options || null,
+    price_range: data.price_range || null,
+    suggested_tags: data.suggested_tags || [],
+  };
+}
 
 export function DestinationForm({
   destination,
@@ -422,14 +501,7 @@ export function DestinationForm({
       }));
       if (data.image) setImagePreview(data.image);
       // Store Google-specific data for the Data tab
-      setGoogleData({
-        place_id: data.place_id || null,
-        user_ratings_total: data.user_ratings_total || null,
-        opening_hours: data.opening_hours || null,
-        reviews: data.reviews || [],
-        business_status: data.business_status || null,
-        google_name: data.google_name || null,
-      });
+      setGoogleData(buildGoogleData(data));
       toast.success('Auto-filled from Google Places');
     } catch (error) {
       console.error('Fetch Google error:', error);
@@ -524,14 +596,7 @@ export function DestinationForm({
       if (!res.ok) throw new Error('Failed to fetch from Google');
       const data = await res.json();
 
-      setGoogleData({
-        place_id: data.place_id || null,
-        user_ratings_total: data.user_ratings_total || null,
-        opening_hours: data.opening_hours || null,
-        reviews: data.reviews || [],
-        business_status: data.business_status || null,
-        google_name: data.google_name || null,
-      });
+      setGoogleData(buildGoogleData(data));
 
       // Update editable data fields
       setFormData(prev => ({
@@ -590,14 +655,7 @@ export function DestinationForm({
       }));
       if (data.image) setImagePreview(data.image);
       // Store Google-specific data for the Data tab
-      setGoogleData({
-        place_id: data.place_id || null,
-        user_ratings_total: data.user_ratings_total || null,
-        opening_hours: data.opening_hours || null,
-        reviews: data.reviews || [],
-        business_status: data.business_status || null,
-        google_name: data.google_name || null,
-      });
+      setGoogleData(buildGoogleData(data));
       toast.success('Auto-filled from Google Places');
     } catch (error) {
       console.error('Error:', error);
@@ -1208,6 +1266,171 @@ export function DestinationForm({
                   </div>
                 )}
 
+                {/* AI Summaries */}
+                {(googleData.generative_summary || googleData.review_summary || googleData.neighborhood_summary) && (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                      <Star className="h-4 w-4 text-purple-500" />
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Summaries from Google</span>
+                    </div>
+                    <div className="px-4 py-3 space-y-3">
+                      {googleData.generative_summary && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-purple-600 dark:text-purple-400">Place Summary</span>
+                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, description: googleData.generative_summary || prev.description }))}
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Apply to Description</button>
+                          </div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">{googleData.generative_summary}</p>
+                        </div>
+                      )}
+                      {googleData.review_summary && (
+                        <div>
+                          <span className="text-xs font-medium text-purple-600 dark:text-purple-400">Review Summary</span>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{googleData.review_summary}</p>
+                        </div>
+                      )}
+                      {googleData.neighborhood_summary && (
+                        <div>
+                          <span className="text-xs font-medium text-purple-600 dark:text-purple-400">Neighborhood</span>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{googleData.neighborhood_summary}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggested Tags */}
+                {googleData.suggested_tags && googleData.suggested_tags.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-gray-500" />
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Suggested Tags</span>
+                      </div>
+                      <button type="button"
+                        onClick={() => {
+                          const newTags = [...new Set([...formData.tags, ...googleData.suggested_tags])];
+                          setFormData(prev => ({ ...prev, tags: newTags }));
+                          toast.success(`Added ${newTags.length - formData.tags.length} new tags`);
+                        }}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Apply All</button>
+                    </div>
+                    <div className="px-4 py-3 flex flex-wrap gap-1.5">
+                      {googleData.suggested_tags.map((tag) => {
+                        const isApplied = formData.tags.includes(tag);
+                        return (
+                          <button key={tag} type="button"
+                            onClick={() => {
+                              if (!isApplied) {
+                                setFormData(prev => ({ ...prev, tags: [...prev.tags, tag] }));
+                              }
+                            }}
+                            disabled={isApplied}
+                            className={cn("inline-flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors",
+                              isApplied
+                                ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 cursor-pointer"
+                            )}>
+                            {isApplied ? <CheckCircle className="h-3 w-3" /> : <Tag className="h-3 w-3" />}
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Atmosphere: Features Grid */}
+                {googleData.atmosphere && (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Place Features</span>
+                    </div>
+                    <div className="px-4 py-3">
+                      {/* Service Options */}
+                      {(googleData.atmosphere.dine_in != null || googleData.atmosphere.delivery != null || googleData.atmosphere.takeout != null || googleData.atmosphere.reservable != null) && (
+                        <div className="mb-3">
+                          <span className="text-xs text-gray-400 mb-1.5 block">Service</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {googleData.atmosphere.dine_in != null && <FeaturePill label="Dine-in" value={googleData.atmosphere.dine_in} />}
+                            {googleData.atmosphere.takeout != null && <FeaturePill label="Takeout" value={googleData.atmosphere.takeout} />}
+                            {googleData.atmosphere.delivery != null && <FeaturePill label="Delivery" value={googleData.atmosphere.delivery} />}
+                            {googleData.atmosphere.curbside_pickup != null && <FeaturePill label="Curbside" value={googleData.atmosphere.curbside_pickup} />}
+                            {googleData.atmosphere.reservable != null && <FeaturePill label="Reservations" value={googleData.atmosphere.reservable} />}
+                          </div>
+                        </div>
+                      )}
+                      {/* Dining */}
+                      {(googleData.atmosphere.serves_breakfast != null || googleData.atmosphere.serves_brunch != null || googleData.atmosphere.serves_lunch != null || googleData.atmosphere.serves_dinner != null) && (
+                        <div className="mb-3">
+                          <span className="text-xs text-gray-400 mb-1.5 block">Meals</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {googleData.atmosphere.serves_breakfast != null && <FeaturePill label="Breakfast" value={googleData.atmosphere.serves_breakfast} />}
+                            {googleData.atmosphere.serves_brunch != null && <FeaturePill label="Brunch" value={googleData.atmosphere.serves_brunch} />}
+                            {googleData.atmosphere.serves_lunch != null && <FeaturePill label="Lunch" value={googleData.atmosphere.serves_lunch} />}
+                            {googleData.atmosphere.serves_dinner != null && <FeaturePill label="Dinner" value={googleData.atmosphere.serves_dinner} />}
+                            {googleData.atmosphere.serves_dessert != null && <FeaturePill label="Dessert" value={googleData.atmosphere.serves_dessert} />}
+                          </div>
+                        </div>
+                      )}
+                      {/* Drinks */}
+                      {(googleData.atmosphere.serves_coffee != null || googleData.atmosphere.serves_beer != null || googleData.atmosphere.serves_wine != null || googleData.atmosphere.serves_cocktails != null) && (
+                        <div className="mb-3">
+                          <span className="text-xs text-gray-400 mb-1.5 block">Drinks</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {googleData.atmosphere.serves_coffee != null && <FeaturePill label="Coffee" value={googleData.atmosphere.serves_coffee} />}
+                            {googleData.atmosphere.serves_beer != null && <FeaturePill label="Beer" value={googleData.atmosphere.serves_beer} />}
+                            {googleData.atmosphere.serves_wine != null && <FeaturePill label="Wine" value={googleData.atmosphere.serves_wine} />}
+                            {googleData.atmosphere.serves_cocktails != null && <FeaturePill label="Cocktails" value={googleData.atmosphere.serves_cocktails} />}
+                          </div>
+                        </div>
+                      )}
+                      {/* Vibe / Features */}
+                      {(googleData.atmosphere.outdoor_seating != null || googleData.atmosphere.live_music != null || googleData.atmosphere.good_for_groups != null || googleData.atmosphere.allows_dogs != null || googleData.atmosphere.serves_vegetarian_food != null) && (
+                        <div className="mb-3">
+                          <span className="text-xs text-gray-400 mb-1.5 block">Vibe</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {googleData.atmosphere.outdoor_seating != null && <FeaturePill label="Outdoor Seating" value={googleData.atmosphere.outdoor_seating} />}
+                            {googleData.atmosphere.live_music != null && <FeaturePill label="Live Music" value={googleData.atmosphere.live_music} />}
+                            {googleData.atmosphere.good_for_groups != null && <FeaturePill label="Good for Groups" value={googleData.atmosphere.good_for_groups} />}
+                            {googleData.atmosphere.good_for_children != null && <FeaturePill label="Family Friendly" value={googleData.atmosphere.good_for_children} />}
+                            {googleData.atmosphere.allows_dogs != null && <FeaturePill label="Dog Friendly" value={googleData.atmosphere.allows_dogs} />}
+                            {googleData.atmosphere.serves_vegetarian_food != null && <FeaturePill label="Vegetarian" value={googleData.atmosphere.serves_vegetarian_food} />}
+                            {googleData.atmosphere.restroom != null && <FeaturePill label="Restroom" value={googleData.atmosphere.restroom} />}
+                          </div>
+                        </div>
+                      )}
+                      {/* Parking */}
+                      {googleData.atmosphere.parking_options && Object.values(googleData.atmosphere.parking_options).some(v => v) && (
+                        <div className="mb-3">
+                          <span className="text-xs text-gray-400 mb-1.5 block">Parking</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(googleData.atmosphere.parking_options).map(([key, value]) => (
+                              value ? <span key={key} className="inline-flex items-center px-2 py-1 rounded text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                                {key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim()}
+                              </span> : null
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {/* Accessibility */}
+                      {googleData.accessibility_options && Object.values(googleData.accessibility_options).some(v => v) && (
+                        <div>
+                          <span className="text-xs text-gray-400 mb-1.5 block">Accessibility</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(googleData.accessibility_options).map(([key, value]) => (
+                              value ? <span key={key} className="inline-flex items-center px-2 py-1 rounded text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400">
+                                {key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim()}
+                              </span> : null
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Opening Hours */}
                 {googleData.opening_hours && googleData.opening_hours.weekday_text && googleData.opening_hours.weekday_text.length > 0 && (
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
@@ -1226,6 +1449,23 @@ export function DestinationForm({
                     </div>
                     <div className="px-4 py-2 space-y-1">
                       {googleData.opening_hours.weekday_text.map((day, i) => (
+                        <div key={i} className="text-xs text-gray-600 dark:text-gray-400 py-0.5">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Secondary Opening Hours (kitchen, happy hour, etc.) */}
+                {googleData.secondary_opening_hours && googleData.secondary_opening_hours.weekday_text && googleData.secondary_opening_hours.weekday_text.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Secondary Hours</span>
+                    </div>
+                    <div className="px-4 py-2 space-y-1">
+                      {googleData.secondary_opening_hours.weekday_text.map((day, i) => (
                         <div key={i} className="text-xs text-gray-600 dark:text-gray-400 py-0.5">
                           {day}
                         </div>

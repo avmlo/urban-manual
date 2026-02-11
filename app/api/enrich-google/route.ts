@@ -65,15 +65,17 @@ async function getPlaceDetails(placeId: string) {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': GOOGLE_API_KEY!,
       'X-Goog-FieldMask': [
+        // Core fields
         'formattedAddress',
         'internationalPhoneNumber',
         'websiteUri',
         'priceLevel',
+        'priceRange',
         'rating',
         'userRatingCount',
         'regularOpeningHours',
         'currentOpeningHours',
-        'secondaryOpeningHours',
+        'regularSecondaryOpeningHours',
         'plusCode',
         'location',
         'reviews',
@@ -87,6 +89,40 @@ async function getPlaceDetails(placeId: string) {
         'addressComponents',
         'iconMaskBaseUri',
         'iconBackgroundColor',
+        // AI-powered summaries
+        'generativeSummary',
+        'reviewSummary',
+        'neighborhoodSummary',
+        // Atmosphere: Service options
+        'dineIn',
+        'delivery',
+        'takeout',
+        'curbsidePickup',
+        'reservable',
+        // Atmosphere: Dining features
+        'servesBreakfast',
+        'servesBrunch',
+        'servesLunch',
+        'servesDinner',
+        'servesDessert',
+        'servesCoffee',
+        'servesBeer',
+        'servesWine',
+        'servesCocktails',
+        'servesVegetarianFood',
+        // Atmosphere: Place features
+        'outdoorSeating',
+        'liveMusic',
+        'goodForChildren',
+        'goodForGroups',
+        'goodForWatchingSports',
+        'menuForChildren',
+        'allowsDogs',
+        'restroom',
+        // Atmosphere: Practical info
+        'parkingOptions',
+        'paymentOptions',
+        'accessibilityOptions',
       ].join(','),
     },
   });
@@ -105,11 +141,12 @@ async function getPlaceDetails(placeId: string) {
     international_phone_number: place.internationalPhoneNumber || '',
     website: place.websiteUri || '',
     price_level: place.priceLevel ? priceLevelToNumber(place.priceLevel) : null,
+    price_range: place.priceRange ?? null,
     rating: place.rating ?? null,
     user_ratings_total: place.userRatingCount ?? null,
     opening_hours: place.regularOpeningHours ? transformOpeningHours(place.regularOpeningHours) : null,
     current_opening_hours: place.currentOpeningHours ? transformOpeningHours(place.currentOpeningHours) : null,
-    secondary_opening_hours: place.secondaryOpeningHours ? transformOpeningHours(place.secondaryOpeningHours) : null,
+    secondary_opening_hours: place.regularSecondaryOpeningHours ? transformOpeningHours(place.regularSecondaryOpeningHours) : null,
     plus_code: place.plusCode?.globalCode || null,
     geometry: place.location ? {
       location: {
@@ -136,6 +173,40 @@ async function getPlaceDetails(placeId: string) {
     icon: place.iconMaskBaseUri || null,
     icon_background_color: place.iconBackgroundColor || null,
     icon_mask_base_uri: place.iconMaskBaseUri || null,
+    // AI-powered summaries
+    generative_summary: place.generativeSummary?.overview?.text || null,
+    review_summary: place.reviewSummary?.text?.text || null,
+    neighborhood_summary: place.neighborhoodSummary?.text?.text || null,
+    // Accessibility
+    accessibility_options: place.accessibilityOptions ?? null,
+    // Atmosphere data (structured)
+    atmosphere: {
+      dine_in: place.dineIn ?? null,
+      delivery: place.delivery ?? null,
+      takeout: place.takeout ?? null,
+      curbside_pickup: place.curbsidePickup ?? null,
+      reservable: place.reservable ?? null,
+      serves_breakfast: place.servesBreakfast ?? null,
+      serves_brunch: place.servesBrunch ?? null,
+      serves_lunch: place.servesLunch ?? null,
+      serves_dinner: place.servesDinner ?? null,
+      serves_dessert: place.servesDessert ?? null,
+      serves_coffee: place.servesCoffee ?? null,
+      serves_beer: place.servesBeer ?? null,
+      serves_wine: place.servesWine ?? null,
+      serves_cocktails: place.servesCocktails ?? null,
+      serves_vegetarian_food: place.servesVegetarianFood ?? null,
+      outdoor_seating: place.outdoorSeating ?? null,
+      live_music: place.liveMusic ?? null,
+      good_for_children: place.goodForChildren ?? null,
+      good_for_groups: place.goodForGroups ?? null,
+      good_for_watching_sports: place.goodForWatchingSports ?? null,
+      menu_for_children: place.menuForChildren ?? null,
+      allows_dogs: place.allowsDogs ?? null,
+      restroom: place.restroom ?? null,
+      parking_options: place.parkingOptions ?? null,
+      payment_options: place.paymentOptions ?? null,
+    },
   };
 }
 
@@ -258,6 +329,14 @@ export const POST = withAdminAuth(async (req: NextRequest, { serviceClient: supa
       icon_url: details.icon || null,
       icon_background_color: details.icon_background_color || null,
       icon_mask_base_uri: details.icon_mask_base_uri || null,
+      // AI-powered summaries
+      generative_summary: details.generative_summary || null,
+      review_summary: details.review_summary || null,
+      neighborhood_summary: details.neighborhood_summary || null,
+      // Atmosphere data (all service/dining/feature booleans + parking/payment/accessibility)
+      google_atmosphere_json: JSON.stringify(details.atmosphere),
+      accessibility_options_json: details.accessibility_options ? JSON.stringify(details.accessibility_options) : null,
+      price_range_json: details.price_range ? JSON.stringify(details.price_range) : null,
     }
 
     // Try updating with extended fields first, if it fails, fall back to basic fields

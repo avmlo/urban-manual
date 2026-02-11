@@ -63,30 +63,73 @@ async function findPlaceId(query: string, name?: string, city?: string): Promise
 async function getPlaceDetails(placeId: string, minimal: boolean = false) {
   if (!GOOGLE_API_KEY) return null;
 
-  // Build field mask - skip photos and reviews in minimal mode for faster response
+  // Build field mask - skip heavy fields in minimal mode for faster response
   const fields = [
+    // Pro tier
     'displayName',
     'formattedAddress',
     'addressComponents',
-    'internationalPhoneNumber',
-    'websiteUri',
-    'priceLevel',
-    'rating',
-    'userRatingCount',
-    'regularOpeningHours',
-    'currentOpeningHours',
-    'editorialSummary',
     'types',
     'primaryTypeDisplayName',
     'location',
     'googleMapsUri',
     'businessStatus',
+    'accessibilityOptions',
+    // Enterprise tier
+    'internationalPhoneNumber',
+    'websiteUri',
+    'priceLevel',
+    'priceRange',
+    'rating',
+    'userRatingCount',
+    'regularOpeningHours',
+    'currentOpeningHours',
+    'regularSecondaryOpeningHours',
   ];
 
-  // Only request photos and reviews if not in minimal mode
+  // Only request heavy/Atmosphere-tier fields if not in minimal mode
   if (!minimal) {
-    fields.push('photos');
-    fields.push('reviews');
+    fields.push(
+      'photos',
+      'reviews',
+      'editorialSummary',
+      // AI-powered summaries
+      'generativeSummary',
+      'reviewSummary',
+      'neighborhoodSummary',
+      // Atmosphere: Service options
+      'dineIn',
+      'delivery',
+      'takeout',
+      'curbsidePickup',
+      'reservable',
+      // Atmosphere: Dining features
+      'servesBreakfast',
+      'servesBrunch',
+      'servesLunch',
+      'servesDinner',
+      'servesDessert',
+      'servesCoffee',
+      'servesBeer',
+      'servesWine',
+      'servesCocktails',
+      'servesVegetarianFood',
+      // Atmosphere: Place features
+      'outdoorSeating',
+      'liveMusic',
+      'goodForChildren',
+      'goodForGroups',
+      'goodForWatchingSports',
+      'menuForChildren',
+      'allowsDogs',
+      'restroom',
+      // Atmosphere: Practical info
+      'parkingOptions',
+      'paymentOptions',
+    );
+  } else {
+    // Still request editorialSummary in minimal mode (lightweight)
+    fields.push('editorialSummary');
   }
 
   // Use Places API (New) - Place Details
@@ -108,16 +151,18 @@ async function getPlaceDetails(placeId: string, minimal: boolean = false) {
   const place = await response.json();
   
   // Transform new API format to old format for compatibility
-  return {
+  const result: Record<string, any> = {
     name: place.displayName?.text || '',
     formatted_address: place.formattedAddress || '',
     international_phone_number: place.internationalPhoneNumber || '',
     website: place.websiteUri || '',
     price_level: place.priceLevel ? priceLevelToNumber(place.priceLevel) : null,
+    price_range: place.priceRange ?? null,
     rating: place.rating ?? null,
     user_ratings_total: place.userRatingCount ?? null,
     opening_hours: place.regularOpeningHours ? transformOpeningHours(place.regularOpeningHours) : null,
     current_opening_hours: place.currentOpeningHours ? transformOpeningHours(place.currentOpeningHours) : null,
+    secondary_opening_hours: place.regularSecondaryOpeningHours ? transformOpeningHours(place.regularSecondaryOpeningHours) : null,
     editorial_summary: place.editorialSummary ? {
       overview: place.editorialSummary.overview || '',
     } : null,
@@ -140,7 +185,51 @@ async function getPlaceDetails(placeId: string, minimal: boolean = false) {
       time: r.publishTime || null,
       relative_time: r.relativePublishTimeDescription || '',
     })) : null,
+    // Accessibility
+    accessibility_options: place.accessibilityOptions ?? null,
   };
+
+  // AI-powered summaries (Atmosphere tier, only in non-minimal)
+  if (!minimal) {
+    result.generative_summary = place.generativeSummary?.overview?.text || null;
+    result.review_summary = place.reviewSummary?.text?.text || null;
+    result.neighborhood_summary = place.neighborhoodSummary?.text?.text || null;
+
+    // Atmosphere: service + dining + features as structured object
+    result.atmosphere = {
+      // Service options
+      dine_in: place.dineIn ?? null,
+      delivery: place.delivery ?? null,
+      takeout: place.takeout ?? null,
+      curbside_pickup: place.curbsidePickup ?? null,
+      reservable: place.reservable ?? null,
+      // Dining
+      serves_breakfast: place.servesBreakfast ?? null,
+      serves_brunch: place.servesBrunch ?? null,
+      serves_lunch: place.servesLunch ?? null,
+      serves_dinner: place.servesDinner ?? null,
+      serves_dessert: place.servesDessert ?? null,
+      serves_coffee: place.servesCoffee ?? null,
+      serves_beer: place.servesBeer ?? null,
+      serves_wine: place.servesWine ?? null,
+      serves_cocktails: place.servesCocktails ?? null,
+      serves_vegetarian_food: place.servesVegetarianFood ?? null,
+      // Place features
+      outdoor_seating: place.outdoorSeating ?? null,
+      live_music: place.liveMusic ?? null,
+      good_for_children: place.goodForChildren ?? null,
+      good_for_groups: place.goodForGroups ?? null,
+      good_for_watching_sports: place.goodForWatchingSports ?? null,
+      menu_for_children: place.menuForChildren ?? null,
+      allows_dogs: place.allowsDogs ?? null,
+      restroom: place.restroom ?? null,
+      // Practical info
+      parking_options: place.parkingOptions ?? null,
+      payment_options: place.paymentOptions ?? null,
+    };
+  }
+
+  return result;
 }
 
 // Helper to extract cuisine type from types array
@@ -312,7 +401,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // Build response with form-friendly data
   const editorialSummary = htmlToPlainText(details.editorial_summary?.overview || '');
-  const result = {
+  const result: Record<string, any> = {
     name: details.name || name,
     city: extractedCity || city || '',
     country: extractedCountry,
@@ -329,10 +418,11 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     rating: details.rating || null,
     user_ratings_total: details.user_ratings_total || null,
     price_level: details.price_level || null,
+    price_range: details.price_range || null,
     opening_hours: details.current_opening_hours || details.opening_hours || null,
+    secondary_opening_hours: details.secondary_opening_hours || null,
     place_types: details.types || [],
     cuisine_type: extractCuisineType(details.types || []),
-    // Include coordinates for transit connector
     latitude: details.geometry?.location?.lat || null,
     longitude: details.geometry?.location?.lng || null,
     place_id: finalPlaceId,
@@ -340,7 +430,40 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     google_name: details.name || '',
     business_status: details.business_status || null,
     reviews: details.reviews || [],
+    // AI-powered summaries
+    generative_summary: details.generative_summary || null,
+    review_summary: details.review_summary || null,
+    neighborhood_summary: details.neighborhood_summary || null,
+    // Atmosphere data (service options, dining, features, amenities)
+    atmosphere: details.atmosphere || null,
+    // Accessibility
+    accessibility_options: details.accessibility_options || null,
   };
+
+  // Auto-generate suggested tags from atmosphere booleans
+  if (details.atmosphere) {
+    const a = details.atmosphere;
+    const suggestedTags: string[] = [];
+    if (a.serves_breakfast) suggestedTags.push('breakfast');
+    if (a.serves_brunch) suggestedTags.push('brunch');
+    if (a.serves_lunch) suggestedTags.push('lunch');
+    if (a.serves_dinner) suggestedTags.push('dinner');
+    if (a.serves_dessert) suggestedTags.push('dessert');
+    if (a.serves_coffee) suggestedTags.push('coffee');
+    if (a.serves_cocktails) suggestedTags.push('cocktails');
+    if (a.serves_wine) suggestedTags.push('wine');
+    if (a.serves_beer) suggestedTags.push('beer');
+    if (a.serves_vegetarian_food) suggestedTags.push('vegetarian');
+    if (a.outdoor_seating) suggestedTags.push('outdoor seating');
+    if (a.live_music) suggestedTags.push('live music');
+    if (a.good_for_groups) suggestedTags.push('groups');
+    if (a.good_for_children) suggestedTags.push('family friendly');
+    if (a.allows_dogs) suggestedTags.push('dog friendly');
+    if (a.reservable) suggestedTags.push('reservations');
+    if (a.delivery) suggestedTags.push('delivery');
+    if (a.takeout) suggestedTags.push('takeout');
+    result.suggested_tags = suggestedTags;
+  }
 
   return createSuccessResponse(result);
 })

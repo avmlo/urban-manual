@@ -87,15 +87,15 @@ export function AdminStats({ refreshKey }: AdminStatsProps) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">Stats</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-semibold text-[var(--editorial-text-primary)]">Stats</p>
+          <p className="text-xs text-[var(--editorial-text-tertiary)]">
             Live counts pulled directly from Supabase.
           </p>
         </div>
         <button
           onClick={() => loadAdminStats()}
           disabled={statsLoading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[var(--editorial-text-primary)] bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-xl hover:bg-[var(--editorial-border-subtle)] disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`h-3 w-3 ${statsLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -107,13 +107,13 @@ export function AdminStats({ refreshKey }: AdminStatsProps) {
           return (
             <div
               key={stat.label}
-              className={`p-4 rounded-xl border border-gray-200 dark:border-gray-800 ${stat.bgColor}`}
+              className={`p-4 rounded-xl border border-[var(--editorial-border)] ${stat.bgColor}`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Icon className={`h-4 w-4 ${stat.color}`} />
-                <span className="text-xs text-gray-600 dark:text-gray-400">{stat.label}</span>
+                <span className="text-xs text-[var(--editorial-text-secondary)]">{stat.label}</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-[var(--editorial-text-primary)]">
                 {statsLoading ? '…' : stat.value.toLocaleString()}
               </div>
             </div>

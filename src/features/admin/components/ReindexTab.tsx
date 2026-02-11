@@ -48,13 +48,13 @@ export default function ReindexTab() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold mb-2">Vector Index Management</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-[var(--editorial-text-secondary)]">
           Populate or update the Upstash Vector index with destination embeddings
         </p>
       </div>
 
       {/* Configuration */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 space-y-6">
+      <div className="bg-[var(--editorial-bg-elevated)] rounded-lg border border-[var(--editorial-border)] p-6 space-y-6">
         <h3 className="text-lg font-semibold mb-4">Configuration</h3>
 
         {/* Mode Selection */}
@@ -72,7 +72,7 @@ export default function ReindexTab() {
               />
               <div>
                 <div className="font-medium text-sm">Changed Only</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="text-xs text-[var(--editorial-text-secondary)]">
                   Only reindex destinations that have been updated since last index
                 </div>
               </div>
@@ -88,7 +88,7 @@ export default function ReindexTab() {
               />
               <div>
                 <div className="font-medium text-sm">All Destinations</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="text-xs text-[var(--editorial-text-secondary)]">
                   Reindex all destinations (use for initial setup or full refresh)
                 </div>
               </div>
@@ -108,9 +108,9 @@ export default function ReindexTab() {
             value={batchSize}
             onChange={(e) => setBatchSize(parseInt(e.target.value) || 20)}
             disabled={isReindexing}
-            className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-950 text-sm"
+            className="w-32 px-3 py-2 border border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)] text-sm"
           />
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-xs text-[var(--editorial-text-secondary)] mt-1">
             Number of destinations to process per batch (recommended: 10-20)
           </p>
         </div>
@@ -127,7 +127,7 @@ export default function ReindexTab() {
             />
             <div>
               <div className="font-medium text-sm">Dry Run</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
+              <div className="text-xs text-[var(--editorial-text-secondary)]">
                 Test the reindex process without actually updating the vector index
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function ReindexTab() {
           <button
             onClick={handleReindex}
             disabled={isReindexing}
-            className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-80 transition-opacity text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)] rounded-xl hover:opacity-80 transition-opacity text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isReindexing ? (
               <>
@@ -167,11 +167,11 @@ export default function ReindexTab() {
               </h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="text-gray-600 dark:text-gray-400">Total Destinations</div>
+                  <div className="text-[var(--editorial-text-secondary)]">Total Destinations</div>
                   <div className="font-semibold text-lg">{result.total || 0}</div>
                 </div>
                 <div>
-                  <div className="text-gray-600 dark:text-gray-400">Successfully Processed</div>
+                  <div className="text-[var(--editorial-text-secondary)]">Successfully Processed</div>
                   <div className="font-semibold text-lg text-green-600 dark:text-green-400">
                     {result.processed || 0}
                   </div>
@@ -182,7 +182,7 @@ export default function ReindexTab() {
                   <div className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
                     Errors ({result.errors.length}):
                   </div>
-                  <div className="bg-white dark:bg-gray-950 rounded border border-red-200 dark:border-red-800 p-3 max-h-40 overflow-y-auto">
+                  <div className="bg-[var(--editorial-bg-elevated)] rounded border border-red-200 dark:border-red-800 p-3 max-h-40 overflow-y-auto">
                     <ul className="text-xs space-y-1 text-red-700 dark:text-red-300">
                       {result.errors.map((err: string, idx: number) => (
                         <li key={idx}>• {err}</li>

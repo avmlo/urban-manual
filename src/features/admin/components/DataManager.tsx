@@ -501,15 +501,15 @@ export function DataManager({ type }: DataManagerProps) {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const Icon = config.icon;
 
-  const inputClasses = "w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white";
-  const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+  const inputClasses = "w-full px-3 py-2 border border-[var(--editorial-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--editorial-accent)] bg-[var(--editorial-bg-elevated)]";
+  const labelClasses = "block text-sm font-medium text-[var(--editorial-text-primary)] mb-1";
 
   return (
     <div className="space-y-4">
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
+          <p className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">
             {totalCount.toLocaleString()} {type}
             {syncResult && (
               <span className="ml-2 text-green-600 dark:text-green-400">
@@ -522,7 +522,7 @@ export function DataManager({ type }: DataManagerProps) {
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="inline-flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 text-[13px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors disabled:opacity-40"
             title={`Sync ${type} from existing destinations`}
           >
             <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
@@ -530,7 +530,7 @@ export function DataManager({ type }: DataManagerProps) {
           </button>
           <button
             onClick={openCreateDrawer}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-black dark:text-white hover:opacity-60 transition-opacity"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--editorial-text-primary)] hover:opacity-60 transition-opacity"
           >
             <Plus className="w-3.5 h-3.5" />
             Add New
@@ -549,24 +549,24 @@ export function DataManager({ type }: DataManagerProps) {
       {/* Search */}
       <div className="pb-2">
         <div className="relative max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
           <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Search ${type}...`}
-            className="pl-9 h-8 text-xs rounded-lg border-transparent bg-gray-50 dark:bg-gray-900/50 focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white dark:focus:bg-gray-900"
+            className="pl-9 h-8 text-xs rounded-lg border-transparent bg-[var(--editorial-bg)] focus:border-[var(--editorial-border)] focus:bg-[var(--editorial-bg-elevated)]"
           />
         </div>
       </div>
 
       {/* Bulk Actions - Fixed floating bar */}
       {selectedItems.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-gray-900/95 dark:bg-gray-100/95 backdrop-blur-sm text-white dark:text-gray-900 rounded-xl shadow-2xl border border-gray-700/50 dark:border-gray-300/50">
-          <Badge variant="secondary" className="font-medium whitespace-nowrap bg-white/15 dark:bg-gray-900/15 text-white dark:text-gray-900 border-0">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-[var(--editorial-bg-elevated)] backdrop-blur-sm text-[var(--editorial-text-primary)] rounded-xl shadow-2xl border border-[var(--editorial-border)]">
+          <Badge variant="secondary" className="font-medium whitespace-nowrap border-0">
             {selectedItems.size} selected
           </Badge>
-          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
+          <Separator orientation="vertical" className="h-5 bg-[var(--editorial-border)]" />
 
           {/* Delete */}
           <Button
@@ -584,13 +584,13 @@ export function DataManager({ type }: DataManagerProps) {
             <span className="hidden sm:inline">Delete</span>
           </Button>
 
-          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
+          <Separator orientation="vertical" className="h-5 bg-[var(--editorial-border)]" />
 
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSelectedItems(new Set())}
-            className="shrink-0 text-white/70 dark:text-gray-900/70 hover:text-white dark:hover:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10"
+            className="shrink-0 text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]"
           >
             <X className="w-3.5 h-3.5 sm:mr-1.5" />
             <span className="hidden sm:inline">Clear</span>
@@ -601,13 +601,13 @@ export function DataManager({ type }: DataManagerProps) {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--editorial-text-tertiary)]" />
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[400px]">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800/50">
+              <tr className="border-b border-[var(--editorial-border-subtle)]">
                 <th className="w-8 pl-0 pr-2 py-2">
                   <Checkbox
                     checked={items.length > 0 && selectedItems.size === items.length}
@@ -616,45 +616,45 @@ export function DataManager({ type }: DataManagerProps) {
                   />
                 </th>
                 {visibleColumns.name && (
-                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2">
+                  <th className="text-left text-[11px] font-medium text-[var(--editorial-text-tertiary)] uppercase tracking-wider px-2 py-2">
                     {config.singular}
                   </th>
                 )}
                 {type === 'brands' && visibleColumns.category && (
-                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-[var(--editorial-text-tertiary)] uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Category
                   </th>
                 )}
                 {(type === 'cities' || type === 'neighborhoods') && visibleColumns.location && (
-                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-[var(--editorial-text-tertiary)] uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Location
                   </th>
                 )}
                 {type === 'countries' && visibleColumns.code && (
-                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-[var(--editorial-text-tertiary)] uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Code
                   </th>
                 )}
                 {type === 'architects' && visibleColumns.nationality && (
-                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
+                  <th className="text-left text-[11px] font-medium text-[var(--editorial-text-tertiary)] uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Nationality
                   </th>
                 )}
                 {visibleColumns.slug && (
-                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden md:table-cell">
+                  <th className="text-left text-[11px] font-medium text-[var(--editorial-text-tertiary)] uppercase tracking-wider px-2 py-2 hidden md:table-cell">
                     Slug
                   </th>
                 )}
                 <th className="w-8"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-gray-800/30">
+            <tbody className="divide-y divide-[var(--editorial-border-subtle)]">
               {items.map((item) => (
                 <tr
                   key={item.id}
                   className={cn(
-                    "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-900/20",
-                    selectedItems.has(item.id) && "bg-gray-50 dark:bg-gray-900/50"
+                    "cursor-pointer hover:bg-[var(--editorial-border-subtle)]",
+                    selectedItems.has(item.id) && "bg-[var(--editorial-bg)]"
                   )}
                   onClick={() => openEditDrawer(item)}
                 >
@@ -672,26 +672,26 @@ export function DataManager({ type }: DataManagerProps) {
                           <img
                             src={('logo_url' in item ? item.logo_url : (item as City | Country | Neighborhood).image_url) || ''}
                             alt={item.name}
-                            className="w-8 h-8 rounded-lg object-cover bg-gray-100 dark:bg-gray-800"
+                            className="w-8 h-8 rounded-lg object-cover bg-[var(--editorial-border-subtle)]"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-[var(--editorial-border-subtle)] flex items-center justify-center flex-shrink-0">
                             {type === 'countries' && 'flag_emoji' in item && item.flag_emoji ? (
                               <span className="text-sm">{item.flag_emoji}</span>
                             ) : (
-                              <Icon className="h-3 w-3 text-gray-300 dark:text-gray-600" />
+                              <Icon className="h-3 w-3 text-[var(--editorial-text-tertiary)]" />
                             )}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <div className="text-[13px] text-gray-900 dark:text-white truncate">{item.name}</div>
+                          <div className="text-[13px] text-[var(--editorial-text-primary)] truncate">{item.name}</div>
                           {'website' in item && item.website && (
                             <a
                               href={item.website}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-0.5 transition-colors"
+                              className="text-[11px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] flex items-center gap-0.5 transition-colors"
                             >
                               Website <ExternalLink className="h-2.5 w-2.5" />
                             </a>
@@ -714,7 +714,7 @@ export function DataManager({ type }: DataManagerProps) {
                             apiRequest('PUT', { type, id: item.id, data: { category: e.target.value || null } }).then(() => fetchData());
                           }}
                           onBlur={cancelInlineEdit}
-                          className="text-[13px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                          className="text-[13px] bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
                         >
                           <option value="">—</option>
                           {BRAND_CATEGORIES.map(cat => (
@@ -724,7 +724,7 @@ export function DataManager({ type }: DataManagerProps) {
                       ) : (
                         <button
                           onClick={() => startInlineEdit(item, 'category', 'category' in item ? (item.category || '') : '')}
-                          className="text-[13px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                          className="text-[13px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] transition-colors cursor-pointer"
                           title="Click to edit"
                         >
                           {'category' in item ? item.category || '—' : '—'}
@@ -734,7 +734,7 @@ export function DataManager({ type }: DataManagerProps) {
                   )}
                   {(type === 'cities' || type === 'neighborhoods') && visibleColumns.location && (
                     <td className="px-2 py-2 hidden sm:table-cell">
-                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
+                      <span className="text-[13px] text-[var(--editorial-text-tertiary)]">
                         {'city' in item && item.city ? `${item.city}, ` : ''}
                         {'country' in item ? item.country || '—' : '—'}
                       </span>
@@ -742,7 +742,7 @@ export function DataManager({ type }: DataManagerProps) {
                   )}
                   {type === 'countries' && visibleColumns.code && (
                     <td className="px-2 py-2 hidden sm:table-cell">
-                      <span className="text-[13px] text-gray-400 dark:text-gray-500">
+                      <span className="text-[13px] text-[var(--editorial-text-tertiary)]">
                         {'code' in item ? item.code || '—' : '—'}
                       </span>
                     </td>
@@ -760,12 +760,12 @@ export function DataManager({ type }: DataManagerProps) {
                             if (e.key === 'Enter') commitInlineEdit();
                             if (e.key === 'Escape') cancelInlineEdit();
                           }}
-                          className="text-[13px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5 w-24 outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
+                          className="text-[13px] bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded px-1.5 py-0.5 w-24 outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
                         />
                       ) : (
                         <button
                           onClick={() => startInlineEdit(item, 'nationality', 'nationality' in item ? (item.nationality || '') : '')}
-                          className="text-[13px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer"
+                          className="text-[13px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] transition-colors cursor-pointer"
                           title="Click to edit"
                         >
                           {'nationality' in item ? item.nationality || '—' : '—'}
@@ -775,7 +775,7 @@ export function DataManager({ type }: DataManagerProps) {
                   )}
                   {visibleColumns.slug && (
                     <td className="px-2 py-2 hidden md:table-cell">
-                      <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                      <span className="text-[11px] text-[var(--editorial-text-tertiary)]">
                         {item.slug}
                       </span>
                     </td>
@@ -783,7 +783,7 @@ export function DataManager({ type }: DataManagerProps) {
                   <td className="px-2 py-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <button className="p-1 rounded-md text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 transition-colors">
+                        <button className="p-1 rounded-md text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] transition-colors">
                           <MoreVertical className="h-3.5 w-3.5" />
                         </button>
                       </DropdownMenuTrigger>
@@ -811,7 +811,7 @@ export function DataManager({ type }: DataManagerProps) {
 
               {items.length === 0 && !error && (
                 <tr>
-                  <td colSpan={4} className="px-2 py-12 text-center text-[13px] text-gray-400">
+                  <td colSpan={4} className="px-2 py-12 text-center text-[13px] text-[var(--editorial-text-tertiary)]">
                     No {type} found. {searchQuery ? 'Try a different search.' : `Add your first ${config.singular.toLowerCase()}!`}
                   </td>
                 </tr>
@@ -821,8 +821,8 @@ export function DataManager({ type }: DataManagerProps) {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800/50 mt-2">
-              <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
+            <div className="flex items-center justify-between pt-4 border-t border-[var(--editorial-border-subtle)] mt-2">
+              <p className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">
                 Page {page} of {totalPages}
               </p>
               <div className="flex items-center gap-1">
@@ -862,26 +862,26 @@ export function DataManager({ type }: DataManagerProps) {
           />
           {/* Drawer Panel */}
           <div
-            className={`fixed right-3 top-3 bottom-3 w-[calc(100%-1.5rem)] sm:w-[480px] bg-white dark:bg-gray-950 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden ${
+            className={`fixed right-3 top-3 bottom-3 w-[calc(100%-1.5rem)] sm:w-[480px] bg-[var(--editorial-bg-elevated)] z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col rounded-2xl border border-[var(--editorial-border)] overflow-hidden ${
               showDrawer ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
             {/* Header */}
-            <div className="flex-shrink-0 h-14 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
+            <div className="flex-shrink-0 h-14 px-4 flex items-center justify-between border-b border-[var(--editorial-border)]">
               <div className="flex items-center gap-3">
                 <button
                   onClick={closeDrawer}
-                  className="p-1.5 -ml-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+                  className="p-1.5 -ml-1.5 hover:bg-[var(--editorial-border-subtle)] rounded-lg transition-colors text-[var(--editorial-text-secondary)]"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-base font-semibold text-[var(--editorial-text-primary)]">
                   {editingItem ? editingItem.name || `Edit ${config.singular}` : `New ${config.singular}`}
                 </h2>
               </div>
               <button
                 onClick={closeDrawer}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+                className="p-1.5 hover:bg-[var(--editorial-border-subtle)] rounded-lg transition-colors text-[var(--editorial-text-secondary)]"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -930,7 +930,7 @@ export function DataManager({ type }: DataManagerProps) {
                       {formData.logo_url && (
                         <img src={formData.logo_url} alt="Logo" className="w-16 h-16 rounded-lg object-cover" />
                       )}
-                      <label className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <label className="flex items-center gap-2 px-4 py-2 border border-[var(--editorial-border)] rounded-lg cursor-pointer hover:bg-[var(--editorial-border-subtle)]">
                         <Upload className="h-4 w-4" />
                         <span className="text-sm">Upload Logo</span>
                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'logo_url')} className="hidden" />
@@ -1001,7 +1001,7 @@ export function DataManager({ type }: DataManagerProps) {
                       {formData.image_url && (
                         <img src={formData.image_url} alt="City" className="w-16 h-16 rounded-lg object-cover" />
                       )}
-                      <label className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <label className="flex items-center gap-2 px-4 py-2 border border-[var(--editorial-border)] rounded-lg cursor-pointer hover:bg-[var(--editorial-border-subtle)]">
                         <Upload className="h-4 w-4" />
                         <span className="text-sm">Upload Image</span>
                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'image_url')} className="hidden" />
@@ -1050,7 +1050,7 @@ export function DataManager({ type }: DataManagerProps) {
                       {formData.image_url && (
                         <img src={formData.image_url} alt="Country" className="w-16 h-16 rounded-lg object-cover" />
                       )}
-                      <label className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <label className="flex items-center gap-2 px-4 py-2 border border-[var(--editorial-border)] rounded-lg cursor-pointer hover:bg-[var(--editorial-border-subtle)]">
                         <Upload className="h-4 w-4" />
                         <span className="text-sm">Upload Image</span>
                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'image_url')} className="hidden" />
@@ -1089,7 +1089,7 @@ export function DataManager({ type }: DataManagerProps) {
                       {formData.image_url && (
                         <img src={formData.image_url} alt="Neighborhood" className="w-16 h-16 rounded-lg object-cover" />
                       )}
-                      <label className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <label className="flex items-center gap-2 px-4 py-2 border border-[var(--editorial-border)] rounded-lg cursor-pointer hover:bg-[var(--editorial-border-subtle)]">
                         <Upload className="h-4 w-4" />
                         <span className="text-sm">Upload Image</span>
                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'image_url')} className="hidden" />
@@ -1149,7 +1149,7 @@ export function DataManager({ type }: DataManagerProps) {
                       {formData.image_url && (
                         <img src={formData.image_url} alt="Design Firm" className="w-16 h-16 rounded-lg object-cover" />
                       )}
-                      <label className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <label className="flex items-center gap-2 px-4 py-2 border border-[var(--editorial-border)] rounded-lg cursor-pointer hover:bg-[var(--editorial-border-subtle)]">
                         <Upload className="h-4 w-4" />
                         <span className="text-sm">Upload Image</span>
                         <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'image_url')} className="hidden" />
@@ -1179,7 +1179,7 @@ export function DataManager({ type }: DataManagerProps) {
             </div>
 
             {/* Footer */}
-            <div className="flex-shrink-0 px-4 py-3 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3">
+            <div className="flex-shrink-0 px-4 py-3 border-t border-[var(--editorial-border)] flex justify-end gap-3">
               <Button variant="ghost" onClick={closeDrawer}>
                 Cancel
               </Button>
@@ -1205,18 +1205,18 @@ export function DataManager({ type }: DataManagerProps) {
           />
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-950 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-[var(--editorial-bg-elevated)] rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
               {/* Header */}
-              <div className="flex-shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+              <div className="flex-shrink-0 px-4 py-3 border-b border-[var(--editorial-border)] flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Merge className="h-5 w-5 text-gray-500" />
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                  <Merge className="h-5 w-5 text-[var(--editorial-text-secondary)]" />
+                  <h2 className="text-base font-semibold text-[var(--editorial-text-primary)]">
                     Merge {config.singular}
                   </h2>
                 </div>
                 <button
                   onClick={closeMergeModal}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500"
+                  className="p-1.5 hover:bg-[var(--editorial-border-subtle)] rounded-lg transition-colors text-[var(--editorial-text-secondary)]"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -1225,11 +1225,11 @@ export function DataManager({ type }: DataManagerProps) {
               {/* Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {/* Source info */}
-                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Merging:</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{mergeSource.name}</p>
+                <div className="p-3 bg-[var(--editorial-bg)] rounded-lg">
+                  <p className="text-sm text-[var(--editorial-text-secondary)] mb-1">Merging:</p>
+                  <p className="font-medium text-[var(--editorial-text-primary)]">{mergeSource.name}</p>
                   {mergePreview && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--editorial-text-secondary)] mt-1">
                       {mergePreview.affectedCount} destination{mergePreview.affectedCount !== 1 ? 's' : ''} will be updated
                     </p>
                   )}
@@ -1246,7 +1246,7 @@ export function DataManager({ type }: DataManagerProps) {
                 <div>
                   <label className={labelClasses}>Merge into:</label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--editorial-text-tertiary)]" />
                     <input
                       type="text"
                       value={mergeSearch}
@@ -1260,9 +1260,9 @@ export function DataManager({ type }: DataManagerProps) {
                   </div>
 
                   {/* Target options */}
-                  <div className="mt-2 border border-gray-200 dark:border-gray-700 rounded-lg max-h-48 overflow-y-auto">
+                  <div className="mt-2 border border-[var(--editorial-border)] rounded-lg max-h-48 overflow-y-auto">
                     {getMergeTargetOptions().length === 0 ? (
-                      <div className="p-3 text-sm text-gray-500 text-center">
+                      <div className="p-3 text-sm text-[var(--editorial-text-secondary)] text-center">
                         No matching {type} found
                       </div>
                     ) : (
@@ -1271,7 +1271,7 @@ export function DataManager({ type }: DataManagerProps) {
                           key={item.id}
                           onClick={() => setMergeTarget(item)}
                           className={cn(
-                            "w-full px-3 py-2 text-left flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
+                            "w-full px-3 py-2 text-left flex items-center gap-3 hover:bg-[var(--editorial-border-subtle)] transition-colors",
                             mergeTarget?.id === item.id && "bg-blue-50 dark:bg-blue-900/30"
                           )}
                         >
@@ -1279,21 +1279,21 @@ export function DataManager({ type }: DataManagerProps) {
                             <img
                               src={('logo_url' in item ? item.logo_url : (item as City | Country | Neighborhood).image_url) || ''}
                               alt={item.name}
-                              className="w-8 h-8 rounded-lg object-cover bg-gray-100 dark:bg-gray-800"
+                              className="w-8 h-8 rounded-lg object-cover bg-[var(--editorial-border-subtle)]"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-[var(--editorial-border-subtle)] flex items-center justify-center">
                               {type === 'countries' && 'flag_emoji' in item && item.flag_emoji ? (
                                 <span className="text-lg">{item.flag_emoji}</span>
                               ) : (
-                                <Icon className="h-4 w-4 text-gray-400" />
+                                <Icon className="h-4 w-4 text-[var(--editorial-text-tertiary)]" />
                               )}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 dark:text-white truncate">{item.name}</div>
+                            <div className="font-medium text-[var(--editorial-text-primary)] truncate">{item.name}</div>
                             {(type === 'cities' || type === 'neighborhoods') && 'country' in item && item.country && (
-                              <div className="text-xs text-gray-500 truncate">
+                              <div className="text-xs text-[var(--editorial-text-secondary)] truncate">
                                 {'city' in item && item.city ? `${item.city}, ` : ''}{item.country}
                               </div>
                             )}
@@ -1308,18 +1308,18 @@ export function DataManager({ type }: DataManagerProps) {
                 </div>
 
                 {/* Delete source checkbox */}
-                <label className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <label className="flex items-center gap-3 p-3 bg-[var(--editorial-bg)] rounded-lg cursor-pointer hover:bg-[var(--editorial-border-subtle)] transition-colors">
                   <input
                     type="checkbox"
                     checked={deleteAfterMerge}
                     onChange={(e) => setDeleteAfterMerge(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-[var(--editorial-border)] text-blue-600 focus:ring-blue-500"
                   />
                   <div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    <span className="text-sm font-medium text-[var(--editorial-text-primary)]">
                       Delete "{mergeSource.name}" after merge
                     </span>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-[var(--editorial-text-secondary)] mt-0.5">
                       Remove the source {config.singular.toLowerCase()} from the database
                     </p>
                   </div>
@@ -1327,7 +1327,7 @@ export function DataManager({ type }: DataManagerProps) {
               </div>
 
               {/* Footer */}
-              <div className="flex-shrink-0 px-4 py-3 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3">
+              <div className="flex-shrink-0 px-4 py-3 border-t border-[var(--editorial-border)] flex justify-end gap-3">
                 <Button variant="ghost" onClick={closeMergeModal}>
                   Cancel
                 </Button>

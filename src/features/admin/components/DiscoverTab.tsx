@@ -40,7 +40,7 @@ export default function DiscoverTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--editorial-text-tertiary)]" />
       </div>
     );
   }
@@ -56,7 +56,7 @@ export default function DiscoverTab() {
   if (items.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-[var(--editorial-text-tertiary)]">
           No recommendations available. Run the fetch endpoint to discover new places.
         </p>
       </div>
@@ -65,18 +65,18 @@ export default function DiscoverTab() {
 
   return (
     <div className="space-y-6">
-      <div className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-xs text-[var(--editorial-text-tertiary)]">
         Showing {items.length} recommended places based on similarity to your curated destinations
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {items.map((p) => (
           <div
             key={p.place_id}
-            className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 hover:shadow-sm transition-shadow"
+            className="border border-[var(--editorial-border)] rounded-lg p-4 hover:shadow-sm transition-shadow"
           >
             <div className="text-sm font-medium mb-1">{p.name}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{p.city}</div>
-            <div className="text-xs text-gray-400 dark:text-gray-500">
+            <div className="text-xs text-[var(--editorial-text-secondary)] mb-2">{p.city}</div>
+            <div className="text-xs text-[var(--editorial-text-tertiary)]">
               Score: {p.score?.toFixed(3) || 'N/A'}
             </div>
           </div>

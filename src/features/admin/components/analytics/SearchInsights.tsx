@@ -125,8 +125,8 @@ export function SearchInsights() {
             onClick={() => setActiveTab('analytics')}
             className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
               activeTab === 'analytics'
-                ? 'font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'font-medium text-[var(--editorial-text-primary)] bg-[var(--editorial-border-subtle)]'
+                : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'
             }`}
           >
             Analytics
@@ -135,8 +135,8 @@ export function SearchInsights() {
             onClick={() => setActiveTab('logs')}
             className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
               activeTab === 'logs'
-                ? 'font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'font-medium text-[var(--editorial-text-primary)] bg-[var(--editorial-border-subtle)]'
+                : 'text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)]'
             }`}
           >
             Search Logs
@@ -145,7 +145,7 @@ export function SearchInsights() {
         <div className="flex items-center gap-3">
           <Select value={dateRange} onValueChange={(val) => setDateRange(val as DateRange)}>
             <SelectTrigger className="w-[130px]">
-              <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+              <Calendar className="w-4 h-4 mr-2 text-[var(--editorial-text-tertiary)]" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -165,7 +165,7 @@ export function SearchInsights() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+            <div key={i} className="rounded-xl border border-[var(--editorial-border)] p-6">
               <Skeleton className="h-4 w-24 mb-4" />
               <div className="space-y-2">
                 {Array.from({ length: 5 }).map((_, j) => (
@@ -180,9 +180,9 @@ export function SearchInsights() {
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       ) : logs.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-12 text-center">
-          <Search className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-          <p className="text-gray-500 dark:text-gray-400">No search activity recorded in this period.</p>
+        <div className="rounded-xl border border-[var(--editorial-border)] p-12 text-center">
+          <Search className="w-12 h-12 mx-auto mb-4 text-[var(--editorial-text-tertiary)]" />
+          <p className="text-[var(--editorial-text-secondary)]">No search activity recorded in this period.</p>
         </div>
       ) : activeTab === 'analytics' ? (
         <div className="space-y-6">
@@ -196,59 +196,59 @@ export function SearchInsights() {
 
           {/* Analytics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-gray-400" />
+            <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-6">
+              <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
                 Top Search Terms
               </h3>
               <div className="space-y-2">
                 {analytics?.topQueries.map(([query, count], i) => (
                   <div key={query} className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs text-gray-400 w-4">{i + 1}.</span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{query}</span>
+                      <span className="text-xs text-[var(--editorial-text-tertiary)] w-4">{i + 1}.</span>
+                      <span className="text-sm text-[var(--editorial-text-primary)] truncate">{query}</span>
                     </div>
                     <Badge variant="secondary" className="text-xs ml-2">{count}</Badge>
                   </div>
                 ))}
                 {(!analytics?.topQueries || analytics.topQueries.length === 0) && (
-                  <p className="text-xs text-gray-400">No search queries recorded</p>
+                  <p className="text-xs text-[var(--editorial-text-tertiary)]">No search queries recorded</p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-gray-400" />
+            <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-6">
+              <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
                 Top Cities Searched
               </h3>
               <div className="space-y-2">
                 {analytics?.topCities.map(([city, count]) => (
                   <div key={city} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{city}</span>
+                    <span className="text-sm text-[var(--editorial-text-primary)]">{city}</span>
                     <Badge variant="secondary" className="text-xs">{count}</Badge>
                   </div>
                 ))}
                 {(!analytics?.topCities || analytics.topCities.length === 0) && (
-                  <p className="text-xs text-gray-400">No city filters used</p>
+                  <p className="text-xs text-[var(--editorial-text-tertiary)]">No city filters used</p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-400" />
+            <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-6">
+              <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4 flex items-center gap-2">
+                <Filter className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
                 Top Categories
               </h3>
               <div className="space-y-2">
                 {analytics?.topCategories.map(([category, count]) => (
                   <div key={category} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{category}</span>
+                    <span className="text-sm text-[var(--editorial-text-primary)] capitalize">{category}</span>
                     <Badge variant="secondary" className="text-xs">{count}</Badge>
                   </div>
                 ))}
                 {(!analytics?.topCategories || analytics.topCategories.length === 0) && (
-                  <p className="text-xs text-gray-400">No category filters used</p>
+                  <p className="text-xs text-[var(--editorial-text-tertiary)]">No category filters used</p>
                 )}
               </div>
             </div>
@@ -275,18 +275,18 @@ export function SearchInsights() {
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
+        <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-6">
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs">
               <thead>
-                <tr className="text-left border-b border-gray-200 dark:border-gray-800">
-                  <th className="py-2 pr-4 font-medium text-gray-500">Time</th>
-                  <th className="py-2 pr-4 font-medium text-gray-500">User</th>
-                  <th className="py-2 pr-4 font-medium text-gray-500">Query</th>
-                  <th className="py-2 pr-4 font-medium text-gray-500">City</th>
-                  <th className="py-2 pr-4 font-medium text-gray-500">Category</th>
-                  <th className="py-2 pr-4 font-medium text-gray-500">Results</th>
-                  <th className="py-2 pr-4 font-medium text-gray-500">Source</th>
+                <tr className="text-left border-b border-[var(--editorial-border)]">
+                  <th className="py-2 pr-4 font-medium text-[var(--editorial-text-secondary)]">Time</th>
+                  <th className="py-2 pr-4 font-medium text-[var(--editorial-text-secondary)]">User</th>
+                  <th className="py-2 pr-4 font-medium text-[var(--editorial-text-secondary)]">Query</th>
+                  <th className="py-2 pr-4 font-medium text-[var(--editorial-text-secondary)]">City</th>
+                  <th className="py-2 pr-4 font-medium text-[var(--editorial-text-secondary)]">Category</th>
+                  <th className="py-2 pr-4 font-medium text-[var(--editorial-text-secondary)]">Results</th>
+                  <th className="py-2 pr-4 font-medium text-[var(--editorial-text-secondary)]">Source</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,7 +298,7 @@ export function SearchInsights() {
                   const count = (metadata.count as number) ?? '';
                   const source = (metadata.source as string) || '';
                   return (
-                    <tr key={log.id} className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                    <tr key={log.id} className="border-b border-[var(--editorial-border)] hover:bg-[var(--editorial-bg)] transition-colors">
                       <td className="py-2 pr-4 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
                       <td className="py-2 pr-4">{log.user_id ? log.user_id.substring(0, 8) : 'anon'}</td>
                       <td className="py-2 pr-4 max-w-[360px] truncate" title={q}>{q}</td>
@@ -319,7 +319,7 @@ export function SearchInsights() {
             </table>
           </div>
           {logs.length > 100 && (
-            <p className="text-xs text-gray-400 mt-4 text-center">
+            <p className="text-xs text-[var(--editorial-text-tertiary)] mt-4 text-center">
               Showing 100 of {logs.length} search logs
             </p>
           )}
@@ -334,13 +334,13 @@ function StatCard({ label, value, icon, warning = false }: { label: string; valu
     <div className={`rounded-xl border p-4 ${
       warning
         ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/20'
-        : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950'
+        : 'border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)]'
     }`}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
+        <span className="text-xs text-[var(--editorial-text-secondary)]">{label}</span>
       </div>
-      <p className="text-2xl font-semibold text-gray-900 dark:text-white tabular-nums">
+      <p className="text-2xl font-semibold text-[var(--editorial-text-primary)] tabular-nums">
         {value.toLocaleString()}
       </p>
     </div>

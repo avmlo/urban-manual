@@ -163,10 +163,10 @@ export function DataQualityWidget() {
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-20 bg-gray-100 dark:bg-gray-800 rounded" />
+            <div className="h-20 bg-[var(--editorial-border-subtle)] rounded" />
             <div className="space-y-3">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-12 bg-gray-100 dark:bg-gray-800 rounded" />
+                <div key={i} className="h-12 bg-[var(--editorial-border-subtle)] rounded" />
               ))}
             </div>
           </div>
@@ -193,9 +193,9 @@ export function DataQualityWidget() {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Overall Score */}
-        <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
+        <div className="p-4 rounded-lg bg-[var(--editorial-bg)] border border-[var(--editorial-border)]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-900 dark:text-white">Overall Score</span>
+            <span className="text-sm font-medium text-[var(--editorial-text-primary)]">Overall Score</span>
             <span className={`text-2xl font-bold ${getScoreColor(overallScore)}`}>
               {overallScore}%
             </span>
@@ -213,7 +213,7 @@ export function DataQualityWidget() {
             return (
               <div
                 key={metric.id}
-                className="group flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                className="group flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--editorial-border-subtle)] transition-colors cursor-pointer"
                 onClick={() => router.push(metric.filterHref)}
               >
                 <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${getIconBg(percentage)}`}>
@@ -222,8 +222,8 @@ export function DataQualityWidget() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{metric.label}</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-sm font-medium text-[var(--editorial-text-primary)]">{metric.label}</span>
+                    <span className="text-xs text-[var(--editorial-text-secondary)]">
                       {metric.passing}/{metric.total}
                     </span>
                   </div>
@@ -234,7 +234,7 @@ export function DataQualityWidget() {
                     </span>
                   </div>
                   {failing > 0 && (
-                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                    <div className="mt-1 flex items-center gap-1 text-xs text-[var(--editorial-text-secondary)]">
                       <AlertTriangle className="w-3 h-3" />
                       <span>{failing} need attention</span>
                     </div>
@@ -250,7 +250,7 @@ export function DataQualityWidget() {
         </div>
 
         {/* Quick Actions */}
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex gap-2">
+        <div className="pt-4 border-t border-[var(--editorial-border)] flex gap-2">
           <Button
             variant="outline"
             size="sm"

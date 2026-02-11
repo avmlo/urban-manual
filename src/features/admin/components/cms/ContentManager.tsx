@@ -592,13 +592,13 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
+          <p className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">
             {totalCount.toLocaleString()} destinations
           </p>
         </div>
         <button
           onClick={onCreateNew}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-black dark:text-white hover:opacity-60 transition-opacity"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--editorial-text-primary)] hover:opacity-60 transition-opacity"
         >
           <Plus className="w-3.5 h-3.5" />
           Add New
@@ -610,13 +610,13 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
         {/* Search + View Toggle */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />
             <Input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
-              className="pl-9 h-8 text-xs rounded-lg border-transparent bg-gray-50 dark:bg-gray-900/50 focus:border-gray-200 dark:focus:border-gray-700 focus:bg-white dark:focus:bg-gray-900"
+              className="pl-9 h-8 text-xs rounded-xl border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] focus:border-[var(--editorial-accent-muted)] focus:bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-primary)] placeholder:text-[var(--editorial-text-tertiary)]"
             />
           </div>
 
@@ -624,14 +624,14 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
             onClick={() => setShowFilters(!showFilters)}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
               showFilters || hasActiveFilters
-                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
             }`}
           >
             <SlidersHorizontal className="w-3 h-3" />
             <span>Filters</span>
             {activeFilterCount > 0 && (
-              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-full">
+              <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs bg-[var(--editorial-bg)] text-[var(--editorial-text-primary)] rounded-full">
                 {activeFilterCount}
               </span>
             )}
@@ -642,7 +642,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-150"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] transition-all duration-150"
                 >
                   <Columns3 className="w-3 h-3" />
                   <span className="hidden sm:inline">Columns</span>
@@ -651,7 +651,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 rounded-xl">
                 <div className="px-2 py-1.5">
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Toggle columns</p>
+                  <p className="text-xs font-medium text-[var(--editorial-text-secondary)]">Toggle columns</p>
                 </div>
                 <DropdownMenuSeparator />
                 {TABLE_COLUMNS.map((column) => (
@@ -674,15 +674,15 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
             </DropdownMenu>
           )}
 
-          <div className="hidden sm:flex items-center gap-0.5">
+          <div className="hidden sm:flex items-center gap-0.5 rounded-lg bg-[var(--editorial-border-subtle)]/60 p-0.5">
             <button
               onClick={() => setViewMode('table')}
               aria-label="Switch to table view"
               aria-pressed={viewMode === 'table'}
-              className={`p-1.5 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white focus-visible:outline-none ${
+              className={`p-1.5 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-[var(--editorial-accent)] focus-visible:outline-none ${
                 viewMode === 'table'
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  ? 'bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-primary)] shadow-sm'
+                  : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
               }`}
             >
               <LayoutList className="w-3.5 h-3.5" />
@@ -691,10 +691,10 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               onClick={() => setViewMode('grid')}
               aria-label="Switch to grid view"
               aria-pressed={viewMode === 'grid'}
-              className={`p-1.5 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white focus-visible:outline-none ${
+              className={`p-1.5 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-[var(--editorial-accent)] focus-visible:outline-none ${
                 viewMode === 'grid'
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  ? 'bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-primary)] shadow-sm'
+                  : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
@@ -704,7 +704,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800/50">
+          <div className="space-y-3 pt-3 border-t border-[var(--editorial-border)]">
             {/* Row 1: City, Category, Status */}
             <div className="flex flex-wrap items-center gap-1.5">
               {/* City Filter */}
@@ -713,8 +713,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                   <button
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
                       selectedCity
-                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                     }`}
                   >
                     <MapPin className="w-3 h-3" />
@@ -769,8 +769,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                   <button
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
                       selectedCategory
-                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                     }`}
                   >
                     <Tag className="w-3 h-3" />
@@ -801,8 +801,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                   <button
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
                       enrichedFilter !== 'all'
-                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                     }`}
                   >
                     <Sparkles className="w-3 h-3" />
@@ -830,8 +830,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                   <button
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
                       missingDataFilter !== 'all'
-                        ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                     }`}
                   >
                     <AlertTriangle className="w-3 h-3" />
@@ -864,8 +864,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                 onClick={() => setCrownOnly(!crownOnly)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
                   crownOnly
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                    : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                 }`}
               >
                 <Crown className="w-3 h-3 text-amber-500" />
@@ -875,8 +875,8 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                 onClick={() => setMichelinOnly(!michelinOnly)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
                   michelinOnly
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                    : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                 }`}
               >
                 <img src="/michelin-star.svg" alt="Michelin" className="w-3 h-3" />
@@ -886,7 +886,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-1 px-2 py-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1.5 text-xs text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
                 >
                   <X className="w-3 h-3" />
                   <span>Clear</span>
@@ -895,10 +895,10 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
 
               {/* Sort + Show - right aligned */}
               <div className="flex items-center gap-1.5 ml-auto">
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Sort</span>
+                <span className="text-xs text-[var(--editorial-text-tertiary)] uppercase tracking-wider">Sort</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-150">
+                    <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] transition-all duration-150">
                       <span>{getSortLabel(sortField, sortOrder)}</span>
                       <ChevronDown className="w-3 h-3 opacity-50" />
                     </button>
@@ -916,10 +916,10 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <span className="text-xs text-gray-400 uppercase tracking-wider">Show</span>
+                <span className="text-xs text-[var(--editorial-text-tertiary)] uppercase tracking-wider">Show</span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-150">
+                    <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] transition-all duration-150">
                       <span>{itemsPerPage}</span>
                       <ChevronDown className="w-3 h-3 opacity-50" />
                     </button>
@@ -938,23 +938,23 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
 
       {/* Bulk Actions - Fixed floating bar */}
       {selectedItems.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-gray-900/95 dark:bg-gray-100/95 backdrop-blur-sm text-white dark:text-gray-900 rounded-xl shadow-2xl border border-gray-700/50 dark:border-gray-300/50">
-          <Badge variant="secondary" className="font-medium whitespace-nowrap bg-white/15 dark:bg-gray-900/15 text-white dark:text-gray-900 border-0">{selectedItems.size} selected</Badge>
-          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-[var(--editorial-text-primary)]/95 backdrop-blur-md text-[var(--editorial-bg)] rounded-xl shadow-2xl border border-[var(--editorial-border)]/30">
+          <Badge variant="secondary" className="font-medium whitespace-nowrap bg-[var(--editorial-bg)]/15 text-[var(--editorial-bg)] border-0">{selectedItems.size} selected</Badge>
+          <Separator orientation="vertical" className="h-5 bg-[var(--editorial-bg)]/20" />
 
           {/* Actions */}
           <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide">
             {/* Category Change */}
             <Popover open={showBulkCategoryModal} onOpenChange={setShowBulkCategoryModal}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" disabled={bulkActionLoading} className="shrink-0 text-white dark:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10">
+                <Button variant="ghost" size="sm" disabled={bulkActionLoading} className="shrink-0 text-[var(--editorial-bg)] hover:bg-[var(--editorial-bg)]/10">
                   <Tag className="w-3.5 h-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">Category</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-2" align="start" side="top">
                 <div className="space-y-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 px-2">Change category to:</p>
+                  <p className="text-xs text-[var(--editorial-text-secondary)] px-2">Change category to:</p>
                   {CATEGORIES.map((cat) => (
                     <Button
                       key={cat}
@@ -974,7 +974,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
             {/* Crown Toggle */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" disabled={bulkActionLoading} className="shrink-0 text-white dark:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10">
+                <Button variant="ghost" size="sm" disabled={bulkActionLoading} className="shrink-0 text-[var(--editorial-bg)] hover:bg-[var(--editorial-bg)]/10">
                   <Crown className="w-3.5 h-3.5 sm:mr-1.5 text-amber-400" />
                   <span className="hidden sm:inline">Crown</span>
                   <ChevronDown className="w-3 h-3 ml-1" />
@@ -998,7 +998,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               size="sm"
               onClick={handleBulkEnrich}
               disabled={bulkActionLoading}
-              className="shrink-0 text-white dark:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10"
+              className="shrink-0 text-[var(--editorial-bg)] hover:bg-[var(--editorial-bg)]/10"
             >
               {bulkActionLoading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin sm:mr-1.5" />
@@ -1014,13 +1014,13 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               size="sm"
               onClick={handleExportSelected}
               disabled={bulkActionLoading}
-              className="shrink-0 text-white dark:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10"
+              className="shrink-0 text-[var(--editorial-bg)] hover:bg-[var(--editorial-bg)]/10"
             >
               <Download className="w-3.5 h-3.5 sm:mr-1.5" />
               <span className="hidden sm:inline">Export</span>
             </Button>
 
-            <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20 shrink-0" />
+            <Separator orientation="vertical" className="h-5 bg-[var(--editorial-bg)]/20 shrink-0" />
 
             {/* Delete */}
             <Button
@@ -1035,13 +1035,13 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
             </Button>
           </div>
 
-          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
+          <Separator orientation="vertical" className="h-5 bg-[var(--editorial-bg)]/20" />
 
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSelectedItems(new Set())}
-            className="shrink-0 text-white/70 dark:text-gray-900/70 hover:text-white dark:hover:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10"
+            className="shrink-0 text-[var(--editorial-bg)]/70 hover:text-[var(--editorial-bg)] hover:bg-[var(--editorial-bg)]/10"
           >
             <X className="w-3.5 h-3.5 sm:mr-1.5" />
             <span className="hidden sm:inline">Clear</span>
@@ -1087,7 +1087,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4" role="navigation" aria-label="Pagination">
           <div className="flex items-center gap-3 order-2 sm:order-1">
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
+            <p className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">
               {((page - 1) * itemsPerPage) + 1}–{Math.min(page * itemsPerPage, totalCount)} of {totalCount.toLocaleString()}
             </p>
           </div>
@@ -1096,7 +1096,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page === 1}
               aria-label="Go to previous page"
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 disabled:pointer-events-none transition-colors focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white focus-visible:outline-none"
+              className="p-2 rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] disabled:opacity-30 disabled:pointer-events-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--editorial-accent)] focus-visible:outline-none"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -1120,10 +1120,10 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                     onClick={() => setPage(pageNum)}
                     aria-label={`Go to page ${pageNum}`}
                     aria-current={page === pageNum ? 'page' : undefined}
-                    className={`w-7 h-7 rounded-md text-[11px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white focus-visible:outline-none ${
+                    className={`w-7 h-7 rounded-md text-[11px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-[var(--editorial-accent)] focus-visible:outline-none ${
                       page === pageNum
-                        ? 'bg-black text-white dark:bg-white dark:text-black'
-                        : 'text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)]'
                     }`}
                   >
                     {pageNum}
@@ -1135,7 +1135,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
               aria-label="Go to next page"
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 disabled:pointer-events-none transition-colors focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white focus-visible:outline-none"
+              className="p-2 rounded-lg text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] disabled:opacity-30 disabled:pointer-events-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--editorial-accent)] focus-visible:outline-none"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -1181,8 +1181,8 @@ function TableView({
       onClick={() => handleSort(field)}
       className={`flex items-center gap-1 text-[11px] uppercase tracking-wider font-medium transition-colors ${
         sortField === field
-          ? 'text-black/60 dark:text-gray-300'
-          : 'text-black/25 dark:text-gray-600 hover:text-black/50 dark:hover:text-gray-400'
+          ? 'text-[var(--editorial-text-secondary)]'
+          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
       }`}
     >
       {children}
@@ -1194,20 +1194,20 @@ function TableView({
   const renderCell = (columnId: ColumnId, dest: Destination) => {
     switch (columnId) {
       case 'city':
-        return <span className="text-[13px] text-gray-400 dark:text-gray-500">{dest.city || '—'}</span>;
+        return <span className="text-[13px] text-[var(--editorial-text-tertiary)]">{dest.city || '—'}</span>;
       case 'neighborhood':
-        return <span className="text-[13px] text-gray-400 dark:text-gray-500">{dest.neighborhood || '—'}</span>;
+        return <span className="text-[13px] text-[var(--editorial-text-tertiary)]">{dest.neighborhood || '—'}</span>;
       case 'category':
-        return <span className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">{dest.category}</span>;
+        return <span className="text-[11px] text-[var(--editorial-text-secondary)] capitalize">{dest.category}</span>;
       case 'completeness': {
         const score = getCompletenessScore(dest);
-        const color = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600';
+        const color = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-amber-400' : 'bg-[var(--editorial-border)]';
         return (
           <div className="flex items-center gap-1.5">
-            <div className="w-12 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+            <div className="w-12 h-1.5 rounded-full bg-[var(--editorial-border-subtle)] overflow-hidden">
               <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${score}%` }} />
             </div>
-            <span className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">{score}%</span>
+            <span className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums">{score}%</span>
           </div>
         );
       }
@@ -1218,27 +1218,27 @@ function TableView({
               <Check className="w-3 h-3 text-green-500 dark:text-green-400" />
             )}
             {dest.image && (
-              <ImageIcon className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+              <ImageIcon className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
             )}
           </div>
         );
       case 'rating':
         return dest.rating ? (
-          <span className="inline-flex items-center gap-1 text-[13px] text-gray-400 dark:text-gray-500">
+          <span className="inline-flex items-center gap-1 text-[13px] text-[var(--editorial-text-tertiary)]">
             <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
             {dest.rating.toFixed(1)}
           </span>
         ) : (
-          <span className="text-[13px] text-gray-300 dark:text-gray-600">—</span>
+          <span className="text-[13px] text-[var(--editorial-text-tertiary)]">—</span>
         );
       case 'address':
         return (
-          <span className="text-[11px] text-gray-400 dark:text-gray-500 truncate max-w-[200px] block">
+          <span className="text-[11px] text-[var(--editorial-text-tertiary)] truncate max-w-[200px] block">
             {dest.formatted_address || '—'}
           </span>
         );
       case 'brand':
-        return <span className="text-[13px] text-gray-400 dark:text-gray-500">{dest.brand || '—'}</span>;
+        return <span className="text-[13px] text-[var(--editorial-text-tertiary)]">{dest.brand || '—'}</span>;
       default:
         return null;
     }
@@ -1253,7 +1253,7 @@ function TableView({
       return <SortButton field={column.sortField}>{column.label}</SortButton>;
     }
     return (
-      <span className="text-[11px] uppercase tracking-wider text-black/25 dark:text-gray-600 font-medium">
+      <span className="text-[11px] uppercase tracking-wider text-[var(--editorial-text-tertiary)] font-medium">
         {column.label}
       </span>
     );
@@ -1263,7 +1263,7 @@ function TableView({
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-100 dark:border-gray-800/50">
+          <tr className="border-b border-[var(--editorial-border)]">
             <th className="w-8 pl-0 pr-2 py-2 text-left">
               <Checkbox
                 checked={selectedItems.size === destinations.length && destinations.length > 0}
@@ -1281,14 +1281,14 @@ function TableView({
             <th className="w-8 px-2 py-2" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50 dark:divide-gray-800/30">
+        <tbody className="divide-y divide-[var(--editorial-border-subtle)]">
           {destinations.map((dest) => (
             <tr
               key={dest.id}
               className={`group transition-colors ${
                 selectedItems.has(dest.id!)
-                  ? 'bg-gray-50 dark:bg-gray-900/50'
-                  : 'hover:bg-gray-50/50 dark:hover:bg-gray-900/20'
+                  ? 'bg-[var(--editorial-border-subtle)]/50'
+                  : 'hover:bg-[var(--editorial-border-subtle)]/30'
               }`}
             >
               <td className="pl-0 pr-2 py-2">
@@ -1302,18 +1302,18 @@ function TableView({
                   onClick={() => onEdit?.(dest)}
                   className="flex items-center gap-2.5 text-left group/cell"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--editorial-border-subtle)] overflow-hidden flex-shrink-0">
                     {dest.image ? (
                       <img src={dest.image} alt={dest.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+                        <ImageIcon className="w-3 h-3 text-[var(--editorial-text-tertiary)]" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[13px] text-gray-900 dark:text-white truncate group-hover/cell:opacity-60 transition-opacity">{dest.name}</span>
+                      <span className="text-[13px] text-[var(--editorial-text-primary)] truncate group-hover/cell:opacity-60 transition-opacity">{dest.name}</span>
                       {dest.crown && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
                       {dest.michelin_stars != null && dest.michelin_stars > 0 && (
                         <div className="flex items-center gap-0.5">
@@ -1323,7 +1323,7 @@ function TableView({
                         </div>
                       )}
                     </div>
-                    <span className="text-[11px] text-gray-400 dark:text-gray-500 truncate block">{dest.slug}</span>
+                    <span className="text-[11px] text-[var(--editorial-text-tertiary)] truncate block">{dest.slug}</span>
                   </div>
                 </button>
               </td>
@@ -1376,9 +1376,9 @@ function GridView({
       {destinations.map((dest) => (
         <div key={dest.id} className="relative">
           {/* Selection overlay */}
-          <div className={`absolute inset-0 z-10 pointer-events-none rounded-lg transition-all ${
+          <div className={`absolute inset-0 z-10 pointer-events-none rounded-xl transition-all ${
             selectedItems.has(dest.id!)
-              ? 'ring-1 ring-gray-400 dark:ring-gray-500 bg-black/5 dark:bg-white/5'
+              ? 'ring-1 ring-[var(--editorial-accent-muted)] bg-[var(--editorial-accent)]/5'
               : ''
           }`} />
 
@@ -1387,7 +1387,7 @@ function GridView({
             <Checkbox
               checked={selectedItems.has(dest.id!)}
               onCheckedChange={() => toggleSelect(dest.id!)}
-              className="bg-white/90 dark:bg-gray-900/90 shadow-sm"
+              className="bg-[var(--editorial-bg-elevated)]/90 shadow-sm"
             />
           </div>
 
@@ -1418,13 +1418,13 @@ function GridView({
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <div className="absolute inset-0 w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600">
+                <div className="absolute inset-0 w-full h-full flex items-center justify-center text-[var(--editorial-text-tertiary)]">
                   <MapPin className="h-8 w-8 opacity-20" />
                 </div>
               )}
               {/* Michelin stars badge */}
               {dest.michelin_stars != null && dest.michelin_stars > 0 && (
-                <div className="absolute bottom-2 left-2 bg-white dark:bg-gray-900 px-2 py-1 rounded text-xs font-medium flex items-center gap-0.5">
+                <div className="absolute bottom-2 left-2 bg-[var(--editorial-bg-elevated)] px-2 py-1 rounded text-xs font-medium flex items-center gap-0.5">
                   {Array.from({ length: dest.michelin_stars }).map((_, i) => (
                     <img key={i} src="/michelin-star.svg" alt="Michelin" className="w-3 h-3" />
                   ))}
@@ -1432,7 +1432,7 @@ function GridView({
               )}
               {/* Crown badge */}
               {dest.crown && (
-                <div className="absolute bottom-2 right-2 bg-white dark:bg-gray-900 p-1.5 rounded">
+                <div className="absolute bottom-2 right-2 bg-[var(--editorial-bg-elevated)] p-1.5 rounded">
                   <Crown className="w-3.5 h-3.5 text-amber-500" />
                 </div>
               )}
@@ -1442,7 +1442,7 @@ function GridView({
               <div className={CARD_META}>
                 <MapPin className="h-3 w-3" />
                 <span>{dest.city}</span>
-                <span className="text-gray-300 dark:text-gray-600">·</span>
+                <span className="text-[var(--editorial-text-tertiary)]">·</span>
                 <span className="capitalize">{dest.category}</span>
               </div>
             </div>
@@ -1476,7 +1476,7 @@ function RowActions({
         <Button
           variant="ghost"
           size="icon"
-          className={compact ? 'bg-white/90 dark:bg-gray-900/90 shadow-sm h-8 w-8' : 'h-8 w-8'}
+          className={compact ? 'bg-[var(--editorial-bg-elevated)]/90 shadow-sm h-8 w-8' : 'h-8 w-8'}
         >
           <MoreVertical className="w-4 h-4" />
         </Button>
@@ -1549,10 +1549,10 @@ function LoadingState({ viewMode }: { viewMode: ViewMode }) {
 function EmptyState({ hasFilters, onClearFilters }: { hasFilters: boolean; onClearFilters: () => void }) {
   return (
     <div className="text-center py-16">
-      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-        <Search className="w-5 h-5 text-gray-400" />
+      <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[var(--editorial-border-subtle)] flex items-center justify-center">
+        <Search className="w-5 h-5 text-[var(--editorial-text-tertiary)]" />
       </div>
-      <p className="text-gray-600 dark:text-gray-400 mb-2">No destinations found</p>
+      <p className="text-[var(--editorial-text-secondary)] mb-2">No destinations found</p>
       {hasFilters && (
         <Button variant="link" onClick={onClearFilters}>
           Clear filters

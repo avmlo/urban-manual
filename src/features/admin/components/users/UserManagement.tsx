@@ -132,37 +132,37 @@ export function UserManagement() {
     <div className="space-y-8 fade-in">
       {/* Stats - Matches design system */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="text-2xl font-light mb-1">{stats.totalUsers.toLocaleString()}</div>
           )}
-          <div className="text-xs text-gray-500">Total Users</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)]">Total Users</div>
         </div>
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="text-2xl font-light mb-1">{stats.activeUsers.toLocaleString()}</div>
           )}
-          <div className="text-xs text-gray-500">Active (7d)</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)]">Active (7d)</div>
         </div>
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="text-2xl font-light mb-1">{stats.newUsersThisMonth.toLocaleString()}</div>
           )}
-          <div className="text-xs text-gray-500">New This Month</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)]">New This Month</div>
         </div>
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="text-2xl font-light mb-1">{stats.adminUsers.toLocaleString()}</div>
           )}
-          <div className="text-xs text-gray-500">Admins</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)]">Admins</div>
         </div>
       </div>
 
@@ -177,20 +177,20 @@ export function UserManagement() {
       {/* Search & Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--editorial-text-tertiary)]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search users..."
-            className="w-full pl-10 pr-4 py-2.5 bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600"
+            className="w-full pl-10 pr-4 py-2.5 bg-transparent border border-[var(--editorial-border)] rounded-lg text-sm placeholder-[var(--editorial-text-tertiary)] focus:outline-none focus:border-[var(--editorial-border)]"
           />
         </div>
 
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-4 py-2.5 bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-gray-400 dark:focus:border-gray-600"
+          className="px-4 py-2.5 bg-transparent border border-[var(--editorial-border)] rounded-md text-sm text-[var(--editorial-text-primary)] focus:outline-none focus:border-[var(--editorial-border)]"
         >
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
@@ -199,22 +199,22 @@ export function UserManagement() {
       </div>
 
       {/* Users Table */}
-      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="divide-y divide-[var(--editorial-border-subtle)]">
         {loading ? (
           Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse" />
+                <div className="w-10 h-10 bg-[var(--editorial-border-subtle)] rounded-full animate-pulse" />
                 <div>
-                  <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
-                  <div className="h-3 w-40 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
+                  <div className="h-3 w-40 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
                 </div>
               </div>
-              <div className="h-4 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+              <div className="h-4 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
             </div>
           ))
         ) : users.length === 0 ? (
-          <div className="py-12 text-center text-gray-500">
+          <div className="py-12 text-center text-[var(--editorial-text-secondary)]">
             <Users className="w-8 h-8 mx-auto mb-3 opacity-50" />
             <p className="text-sm">No users found</p>
           </div>
@@ -222,7 +222,7 @@ export function UserManagement() {
           users.map((user) => (
             <div key={user.id} className="py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[var(--editorial-border-subtle)] flex items-center justify-center flex-shrink-0">
                   {user.user_metadata.avatar_url ? (
                     <img
                       src={user.user_metadata.avatar_url}
@@ -230,7 +230,7 @@ export function UserManagement() {
                       className="w-full h-full rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <span className="text-sm font-medium text-[var(--editorial-text-secondary)]">
                       {user.email.charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -239,10 +239,10 @@ export function UserManagement() {
                   <p className="text-sm font-medium truncate">
                     {user.user_metadata.full_name || user.email.split('@')[0]}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 text-xs text-[var(--editorial-text-secondary)]">
                     <span className="truncate">{user.email}</span>
                     {user.app_metadata.role === 'admin' && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md text-xs font-medium">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[var(--editorial-border-subtle)] rounded-md text-xs font-medium">
                         <ShieldCheck className="w-2.5 h-2.5" />
                         Admin
                       </span>
@@ -252,7 +252,7 @@ export function UserManagement() {
               </div>
 
               <div className="flex items-center gap-6">
-                <div className="hidden sm:flex items-center gap-4 text-xs text-gray-500">
+                <div className="hidden sm:flex items-center gap-4 text-xs text-[var(--editorial-text-secondary)]">
                   <div className="flex items-center gap-1">
                     <Bookmark className="w-3.5 h-3.5" />
                     <span className="tabular-nums">{user.saved_count}</span>
@@ -263,7 +263,7 @@ export function UserManagement() {
                   </div>
                   <span className={`${
                     user.last_sign_in_at && new Date(user.last_sign_in_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                      ? 'text-gray-700 dark:text-gray-300'
+                      ? 'text-[var(--editorial-text-primary)]'
                       : ''
                   }`}>
                     {getTimeAgo(user.last_sign_in_at)}
@@ -273,7 +273,7 @@ export function UserManagement() {
                 <div className="relative">
                   <button
                     onClick={() => setActiveDropdown(activeDropdown === user.id ? null : user.id)}
-                    className="p-1.5 rounded-full text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-1.5 rounded-full text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
                   >
                     <MoreVertical className="w-4 h-4" />
                   </button>
@@ -284,28 +284,28 @@ export function UserManagement() {
                         className="fixed inset-0 z-10"
                         onClick={() => setActiveDropdown(null)}
                       />
-                      <div className="absolute right-0 top-full mt-1 w-48 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg z-20 py-2 overflow-hidden">
+                      <div className="absolute right-0 top-full mt-1 w-48 rounded-lg bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] shadow-lg z-20 py-2 overflow-hidden">
                         <button
                           onClick={() => {
                             setSelectedUser(user);
                             setActiveDropdown(null);
                           }}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors"
                         >
                           <Eye className="w-4 h-4" />
                           View Details
                         </button>
-                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                        <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors">
                           <Mail className="w-4 h-4" />
                           Send Email
                         </button>
                         {user.app_metadata.role !== 'admin' && (
-                          <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                          <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] transition-colors">
                             <Crown className="w-4 h-4" />
                             Make Admin
                           </button>
                         )}
-                        <div className="my-1 border-t border-gray-200 dark:border-gray-800" />
+                        <div className="my-1 border-t border-[var(--editorial-border)]" />
                         <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
                           <Ban className="w-4 h-4" />
                           Suspend User
@@ -326,17 +326,17 @@ export function UserManagement() {
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
-            className="p-2 rounded-full text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="p-2 rounded-full text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] disabled:opacity-50 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-[var(--editorial-text-secondary)]">
             Page {page} of {totalPages}
           </span>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
-            className="p-2 rounded-full text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="p-2 rounded-full text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)] disabled:opacity-50 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -350,12 +350,12 @@ export function UserManagement() {
           onClick={() => setSelectedUser(null)}
         >
           <div
-            className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800"
+            className="w-full max-w-lg bg-[var(--editorial-bg-elevated)] rounded-lg overflow-hidden border border-[var(--editorial-border)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-[var(--editorial-border-subtle)] flex items-center justify-center">
                   {selectedUser.user_metadata.avatar_url ? (
                     <img
                       src={selectedUser.user_metadata.avatar_url}
@@ -363,7 +363,7 @@ export function UserManagement() {
                       className="w-full h-full rounded-full object-cover"
                     />
                   ) : (
-                    <span className="text-xl font-medium text-gray-600 dark:text-gray-400">
+                    <span className="text-xl font-medium text-[var(--editorial-text-secondary)]">
                       {selectedUser.email.charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -372,9 +372,9 @@ export function UserManagement() {
                   <h2 className="text-xl font-light">
                     {selectedUser.user_metadata.full_name || selectedUser.email.split('@')[0]}
                   </h2>
-                  <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                  <p className="text-sm text-[var(--editorial-text-secondary)]">{selectedUser.email}</p>
                   {selectedUser.app_metadata.role === 'admin' && (
-                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-md text-xs font-medium">
+                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-[var(--editorial-border-subtle)] rounded-md text-xs font-medium">
                       <ShieldCheck className="w-3 h-3" />
                       Admin
                     </span>
@@ -383,40 +383,40 @@ export function UserManagement() {
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Saved Places</p>
+                <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
+                  <p className="text-xs text-[var(--editorial-text-secondary)] mb-1">Saved Places</p>
                   <p className="text-2xl font-light">{selectedUser.saved_count}</p>
                 </div>
-                <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Visited</p>
+                <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
+                  <p className="text-xs text-[var(--editorial-text-secondary)] mb-1">Visited</p>
                   <p className="text-2xl font-light">{selectedUser.visited_count}</p>
                 </div>
               </div>
 
-              <div className="mt-6 divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="mt-6 divide-y divide-[var(--editorial-border-subtle)]">
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-sm text-gray-500">Joined</span>
+                  <span className="text-sm text-[var(--editorial-text-secondary)]">Joined</span>
                   <span className="text-sm">{formatDate(selectedUser.created_at)}</span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-sm text-gray-500">Last Active</span>
+                  <span className="text-sm text-[var(--editorial-text-secondary)]">Last Active</span>
                   <span className="text-sm">{getTimeAgo(selectedUser.last_sign_in_at)}</span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-sm text-gray-500">Provider</span>
+                  <span className="text-sm text-[var(--editorial-text-secondary)]">Provider</span>
                   <span className="text-sm capitalize">{selectedUser.app_metadata.provider || 'email'}</span>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 flex items-center justify-end gap-3">
+            <div className="px-6 py-4 bg-[var(--editorial-bg)] border-t border-[var(--editorial-border)] flex items-center justify-end gap-3">
               <button
                 onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 text-sm text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+                className="px-4 py-2 text-sm text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
               >
                 Close
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium transition-colors hover:opacity-80">
+              <button className="flex items-center gap-2 px-4 py-2 bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)] rounded-xl text-sm font-medium transition-colors hover:opacity-80">
                 <Mail className="w-4 h-4" />
                 Send Email
               </button>

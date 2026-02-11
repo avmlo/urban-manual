@@ -54,7 +54,7 @@ export function AdminNav() {
       <div className="sm:hidden">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="flex items-center justify-between w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm font-medium text-gray-900 dark:text-white"
+          className="flex items-center justify-between w-full px-3 py-2 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-xl text-sm font-medium text-[var(--editorial-text-primary)]"
           aria-expanded={mobileMenuOpen}
           aria-label="Toggle admin navigation"
         >
@@ -70,7 +70,7 @@ export function AdminNav() {
         </button>
 
         {mobileMenuOpen && (
-          <div className="mt-2 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg max-h-[60vh] overflow-y-auto">
+          <div className="absolute left-0 right-0 mt-1 mx-4 py-1 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-xl shadow-lg z-50 max-h-[60vh] overflow-y-auto">
             {NAV_LINKS.map((link) => {
               const Icon = link.icon;
               const isActive = activeValue === link.value;
@@ -78,10 +78,10 @@ export function AdminNav() {
                 <button
                   key={link.value}
                   onClick={() => handleNavigation(link.href)}
-                  className={`flex items-center gap-3 w-full px-4 py-3 text-sm transition-colors ${
+                  className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-colors ${
                     isActive
-                      ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-medium'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-900/50'
+                      ? 'text-[var(--editorial-text-primary)] font-medium bg-[var(--editorial-border-subtle)]'
+                      : 'text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -93,26 +93,24 @@ export function AdminNav() {
         )}
       </div>
 
-      {/* Desktop Navigation - Minimal text tabs matching account page */}
-      <div className="hidden sm:block">
-        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
-          {NAV_LINKS.map((link) => {
-            const isActive = activeValue === link.value;
-            return (
-              <button
-                key={link.value}
-                onClick={() => handleNavigation(link.href)}
-                className={`transition-all ${
-                  isActive
-                    ? 'font-medium text-black dark:text-white'
-                    : 'font-medium text-black/30 dark:text-gray-500 hover:text-black/60 dark:hover:text-gray-300'
-                }`}
-              >
-                {link.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* Desktop Navigation - Pill tabs matching trip detail page */}
+      <div className="hidden sm:flex items-center gap-0.5 rounded-full bg-[var(--editorial-border-subtle)]/60 p-0.5">
+        {NAV_LINKS.map((link) => {
+          const isActive = activeValue === link.value;
+          return (
+            <button
+              key={link.value}
+              onClick={() => handleNavigation(link.href)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                isActive
+                  ? 'bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)]'
+                  : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)]'
+              }`}
+            >
+              {link.label}
+            </button>
+          );
+        })}
       </div>
     </>
   );

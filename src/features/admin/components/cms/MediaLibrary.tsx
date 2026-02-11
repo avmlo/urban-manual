@@ -258,7 +258,7 @@ export function MediaLibrary() {
     <div className="space-y-8 fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 text-xs text-gray-500">
+        <div className="flex items-center gap-3 text-xs text-[var(--editorial-text-secondary)]">
           <HardDrive className="w-4 h-4" />
           <span>{formatFileSize(storageUsed)} used</span>
           <Separator orientation="vertical" className="h-4" />
@@ -303,7 +303,7 @@ export function MediaLibrary() {
       {/* Search & View Toggle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--editorial-text-tertiary)]" />
           <Input
             type="text"
             value={searchQuery}
@@ -316,12 +316,12 @@ export function MediaLibrary() {
           />
         </div>
 
-        <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-800 rounded-lg p-0.5">
+        <div className="flex items-center gap-1 border border-[var(--editorial-border)] rounded-lg p-0.5">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setViewMode('grid')}
-            className={viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}
+            className={viewMode === 'grid' ? 'bg-[var(--editorial-border-subtle)]' : ''}
           >
             <Grid className="w-4 h-4" />
           </Button>
@@ -329,7 +329,7 @@ export function MediaLibrary() {
             variant="ghost"
             size="icon"
             onClick={() => setViewMode('list')}
-            className={viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}
+            className={viewMode === 'list' ? 'bg-[var(--editorial-border-subtle)]' : ''}
           >
             <List className="w-4 h-4" />
           </Button>
@@ -338,9 +338,9 @@ export function MediaLibrary() {
 
       {/* Bulk Actions - Fixed floating bar */}
       {selectedItems.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-gray-900/95 dark:bg-gray-100/95 backdrop-blur-sm text-white dark:text-gray-900 rounded-xl shadow-2xl border border-gray-700/50 dark:border-gray-300/50">
-          <Badge variant="secondary" className="font-medium whitespace-nowrap bg-white/15 dark:bg-gray-900/15 text-white dark:text-gray-900 border-0">{selectedItems.size} selected</Badge>
-          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-[var(--editorial-bg-elevated)] backdrop-blur-sm text-[var(--editorial-text-primary)] rounded-xl shadow-2xl border border-[var(--editorial-border)]">
+          <Badge variant="secondary" className="font-medium whitespace-nowrap bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-primary)] border-0">{selectedItems.size} selected</Badge>
+          <Separator orientation="vertical" className="h-5 bg-[var(--editorial-border)]" />
           <Button
             variant="ghost"
             size="sm"
@@ -356,12 +356,12 @@ export function MediaLibrary() {
             <Trash2 className="w-3 h-3 mr-1" />
             Delete
           </Button>
-          <Separator orientation="vertical" className="h-5 bg-white/20 dark:bg-gray-900/20" />
+          <Separator orientation="vertical" className="h-5 bg-[var(--editorial-border)]" />
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSelectedItems(new Set())}
-            className="shrink-0 text-white/70 dark:text-gray-900/70 hover:text-white dark:hover:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10"
+            className="shrink-0 text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)]"
           >
             <X className="w-3 h-3 mr-1" />
             Clear
@@ -380,7 +380,7 @@ export function MediaLibrary() {
           ))}
         </div>
       ) : media.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-[var(--editorial-text-secondary)]">
           <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p className="text-sm">{searchQuery ? 'No files match your search' : 'No media files yet'}</p>
           <p className="text-xs mt-1">Upload files to get started</p>
@@ -391,10 +391,10 @@ export function MediaLibrary() {
             <div
               key={item.id}
               className={`
-                group relative aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border transition-all cursor-pointer
+                group relative aspect-square rounded-lg overflow-hidden bg-[var(--editorial-border-subtle)] border transition-all cursor-pointer
                 ${selectedItems.has(item.id)
-                  ? 'ring-1 ring-gray-400 dark:ring-gray-500 bg-black/5 dark:bg-white/5'
-                  : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
+                  ? 'ring-1 ring-[var(--editorial-border)] bg-[var(--editorial-bg)]'
+                  : 'border-transparent hover:border-[var(--editorial-border)]'}
               `}
               onClick={() => setSelectedMedia(item)}
             >
@@ -407,7 +407,7 @@ export function MediaLibrary() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <ImageIcon className="w-8 h-8 text-gray-400" />
+                  <ImageIcon className="w-8 h-8 text-[var(--editorial-text-tertiary)]" />
                 </div>
               )}
 
@@ -425,7 +425,7 @@ export function MediaLibrary() {
                     ? 'bg-black dark:bg-white border-black dark:border-white'
                     : 'border-white/70 bg-black/20 opacity-0 group-hover:opacity-100'}
                 `}>
-                  {selectedItems.has(item.id) && <Check className="w-3 h-3 text-white dark:text-black" />}
+                  {selectedItems.has(item.id) && <Check className="w-3 h-3 text-[var(--editorial-bg)]" />}
                 </div>
               </div>
 
@@ -452,11 +452,11 @@ export function MediaLibrary() {
           ))}
         </div>
       ) : (
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="divide-y divide-[var(--editorial-border-subtle)]">
           {media.map((item) => (
             <div
               key={item.id}
-              className={`py-3 flex items-center justify-between ${selectedItems.has(item.id) ? 'bg-gray-50 dark:bg-gray-900 -mx-4 px-4' : ''}`}
+              className={`py-3 flex items-center justify-between ${selectedItems.has(item.id) ? 'bg-[var(--editorial-bg)] -mx-4 px-4' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <Checkbox
@@ -464,24 +464,24 @@ export function MediaLibrary() {
                   onCheckedChange={() => toggleSelect(item.id)}
                 />
                 <div
-                  className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden flex-shrink-0 cursor-pointer"
+                  className="w-10 h-10 rounded-xl bg-[var(--editorial-border-subtle)] overflow-hidden flex-shrink-0 cursor-pointer"
                   onClick={() => setSelectedMedia(item)}
                 >
                   {item.type === 'image' ? (
                     <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-4 h-4 text-gray-400" />
+                      <ImageIcon className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
                     </div>
                   )}
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm truncate">{item.name}</p>
-                  <p className="text-xs text-gray-500">{formatFileSize(item.size)}</p>
+                  <p className="text-xs text-[var(--editorial-text-secondary)]">{formatFileSize(item.size)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--editorial-text-tertiary)]">
                   {new Date(item.created_at).toLocaleDateString()}
                 </span>
                 <Button
@@ -517,7 +517,7 @@ export function MediaLibrary() {
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-[var(--editorial-text-secondary)]">
             Page {page} of {totalPages}
           </span>
           <Button
@@ -543,18 +543,18 @@ export function MediaLibrary() {
                 <img
                   src={selectedMedia.url}
                   alt={selectedMedia.name}
-                  className="w-full max-h-[70vh] object-contain bg-gray-100 dark:bg-gray-800"
+                  className="w-full max-h-[70vh] object-contain bg-[var(--editorial-border-subtle)]"
                 />
               ) : (
-                <div className="w-full h-64 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                  <ImageIcon className="w-16 h-16 text-gray-400" />
+                <div className="w-full h-64 flex items-center justify-center bg-[var(--editorial-border-subtle)]">
+                  <ImageIcon className="w-16 h-16 text-[var(--editorial-text-tertiary)]" />
                 </div>
               )}
               <div className="p-6">
                 <DialogHeader>
                   <DialogTitle className="truncate">{selectedMedia.name}</DialogTitle>
                 </DialogHeader>
-                <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+                <div className="mt-2 flex items-center gap-4 text-xs text-[var(--editorial-text-secondary)]">
                   <span>{formatFileSize(selectedMedia.size)}</span>
                   <span>{new Date(selectedMedia.created_at).toLocaleDateString()}</span>
                 </div>

@@ -72,33 +72,32 @@ export function MetricCard({
     : ArrowDown;
 
   const trendColor = change === undefined || change === 0
-    ? 'text-gray-500'
+    ? 'text-[var(--editorial-text-tertiary)]'
     : change > 0
-    ? 'text-emerald-400'
-    : 'text-rose-400';
+    ? 'text-emerald-500 dark:text-emerald-400'
+    : 'text-rose-500 dark:text-rose-400';
 
   return (
     <div
       className={`
-        relative rounded-xl border bg-gray-900/50 backdrop-blur-sm p-5 overflow-hidden
-        ${classes.border} hover:border-opacity-40 transition-all duration-200
-        hover:shadow-lg ${classes.glow}
+        relative rounded-xl border bg-[var(--editorial-bg-elevated)] p-5 overflow-hidden
+        border-[var(--editorial-border)] hover:shadow-sm transition-all duration-200
         ${size === 'large' ? 'col-span-2' : ''}
       `}
     >
-      {/* Subtle gradient background */}
-      <div className={`absolute inset-0 ${classes.bg} opacity-30`} />
+      {/* Subtle accent tint */}
+      <div className={`absolute inset-0 ${classes.bg} opacity-20`} />
 
       <div className="relative">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-xs uppercase tracking-wider text-gray-500 font-medium">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--editorial-text-tertiary)] font-semibold">
               {title}
             </p>
             {loading ? (
-              <div className="mt-2 h-8 w-24 bg-gray-800 rounded animate-pulse" />
+              <div className="mt-2 h-8 w-24 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
             ) : (
-              <p className={`mt-2 font-semibold text-white ${size === 'large' ? 'text-4xl' : 'text-2xl'}`}>
+              <p className={`mt-2 font-semibold text-[var(--editorial-text-primary)] ${size === 'large' ? 'text-4xl' : 'text-2xl'}`}>
                 {typeof value === 'number' ? value.toLocaleString() : value}
               </p>
             )}
@@ -117,7 +116,7 @@ export function MetricCard({
               {change > 0 ? '+' : ''}{change.toFixed(1)}%
             </span>
             {changeLabel && (
-              <span className="text-xs text-gray-500 ml-1">
+              <span className="text-xs text-[var(--editorial-text-tertiary)] ml-1">
                 {changeLabel}
               </span>
             )}

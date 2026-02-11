@@ -99,8 +99,8 @@ export function RealTimeAnalytics() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Real-Time Analytics</h1>
-          <p className="mt-1 text-sm text-gray-400">
+          <h1 className="text-2xl font-semibold text-[var(--editorial-text-primary)]">Real-Time Analytics</h1>
+          <p className="mt-1 text-sm text-[var(--editorial-text-tertiary)]">
             Live activity on your platform right now
           </p>
         </div>
@@ -109,7 +109,7 @@ export function RealTimeAnalytics() {
             w-2 h-2 rounded-full transition-all
             ${pulse ? 'bg-emerald-400 shadow-lg shadow-emerald-400/50' : 'bg-emerald-500'}
           `} />
-          <span className="text-xs text-gray-500">Live</span>
+          <span className="text-xs text-[var(--editorial-text-secondary)]">Live</span>
         </div>
       </div>
 
@@ -124,12 +124,12 @@ export function RealTimeAnalytics() {
               <span className="text-xs uppercase tracking-wider font-medium">Active Users</span>
             </div>
             <p className={`
-              text-5xl font-bold text-white mt-3 transition-all
+              text-5xl font-bold text-[var(--editorial-text-primary)] mt-3 transition-all
               ${pulse ? 'scale-105' : 'scale-100'}
             `}>
               {metrics.activeUsers}
             </p>
-            <p className="text-xs text-gray-500 mt-2">Currently on site</p>
+            <p className="text-xs text-[var(--editorial-text-secondary)] mt-2">Currently on site</p>
           </div>
         </div>
 
@@ -142,12 +142,12 @@ export function RealTimeAnalytics() {
               <span className="text-xs uppercase tracking-wider font-medium">Page Views</span>
             </div>
             <p className={`
-              text-5xl font-bold text-white mt-3 transition-all
+              text-5xl font-bold text-[var(--editorial-text-primary)] mt-3 transition-all
               ${pulse ? 'scale-105' : 'scale-100'}
             `}>
               {metrics.pageViews}
             </p>
-            <p className="text-xs text-gray-500 mt-2">Last 5 minutes</p>
+            <p className="text-xs text-[var(--editorial-text-secondary)] mt-2">Last 5 minutes</p>
           </div>
         </div>
 
@@ -160,21 +160,21 @@ export function RealTimeAnalytics() {
               <span className="text-xs uppercase tracking-wider font-medium">Views/Min</span>
             </div>
             <p className={`
-              text-5xl font-bold text-white mt-3 transition-all
+              text-5xl font-bold text-[var(--editorial-text-primary)] mt-3 transition-all
               ${pulse ? 'scale-105' : 'scale-100'}
             `}>
               {Math.round(metrics.pageViews / 5)}
             </p>
-            <p className="text-xs text-gray-500 mt-2">Average rate</p>
+            <p className="text-xs text-[var(--editorial-text-secondary)] mt-2">Average rate</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Pages */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-          <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-gray-500" />
+        <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-5">
+          <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[var(--editorial-text-secondary)]" />
             Active Pages
           </h3>
           <div className="space-y-3">
@@ -183,13 +183,13 @@ export function RealTimeAnalytics() {
                 <div className="flex items-center gap-3 min-w-0">
                   <span className={`
                     w-2 h-2 rounded-full
-                    ${i === 0 ? 'bg-emerald-400' : i < 3 ? 'bg-indigo-400' : 'bg-gray-500'}
+                    ${i === 0 ? 'bg-emerald-400' : i < 3 ? 'bg-indigo-400' : 'bg-[var(--editorial-text-secondary)]'}
                   `} />
-                  <span className="text-sm text-gray-300 truncate">{page.page}</span>
+                  <span className="text-sm text-[var(--editorial-text-secondary)] truncate">{page.page}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-white font-medium">{page.users}</span>
-                  <Users className="w-3 h-3 text-gray-500" />
+                  <span className="text-sm text-[var(--editorial-text-primary)] font-medium">{page.users}</span>
+                  <Users className="w-3 h-3 text-[var(--editorial-text-secondary)]" />
                 </div>
               </div>
             ))}
@@ -197,9 +197,9 @@ export function RealTimeAnalytics() {
         </div>
 
         {/* Live Event Feed */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-          <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-            <Zap className="w-4 h-4 text-gray-500" />
+        <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-5">
+          <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[var(--editorial-text-secondary)]" />
             Live Feed
           </h3>
           <div className="space-y-3">
@@ -212,8 +212,8 @@ export function RealTimeAnalytics() {
                   {eventIcons[event.type]}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-gray-300 truncate">{event.detail}</p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                  <p className="text-sm text-[var(--editorial-text-secondary)] truncate">{event.detail}</p>
+                  <p className="text-xs text-[var(--editorial-text-secondary)] flex items-center gap-1 mt-0.5">
                     <Clock className="w-3 h-3" />
                     {formatTimeAgo(event.time)}
                   </p>
@@ -224,9 +224,9 @@ export function RealTimeAnalytics() {
         </div>
 
         {/* User Locations */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-          <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-            <Globe className="w-4 h-4 text-gray-500" />
+        <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-5">
+          <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4 flex items-center gap-2">
+            <Globe className="w-4 h-4 text-[var(--editorial-text-secondary)]" />
             Active Locations
           </h3>
           <div className="space-y-3">
@@ -234,9 +234,9 @@ export function RealTimeAnalytics() {
               <div key={i} className="flex items-center justify-between py-1">
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{getCountryFlag(loc.country)}</span>
-                  <span className="text-sm text-gray-300">{loc.city}</span>
+                  <span className="text-sm text-[var(--editorial-text-secondary)]">{loc.city}</span>
                 </div>
-                <span className="text-xs text-gray-500">{loc.country}</span>
+                <span className="text-xs text-[var(--editorial-text-secondary)]">{loc.country}</span>
               </div>
             ))}
           </div>
@@ -244,8 +244,8 @@ export function RealTimeAnalytics() {
       </div>
 
       {/* Traffic Heatmap Placeholder */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-        <h3 className="text-sm font-medium text-white mb-4">Traffic Activity (24h)</h3>
+      <div className="rounded-xl border border-[var(--editorial-border)] bg-[var(--editorial-bg-elevated)] p-5">
+        <h3 className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4">Traffic Activity (24h)</h3>
         <div className="grid grid-cols-24 gap-1">
           {Array.from({ length: 24 }).map((_, hour) => {
             const intensity = Math.random();
@@ -259,7 +259,7 @@ export function RealTimeAnalytics() {
                   title={`${hour}:00 - ${Math.round(intensity * 100)} views`}
                 />
                 {hour % 4 === 0 && (
-                  <span className="text-xs text-gray-500 block text-center">{hour}h</span>
+                  <span className="text-xs text-[var(--editorial-text-secondary)] block text-center">{hour}h</span>
                 )}
               </div>
             );

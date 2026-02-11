@@ -147,7 +147,7 @@ export function HomepageVisualEditor() {
 
   if (isLoading) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-[var(--editorial-text-secondary)]">
         Loading homepage configuration...
       </div>
     );
@@ -158,18 +158,18 @@ export function HomepageVisualEditor() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-[var(--editorial-text-primary)] flex items-center gap-2">
             <Layout className="h-5 w-5" />
             Homepage Visual Editor
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-[var(--editorial-text-secondary)] mt-1">
             Configure homepage sections and layout visually
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={resetConfig}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-[var(--editorial-text-primary)] bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-lg hover:bg-[var(--editorial-border-subtle)] transition-colors flex items-center gap-2"
           >
             <RotateCcw className="h-4 w-4" />
             Reset
@@ -177,7 +177,7 @@ export function HomepageVisualEditor() {
           <button
             onClick={saveConfig}
             disabled={!hasChanges || isSaving}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-[var(--editorial-bg)] bg-[var(--editorial-text-primary)] rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             <Save className="h-4 w-4" />
             {isSaving ? 'Saving...' : 'Save Changes'}
@@ -186,8 +186,8 @@ export function HomepageVisualEditor() {
       </div>
 
       {/* Hero Section */}
-      <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-6 bg-white dark:bg-gray-900">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="border border-[var(--editorial-border)] rounded-xl p-6 bg-[var(--editorial-bg-elevated)]">
+        <h3 className="text-lg font-semibold mb-4 text-[var(--editorial-text-primary)] flex items-center gap-2">
           <Search className="h-4 w-4" />
           Hero Section
         </h3>
@@ -214,20 +214,20 @@ export function HomepageVisualEditor() {
       </div>
 
       {/* Layout Section */}
-      <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-6 bg-white dark:bg-gray-900">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="border border-[var(--editorial-border)] rounded-xl p-6 bg-[var(--editorial-bg-elevated)]">
+        <h3 className="text-lg font-semibold mb-4 text-[var(--editorial-text-primary)] flex items-center gap-2">
           <Grid3x3 className="h-4 w-4" />
           Layout Settings
         </h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[var(--editorial-text-primary)] mb-2">
               Default View
             </label>
             <select
               value={config.layout.defaultView}
               onChange={(e) => updateConfig('layout', 'defaultView', e.target.value as 'grid' | 'map')}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 text-sm border border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-primary)]"
             >
               <option value="grid">Grid</option>
               <option value="map">Map</option>
@@ -240,7 +240,7 @@ export function HomepageVisualEditor() {
             onChange={(enabled) => updateConfig('layout', 'showViewToggle', enabled)}
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[var(--editorial-text-primary)] mb-2">
               Grid Columns
             </label>
             <input
@@ -249,15 +249,15 @@ export function HomepageVisualEditor() {
               max="6"
               value={config.layout.gridColumns}
               onChange={(e) => updateConfig('layout', 'gridColumns', parseInt(e.target.value))}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 text-sm border border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)] text-[var(--editorial-text-primary)]"
             />
           </div>
         </div>
       </div>
 
       {/* Sections */}
-      <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-6 bg-white dark:bg-gray-900">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="border border-[var(--editorial-border)] rounded-xl p-6 bg-[var(--editorial-bg-elevated)]">
+        <h3 className="text-lg font-semibold mb-4 text-[var(--editorial-text-primary)] flex items-center gap-2">
           <Settings className="h-4 w-4" />
           Homepage Sections
         </h3>
@@ -293,8 +293,8 @@ export function HomepageVisualEditor() {
       </div>
 
       {/* Navigation */}
-      <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-6 bg-white dark:bg-gray-900">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="border border-[var(--editorial-border)] rounded-xl p-6 bg-[var(--editorial-bg-elevated)]">
+        <h3 className="text-lg font-semibold mb-4 text-[var(--editorial-text-primary)] flex items-center gap-2">
           <Map className="h-4 w-4" />
           Navigation Elements
         </h3>
@@ -341,20 +341,20 @@ interface ToggleOptionProps {
 
 function ToggleOption({ label, description, enabled, onChange, icon: Icon }: ToggleOptionProps) {
   return (
-    <div className="flex items-start justify-between p-4 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+    <div className="flex items-start justify-between p-4 border border-[var(--editorial-border)] rounded-lg hover:bg-[var(--editorial-bg)] transition-colors">
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          {Icon && <Icon className="h-4 w-4 text-gray-500 dark:text-gray-400" />}
-          <label className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
+          {Icon && <Icon className="h-4 w-4 text-[var(--editorial-text-secondary)]" />}
+          <label className="text-sm font-medium text-[var(--editorial-text-primary)] cursor-pointer">
             {label}
           </label>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+        <p className="text-xs text-[var(--editorial-text-secondary)]">{description}</p>
       </div>
       <button
         onClick={() => onChange(!enabled)}
-        className={`ml-4 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${
-          enabled ? 'bg-gray-900 dark:bg-gray-100' : 'bg-gray-200 dark:bg-gray-700'
+        className={`ml-4 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--editorial-text-secondary)] focus:ring-offset-2 ${
+          enabled ? 'bg-[var(--editorial-text-primary)]' : 'bg-[var(--editorial-border)]'
         }`}
         role="switch"
         aria-checked={enabled}

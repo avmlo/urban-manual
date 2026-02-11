@@ -107,10 +107,10 @@ export function AdvancedAnalyticsDashboard() {
   if (error && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-gray-500 mb-4">{error}</p>
+        <p className="text-[var(--editorial-text-secondary)] mb-4">{error}</p>
         <button
           onClick={fetchAnalytics}
-          className="text-sm text-black dark:text-white hover:underline"
+          className="text-sm text-[var(--editorial-text-primary)] hover:underline"
         >
           Try again
         </button>
@@ -129,8 +129,8 @@ export function AdvancedAnalyticsDashboard() {
               onClick={() => setDateRange(range)}
               className={`transition-all ${
                 dateRange === range
-                  ? 'font-medium text-black dark:text-white'
-                  : 'font-medium text-black/30 dark:text-gray-500 hover:text-black/60 dark:hover:text-gray-300'
+                  ? 'font-medium text-[var(--editorial-text-primary)]'
+                  : 'font-medium text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)]'
               }`}
             >
               {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
@@ -141,13 +141,13 @@ export function AdvancedAnalyticsDashboard() {
           <button
             onClick={fetchAnalytics}
             disabled={refreshing}
-            className="p-2 text-gray-400 hover:text-black dark:hover:text-white transition-colors disabled:opacity-50"
+            className="p-2 text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 text-xs text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+            className="flex items-center gap-2 text-xs text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors"
           >
             <Download className="w-4 h-4" />
             Export
@@ -157,66 +157,66 @@ export function AdvancedAnalyticsDashboard() {
 
       {/* Primary Stats - Matches account page style */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-light">{data?.totalViews.toLocaleString()}</span>
               <TrendIndicator value={data?.viewsTrend || 0} />
             </div>
           )}
-          <div className="text-xs text-gray-500 mt-1">Page Views</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)] mt-1">Page Views</div>
         </div>
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-light">{data?.totalSearches.toLocaleString()}</span>
               <TrendIndicator value={data?.searchesTrend || 0} />
             </div>
           )}
-          <div className="text-xs text-gray-500 mt-1">Searches</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)] mt-1">Searches</div>
         </div>
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-light">{data?.totalSaves.toLocaleString()}</span>
               <TrendIndicator value={data?.savesTrend || 0} />
             </div>
           )}
-          <div className="text-xs text-gray-500 mt-1">Saves</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)] mt-1">Saves</div>
         </div>
-        <div className="p-4 border border-gray-200 dark:border-gray-800 rounded-lg">
+        <div className="p-4 border border-[var(--editorial-border)] rounded-lg">
           {loading ? (
-            <div className="h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse mb-1" />
+            <div className="h-8 w-16 bg-[var(--editorial-border-subtle)] rounded animate-pulse mb-1" />
           ) : (
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-light">{data?.totalUsers.toLocaleString()}</span>
               <TrendIndicator value={data?.usersTrend || 0} />
             </div>
           )}
-          <div className="text-xs text-gray-500 mt-1">Users</div>
+          <div className="text-xs text-[var(--editorial-text-secondary)] mt-1">Users</div>
         </div>
       </div>
 
       {/* Daily Views Chart - Simple bar chart */}
       <div>
-        <h2 className="text-xs font-medium mb-4 text-gray-500 dark:text-gray-400">Daily Views</h2>
+        <h2 className="text-xs font-medium mb-4 text-[var(--editorial-text-secondary)]">Daily Views</h2>
         {loading ? (
-          <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+          <div className="h-32 bg-[var(--editorial-border-subtle)] rounded-lg animate-pulse" />
         ) : (
           <div className="flex items-end gap-1 h-32">
             {data?.dailyViews.map((day, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
                 <div
-                  className="w-full bg-gray-900 dark:bg-white rounded-t transition-all"
+                  className="w-full bg-[var(--editorial-text-primary)] rounded-t transition-all"
                   style={{ height: `${(day.value / maxViews) * 100}%`, minHeight: '2px' }}
                 />
-                <span className="text-[9px] text-gray-400 truncate w-full text-center">
+                <span className="text-[9px] text-[var(--editorial-text-tertiary)] truncate w-full text-center">
                   {i % Math.ceil(data.dailyViews.length / 7) === 0 ? day.label : ''}
                 </span>
               </div>
@@ -229,28 +229,28 @@ export function AdvancedAnalyticsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Top Destinations */}
         <div>
-          <h2 className="text-xs font-medium mb-4 text-gray-500 dark:text-gray-400">Top Destinations</h2>
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <h2 className="text-xs font-medium mb-4 text-[var(--editorial-text-secondary)]">Top Destinations</h2>
+          <div className="divide-y divide-[var(--editorial-border-subtle)]">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="py-3 flex justify-between">
-                  <div className="h-4 w-32 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                  <div className="h-4 w-12 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
+                  <div className="h-4 w-12 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
                 </div>
               ))
             ) : data?.topDestinations.length === 0 ? (
-              <p className="py-8 text-sm text-gray-400 text-center">No destination views yet</p>
+              <p className="py-8 text-sm text-[var(--editorial-text-tertiary)] text-center">No destination views yet</p>
             ) : (
               data?.topDestinations.slice(0, 8).map((dest, i) => (
                 <div key={i} className="py-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 w-4">{i + 1}</span>
+                    <span className="text-xs text-[var(--editorial-text-tertiary)] w-4">{i + 1}</span>
                     <div>
                       <p className="text-sm">{dest.name}</p>
-                      <p className="text-xs text-gray-400">{dest.city}</p>
+                      <p className="text-xs text-[var(--editorial-text-tertiary)]">{dest.city}</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500 tabular-nums">{dest.views.toLocaleString()}</span>
+                  <span className="text-xs text-[var(--editorial-text-secondary)] tabular-nums">{dest.views.toLocaleString()}</span>
                 </div>
               ))
             )}
@@ -259,22 +259,22 @@ export function AdvancedAnalyticsDashboard() {
 
         {/* Top Searches */}
         <div>
-          <h2 className="text-xs font-medium mb-4 text-gray-500 dark:text-gray-400">Popular Searches</h2>
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <h2 className="text-xs font-medium mb-4 text-[var(--editorial-text-secondary)]">Popular Searches</h2>
+          <div className="divide-y divide-[var(--editorial-border-subtle)]">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="py-3 flex justify-between">
-                  <div className="h-4 w-40 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                  <div className="h-4 w-12 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                  <div className="h-4 w-40 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
+                  <div className="h-4 w-12 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
                 </div>
               ))
             ) : data?.topSearches.length === 0 ? (
-              <p className="py-8 text-sm text-gray-400 text-center">No search queries yet</p>
+              <p className="py-8 text-sm text-[var(--editorial-text-tertiary)] text-center">No search queries yet</p>
             ) : (
               data?.topSearches.map((search, i) => (
                 <div key={i} className="py-3 flex items-center justify-between">
                   <span className="text-sm">{search.query}</span>
-                  <span className="text-xs text-gray-500 tabular-nums">{search.count.toLocaleString()}</span>
+                  <span className="text-xs text-[var(--editorial-text-secondary)] tabular-nums">{search.count.toLocaleString()}</span>
                 </div>
               ))
             )}
@@ -284,17 +284,17 @@ export function AdvancedAnalyticsDashboard() {
 
       {/* Category Breakdown */}
       <div>
-        <h2 className="text-xs font-medium mb-4 text-gray-500 dark:text-gray-400">Content by Category</h2>
+        <h2 className="text-xs font-medium mb-4 text-[var(--editorial-text-secondary)]">Content by Category</h2>
         <div className="flex flex-wrap gap-4">
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-12 w-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+              <div key={i} className="h-12 w-24 bg-[var(--editorial-border-subtle)] rounded-lg animate-pulse" />
             ))
           ) : (
             data?.categoryBreakdown.map((cat, i) => (
-              <div key={i} className="px-4 py-3 border border-gray-200 dark:border-gray-800 rounded-lg">
+              <div key={i} className="px-4 py-3 border border-[var(--editorial-border)] rounded-lg">
                 <div className="text-lg font-light">{cat.count}</div>
-                <div className="text-xs text-gray-500 capitalize">{cat.category}</div>
+                <div className="text-xs text-[var(--editorial-text-secondary)] capitalize">{cat.category}</div>
               </div>
             ))
           )}
@@ -303,25 +303,25 @@ export function AdvancedAnalyticsDashboard() {
 
       {/* Cities */}
       <div>
-        <h2 className="text-xs font-medium mb-4 text-gray-500 dark:text-gray-400">Destinations by City</h2>
+        <h2 className="text-xs font-medium mb-4 text-[var(--editorial-text-secondary)]">Destinations by City</h2>
         <div className="space-y-3">
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="space-y-1.5">
-                <div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full" />
+                <div className="h-4 w-24 bg-[var(--editorial-border-subtle)] rounded animate-pulse" />
+                <div className="h-1.5 bg-[var(--editorial-border-subtle)] rounded-full" />
               </div>
             ))
           ) : (
             data?.topCities.map((city, i) => (
               <div key={i} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700 dark:text-gray-300">{city.city}</span>
-                  <span className="text-gray-400 tabular-nums">{city.count}</span>
+                  <span className="text-[var(--editorial-text-primary)]">{city.city}</span>
+                  <span className="text-[var(--editorial-text-tertiary)] tabular-nums">{city.count}</span>
                 </div>
-                <div className="h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-1 bg-[var(--editorial-border-subtle)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gray-900 dark:bg-white rounded-full"
+                    className="h-full bg-[var(--editorial-text-primary)] rounded-full"
                     style={{
                       width: `${(city.count / (data?.topCities[0]?.count || 1)) * 100}%`,
                     }}

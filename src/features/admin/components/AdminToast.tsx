@@ -62,18 +62,18 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
   const borderColors: Record<ToastVariant, string> = {
     success: 'border-green-200 dark:border-green-800',
     error: 'border-red-200 dark:border-red-800',
-    info: 'border-gray-200 dark:border-gray-700',
+    info: 'border-[var(--editorial-border)]',
   };
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border bg-white dark:bg-gray-900 shadow-lg animate-in slide-in-from-right-full duration-200 ${borderColors[toast.variant]}`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg border bg-[var(--editorial-bg-elevated)] shadow-lg animate-in slide-in-from-right-full duration-200 ${borderColors[toast.variant]}`}
     >
       {icons[toast.variant]}
-      <p className="text-sm text-gray-900 dark:text-white flex-1">{toast.message}</p>
+      <p className="text-sm text-[var(--editorial-text-primary)] flex-1">{toast.message}</p>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+        className="p-1 rounded text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] transition-colors"
       >
         <X className="w-3.5 h-3.5" />
       </button>

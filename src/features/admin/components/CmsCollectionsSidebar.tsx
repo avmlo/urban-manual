@@ -57,7 +57,10 @@ export function CmsCollectionsSidebar() {
   );
 
   return (
-    <nav className="w-48 flex-shrink-0 pr-6 border-r border-gray-100 dark:border-gray-800/60 mr-8 pt-1">
+    <nav className="w-48 flex-shrink-0 pr-6 border-r border-[var(--editorial-border)] mr-8 pt-1">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--editorial-text-tertiary)] mb-3 px-0.5">
+        Collections
+      </p>
       <div className="space-y-0.5">
         {COLLECTIONS.map((col) => {
           const Icon = col.icon;
@@ -66,10 +69,10 @@ export function CmsCollectionsSidebar() {
             <button
               key={col.id}
               onClick={() => router.push(col.href)}
-              className={`w-full flex items-center justify-between py-1.5 text-[13px] transition-colors ${
+              className={`w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-[13px] transition-all ${
                 isActive
-                  ? 'text-black dark:text-white font-medium'
-                  : 'text-black/30 dark:text-gray-500 hover:text-black dark:hover:text-white'
+                  ? 'text-[var(--editorial-text-primary)] font-medium bg-[var(--editorial-border-subtle)]'
+                  : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] hover:bg-[var(--editorial-border-subtle)]/50'
               }`}
             >
               <span className="flex items-center gap-2 min-w-0">
@@ -77,7 +80,7 @@ export function CmsCollectionsSidebar() {
                 <span className="truncate">{col.label}</span>
               </span>
               {counts[col.id] !== undefined && (
-                <span className="text-[11px] tabular-nums opacity-60">
+                <span className="text-[11px] font-mono tabular-nums text-[var(--editorial-text-tertiary)]">
                   {counts[col.id]}
                 </span>
               )}

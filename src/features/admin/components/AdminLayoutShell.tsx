@@ -37,10 +37,10 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
 
   if (loading || (!isAdmin && !loading)) {
     return (
-      <main className="w-full px-6 md:px-10 py-20">
+      <main className="w-full px-6 md:px-10 py-20 bg-[var(--editorial-bg)] min-h-screen">
         <div className="min-h-[60vh] flex flex-col items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          <Loader2 className="h-5 w-5 animate-spin text-[var(--editorial-text-tertiary)]" />
+          <p className="mt-3 text-sm text-[var(--editorial-text-secondary)]">
             Checking access...
           </p>
         </div>
@@ -51,36 +51,34 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
   return (
     <>
     <CommandPalette />
-    <main className="w-full px-4 sm:px-6 md:px-10 py-16 sm:py-20 min-h-screen">
-      <div className="w-full max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 sm:mb-12">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h1 className="text-xl sm:text-2xl font-light">Admin</h1>
-            <div className="flex items-center gap-3">
-              <kbd className="hidden sm:inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 font-mono">
-                <span className="text-xs">⌘</span>K
-              </kbd>
-              <Link
-                href="/"
-                className="text-xs font-medium text-gray-500 hover:text-black dark:hover:text-white transition-colors px-3 py-1.5 -mr-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                Exit
-              </Link>
-            </div>
+    <main className="w-full min-h-screen bg-[var(--editorial-bg)]">
+      {/* Sticky toolbar header - mirrors trip detail toolbar */}
+      <div className="sticky top-0 z-40 flex items-center gap-2 px-4 sm:px-6 md:px-10 h-12 bg-[var(--editorial-bg)]/95 backdrop-blur-md border-b border-[var(--editorial-border)]/50">
+        <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-sm font-semibold text-[var(--editorial-text-primary)]">Admin</h1>
+            <AdminNav />
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:block text-[11px] text-[var(--editorial-text-tertiary)] truncate max-w-[160px]">{user?.email}</span>
+            <kbd className="hidden sm:inline-flex items-center gap-1 text-[10px] text-[var(--editorial-text-tertiary)] font-mono px-1.5 py-0.5 rounded-md border border-[var(--editorial-border-subtle)]">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+            <Link
+              href="/"
+              className="text-xs font-medium text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors px-2.5 py-1 rounded-md hover:bg-[var(--editorial-border-subtle)]"
+            >
+              Exit
+            </Link>
+          </div>
         </div>
+      </div>
 
-        {/* Tab Navigation */}
-        <div className="mb-8 sm:mb-12">
-          <AdminNav />
-        </div>
-
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-10 py-8 sm:py-10">
         {/* Content - CMS pages get a sidebar */}
         <AdminToastProvider>
           {isCmsPage ? (
-            <div className="flex gap-0" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            <div className="flex gap-0" style={{ minHeight: 'calc(100vh - 200px)' }}>
               {/* Collections Sidebar - hidden on mobile */}
               <div className="hidden md:block flex-shrink-0">
                 <CmsCollectionsSidebar />

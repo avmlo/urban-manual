@@ -113,7 +113,7 @@ export function DashboardOverview() {
   return (
     <div className="space-y-10">
       {/* Key numbers */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-y-6">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-y-6 gap-x-4">
         <Metric label="Destinations" value={stats?.totalDestinations} loading={loading} />
         <Metric label="Enriched" value={stats?.enrichedDestinations} loading={loading} sub={stats ? `${Math.round((stats.enrichedDestinations / Math.max(stats.totalDestinations, 1)) * 100)}%` : undefined} />
         <Metric label="Crown Picks" value={stats?.crownPicks} loading={loading} />
@@ -122,14 +122,14 @@ export function DashboardOverview() {
         <Metric label="Users" value={stats?.activeUsers} loading={loading} />
       </div>
 
-      {/* Attention items - compact inline */}
+      {/* Attention items - compact inline pills */}
       {!loading && attentionItems.length > 0 && (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {attentionItems.map((item) => (
             <button
               key={item.label}
               onClick={() => router.push('/admin/enrich')}
-              className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+              className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-100/80 dark:bg-amber-900/25 border border-amber-200/60 dark:border-amber-800/40 rounded-xl px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
             >
               {item.icon}
               <span>{item.count} {item.label}</span>
@@ -141,19 +141,19 @@ export function DashboardOverview() {
       {/* Two columns: Recent + Cities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Recent additions */}
-        <div>
+        <div className="rounded-xl bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[var(--editorial-text-tertiary)]">
               Recently Added
             </h3>
             <Link
               href="/admin/destinations"
-              className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+              className="flex items-center gap-1 text-[11px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors"
             >
               View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-800/60">
+          <div className="divide-y divide-[var(--editorial-border-subtle)]">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="py-2.5 flex items-center justify-between">
@@ -169,12 +169,12 @@ export function DashboardOverview() {
                   className="py-2.5 flex items-center justify-between group"
                 >
                   <div className="min-w-0">
-                    <p className="text-[13px] text-black dark:text-white group-hover:opacity-60 transition-opacity truncate">
+                    <p className="text-[13px] text-[var(--editorial-text-primary)] group-hover:opacity-60 transition-opacity truncate">
                       {dest.name}
                     </p>
-                    <p className="text-[11px] text-gray-400">{dest.city}</p>
+                    <p className="text-[11px] text-[var(--editorial-text-tertiary)]">{dest.city}</p>
                   </div>
-                  <span className="text-[11px] text-gray-400 capitalize flex-shrink-0 ml-4">
+                  <span className="text-[11px] text-[var(--editorial-text-tertiary)] capitalize flex-shrink-0 ml-4">
                     {dest.category}
                   </span>
                 </Link>
@@ -184,8 +184,8 @@ export function DashboardOverview() {
         </div>
 
         {/* Top cities */}
-        <div>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">
+        <div className="rounded-xl bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] p-5">
+          <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[var(--editorial-text-tertiary)] mb-4">
             By City
           </h3>
           <div className="space-y-2.5">
@@ -196,14 +196,14 @@ export function DashboardOverview() {
             ) : (
               stats?.topCities.map((city) => (
                 <div key={city.city} className="flex items-center gap-3">
-                  <span className="text-[13px] text-gray-700 dark:text-gray-300 w-24 truncate">{city.city}</span>
+                  <span className="text-[13px] text-[var(--editorial-text-secondary)] w-24 truncate">{city.city}</span>
                   <div className="flex-1">
                     <Progress
                       value={(city.count / (stats?.topCities[0]?.count || 1)) * 100}
                       className="h-1"
                     />
                   </div>
-                  <span className="text-[11px] text-gray-400 tabular-nums w-6 text-right">{city.count}</span>
+                  <span className="text-[11px] text-[var(--editorial-text-tertiary)] tabular-nums w-6 text-right">{city.count}</span>
                 </div>
               ))
             )}
@@ -213,7 +213,7 @@ export function DashboardOverview() {
 
       {/* This week summary */}
       {!loading && stats && stats.addedThisWeek > 0 && (
-        <p className="text-[11px] text-gray-400">
+        <p className="text-[11px] text-[var(--editorial-text-tertiary)]">
           +{stats.addedThisWeek} destination{stats.addedThisWeek !== 1 ? 's' : ''} added this week
         </p>
       )}
@@ -224,13 +224,13 @@ export function DashboardOverview() {
 function Metric({ label, value, loading, sub }: { label: string; value?: number; loading: boolean; sub?: string }) {
   return (
     <div>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-0.5">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--editorial-text-tertiary)] mb-0.5">{label}</p>
       {loading ? (
         <Skeleton className="h-6 w-12" />
       ) : (
-        <p className="text-lg font-medium text-black dark:text-white tabular-nums">
+        <p className="text-lg font-medium text-[var(--editorial-text-primary)] tabular-nums">
           {(value || 0).toLocaleString()}
-          {sub && <span className="text-[11px] text-gray-400 font-normal ml-1.5">{sub}</span>}
+          {sub && <span className="text-[11px] text-[var(--editorial-text-tertiary)] font-normal ml-1.5">{sub}</span>}
         </p>
       )}
     </div>

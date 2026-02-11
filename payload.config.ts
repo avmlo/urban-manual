@@ -18,8 +18,11 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.POSTGRES_URL || "",
+      ssl: {
+        rejectUnauthorized: false,
+      },
     },
-    push: false,
+    push: true,
     disableCreateDatabase: true,
     idType: "serial",
     migrationDir: "./payload-migrations",

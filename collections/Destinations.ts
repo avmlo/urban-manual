@@ -71,24 +71,10 @@ export const Destinations: CollectionConfig = {
               fields: [
                 {
                   name: "category",
-                  type: "select",
-                  options: [
-                    "Restaurant",
-                    "Hotel",
-                    "Bar",
-                    "Cafe",
-                    "Shopping",
-                    "Museum",
-                    "Gallery",
-                    "Landmark",
-                    "Park",
-                    "Beach",
-                    "Spa",
-                    "Club",
-                    "Theater",
-                    "Market",
-                    "Others",
-                  ],
+                  type: "text",
+                  admin: {
+                    description: "Restaurant, Hotel, Bar, Cafe, Shopping, Museum, Gallery, Landmark, Park, Beach, Spa, Club, Theater, Market, Others",
+                  },
                 },
                 { name: "brand", type: "text" },
               ],

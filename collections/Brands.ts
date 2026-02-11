@@ -37,17 +37,10 @@ export const Brands: CollectionConfig = {
     { name: "description", type: "textarea" },
     {
       name: "category",
-      type: "select",
-      options: [
-        "Luxury Hotel",
-        "Upper Upscale Hotel",
-        "Upscale Hotel",
-        "Boutique Hotel",
-        "Lifestyle Hotel",
-        "Restaurant Group",
-        "Hospitality Group",
-        "Other",
-      ],
+      type: "text",
+      admin: {
+        description: "Luxury Hotel, Upper Upscale Hotel, Upscale Hotel, Boutique Hotel, Lifestyle Hotel, Restaurant Group, Hospitality Group, Other",
+      },
     },
   ],
 };

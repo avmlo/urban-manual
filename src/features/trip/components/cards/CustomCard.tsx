@@ -34,58 +34,49 @@ export default function CustomCard({
         ${isSelected ? 'bg-stone-200 dark:bg-gray-700' : 'hover:bg-stone-200/60 dark:hover:bg-gray-700/60'}
       `}
     >
-      <div className="p-4 flex items-start gap-3">
-        {/* Icon */}
-        <div className="w-10 h-10 rounded-xl bg-stone-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-          <FileText className="w-5 h-5 text-stone-500 dark:text-gray-400" />
+      <div className="px-3 py-2.5 flex items-start gap-2.5">
+        {/* Icon - compact */}
+        <div className="w-8 h-8 rounded-lg bg-stone-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+          <FileText className="w-4 h-4 text-stone-500 dark:text-gray-400" />
         </div>
 
-        {/* Content */}
+        {/* Content - high-density */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-stone-900 dark:text-white leading-tight">
+          <h3 className="text-sm font-semibold text-stone-900 dark:text-white leading-tight truncate">
             {item.title}
           </h3>
 
-          {/* Meta row */}
-          <div className="flex items-center gap-2 mt-1">
+          {/* Meta row - single dense line */}
+          <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-stone-500 dark:text-gray-400">
             {item.time && (
-              <span className="text-xs text-stone-500 dark:text-gray-400 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
+              <span className="flex items-center gap-0.5">
+                <Clock className="w-2.5 h-2.5" />
                 {formatTimeDisplay(item.time)}
               </span>
             )}
             {notes?.duration && (
               <>
-                {item.time && <span className="text-stone-300 dark:text-gray-600">·</span>}
-                <span className="text-xs text-stone-500 dark:text-gray-400">
-                  {formatDuration(notes.duration)}
-                </span>
+                {item.time && <span className="text-stone-300 dark:text-gray-600">&middot;</span>}
+                <span>{formatDuration(notes.duration)}</span>
               </>
             )}
             {notes?.city && (
               <>
                 {(item.time || notes?.duration) && (
-                  <span className="text-stone-300 dark:text-gray-600">·</span>
+                  <span className="text-stone-300 dark:text-gray-600">&middot;</span>
                 )}
-                <span className="text-xs text-stone-500 dark:text-gray-400 flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
+                <span className="flex items-center gap-0.5">
+                  <MapPin className="w-2.5 h-2.5" />
                   {notes.city}
                 </span>
               </>
             )}
           </div>
 
-          {/* Description */}
-          {item.description && (
-            <p className="text-xs text-stone-500 dark:text-gray-400 mt-2 line-clamp-2">
-              {item.description}
-            </p>
-          )}
-
-          {/* Notes */}
-          {notes?.notes && !item.description && (
-            <p className="text-xs text-stone-500 dark:text-gray-400 mt-2 line-clamp-2">
-              {notes.notes}
+          {/* Description or notes - single line */}
+          {(item.description || notes?.notes) && (
+            <p className="text-[11px] text-stone-400 dark:text-gray-500 mt-1 line-clamp-1 leading-tight">
+              {item.description || notes?.notes}
             </p>
           )}
         </div>

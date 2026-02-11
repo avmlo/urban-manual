@@ -10,6 +10,7 @@ import {
   TransportCard,
   CustomCard,
 } from '../cards';
+import LogisticalIndicators from '../cards/LogisticalIndicators';
 
 interface ItineraryCardProps {
   item: EnrichedItineraryItem;
@@ -19,7 +20,8 @@ interface ItineraryCardProps {
 }
 
 /**
- * ItineraryCard - Dispatches to the appropriate card type based on item category
+ * ItineraryCard - Dispatches to the appropriate card type based on item category.
+ * Wraps each card with logistical micro-indicators for attachments, cost, and group data.
  */
 export default function ItineraryCard({
   item,
@@ -29,61 +31,72 @@ export default function ItineraryCard({
 }: ItineraryCardProps) {
   const category = item.parsedNotes?.category || item.parsedNotes?.type || '';
   const type = item.parsedNotes?.type;
+  const notes = item.parsedNotes;
+
+  // Derive logistical flags from item data
+  const hasAttachments = !!(
+    notes?.confirmationNumber ||
+    notes?.hotelConfirmation ||
+    notes?.ticketConfirmation ||
+    notes?.confirmation
+  );
+  const bookingStatus = notes?.bookingStatus;
+  const partySize = notes?.partySize;
 
   // Determine the card type to render
+  let card: React.ReactNode;
+
   if (type === 'flight') {
-    return (
+    card = (
       <FlightCard
         item={item}
         isSelected={isActive}
         onSelect={onClick || (() => {})}
       />
     );
-  }
-
-  if (type === 'hotel') {
-    return (
+  } else if (type === 'hotel') {
+    card = (
       <OvernightCard
         item={item}
         isSelected={isActive}
         onSelect={onClick || (() => {})}
       />
     );
-  }
-
-  if (type === 'train' || type === 'drive' || category === 'transport') {
-    return (
+  } else if (type === 'train' || type === 'drive' || category === 'transport') {
+    card = (
       <TransportCard
         item={item}
         isSelected={isActive}
         onSelect={onClick || (() => {})}
       />
     );
-  }
-
-  if (category === 'hotel_activity' || category === 'airport_activity') {
-    return (
+  } else if (category === 'hotel_activity' || category === 'airport_activity') {
+    card = (
       <MinimalActivityCard
         item={item}
         isSelected={isActive}
         onSelect={onClick || (() => {})}
       />
     );
-  }
-
-  if (category === 'restaurant' || category === 'bar' || category === 'cafe') {
-    return (
+  } else if (category === 'restaurant' || category === 'bar' || category === 'cafe') {
+    card = (
       <RestaurantCard
         item={item}
         isSelected={isActive}
         onSelect={onClick || (() => {})}
       />
     );
-  }
-
-  if (category === 'attraction' || category === 'museum' || category === 'landmark') {
-    return (
+  } else if (category === 'attraction' || category === 'museum' || category === 'landmark') {
+    card = (
       <AttractionCard
+        item={item}
+        isSelected={isActive}
+        onSelect={onClick || (() => {})}
+      />
+    );
+  } else {
+    card = (
+      <CustomCard
         item={item}
         isSelected={isActive}
         onSelect={onClick || (() => {})}
@@ -91,12 +104,16 @@ export default function ItineraryCard({
     );
   }
 
-  // Default to CustomCard for unknown types
   return (
-    <CustomCard
-      item={item}
-      isSelected={isActive}
-      onSelect={onClick || (() => {})}
-    />
+    <div className="relative">
+      {card}
+      {/* Logistical micro-indicators - positioned at bottom-right of each card */}
+      <LogisticalIndicators
+        hasAttachments={hasAttachments}
+        bookingStatus={bookingStatus}
+        partySize={partySize}
+        className="absolute bottom-2 right-2"
+      />
+    </div>
   );
 }

@@ -12,12 +12,26 @@ import { Brands } from "./collections/Brands";
 import { Architects } from "./collections/Architects";
 import { SiteSettings } from "./globals/SiteSettings";
 
+// Strip sslmode from connection string so pg doesn't override our ssl config.
+// Supabase URLs include sslmode=require, which pg v8+ treats as verify-full
+// (rejects self-signed certs). We handle SSL via pool options instead.
+function cleanConnectionString(url: string): string {
+  if (!url) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.delete("sslmode");
+    return parsed.toString();
+  } catch {
+    return url.replace(/[?&]sslmode=[^&]*/g, "");
+  }
+}
+
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || "REPLACE_WITH_SECURE_SECRET",
 
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.POSTGRES_URL || "",
+      connectionString: cleanConnectionString(process.env.POSTGRES_URL || ""),
       ssl: {
         rejectUnauthorized: false,
       },

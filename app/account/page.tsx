@@ -100,7 +100,7 @@ export default function Account() {
           .eq('user_id', user.id)
           .order('visited_at', { ascending: false }),
         supabase
-          .from('collections')
+          .from('lists')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),

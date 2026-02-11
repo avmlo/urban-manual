@@ -188,7 +188,7 @@ async function buildExportPayload(client: ReturnType<typeof createServiceRoleCli
     client.from('user_profiles').select('*').eq('user_id', userId).maybeSingle(),
     client.from('saved_places').select('*').eq('user_id', userId),
     client.from('visited_places').select('*').eq('user_id', userId),
-    client.from('collections').select('*').eq('user_id', userId),
+    client.from('lists').select('*').eq('user_id', userId),
     client.from('trips').select('*').eq('user_id', userId),
     client.from('user_interactions').select('*').eq('user_id', userId).limit(500),
   ]);

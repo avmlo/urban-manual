@@ -23,7 +23,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   // Insert collection
   const { data, error } = await supabase
-    .from('collections')
+    .from('lists')
     .insert({
       user_id: user.id,
       name: name.trim(),
@@ -56,7 +56,7 @@ export const GET = withErrorHandling(async () => {
   }
 
   const { data, error } = await supabase
-    .from('collections')
+    .from('lists')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });

@@ -75,7 +75,7 @@ export const collectionTools: Tool[] = [
           description: "Include full destination details (default: true)",
         },
       },
-      required: ["collection_id"],
+      required: ["list_id"],
     },
   },
   {
@@ -97,7 +97,7 @@ export const collectionTools: Tool[] = [
           description: "Optional personal notes about this destination",
         },
       },
-      required: ["collection_id", "destination_slug"],
+      required: ["list_id", "destination_slug"],
     },
   },
   {
@@ -115,7 +115,7 @@ export const collectionTools: Tool[] = [
           description: "Destination slug to remove",
         },
       },
-      required: ["collection_id", "destination_slug"],
+      required: ["list_id", "destination_slug"],
     },
   },
   {
@@ -129,7 +129,7 @@ export const collectionTools: Tool[] = [
           description: "Collection ID to delete",
         },
       },
-      required: ["collection_id"],
+      required: ["list_id"],
     },
   },
   {
@@ -241,7 +241,7 @@ export async function handleCollectionTool(
       }
 
       const { data, error } = await supabase
-        .from("collections")
+        .from("lists")
         .insert({
           user_id,
           name: collectionName,
@@ -274,7 +274,7 @@ export async function handleCollectionTool(
       }
 
       const { data: collections, error } = await supabase
-        .from("collections")
+        .from("lists")
         .select("*")
         .eq("user_id", user_id)
         .order("created_at", { ascending: false });
@@ -288,16 +288,16 @@ export async function handleCollectionTool(
       if (include_counts && result.length > 0) {
         // Get counts for each collection
         const { data: items } = await supabase
-          .from("collection_items")
-          .select("collection_id")
+          .from("list_items")
+          .select("list_id")
           .in(
-            "collection_id",
+            "list_id",
             result.map((c) => c.id)
           );
 
         const counts = new Map<string, number>();
         items?.forEach((item) => {
-          counts.set(item.collection_id, (counts.get(item.collection_id) || 0) + 1);
+          counts.set(item.list_id, (counts.get(item.list_id) || 0) + 1);
         });
 
         result = result.map((c) => ({
@@ -324,7 +324,7 @@ export async function handleCollectionTool(
       }
 
       const { data: collection, error } = await supabase
-        .from("collections")
+        .from("lists")
         .select("*")
         .eq("id", collection_id)
         .single();
@@ -335,9 +335,9 @@ export async function handleCollectionTool(
 
       // Get collection items
       const { data: items } = await supabase
-        .from("collection_items")
+        .from("list_items")
         .select("destination_slug, notes, created_at")
-        .eq("collection_id", collection_id);
+        .eq("list_id", collection_id);
 
       let destinations = items || [];
 
@@ -383,9 +383,9 @@ export async function handleCollectionTool(
       }
 
       const { data, error } = await supabase
-        .from("collection_items")
+        .from("list_items")
         .insert({
-          collection_id,
+          list_id: collection_id,
           destination_slug,
           notes: notes || null,
         })
@@ -417,9 +417,9 @@ export async function handleCollectionTool(
       }
 
       const { error } = await supabase
-        .from("collection_items")
+        .from("list_items")
         .delete()
-        .eq("collection_id", collection_id)
+        .eq("list_id", collection_id)
         .eq("destination_slug", destination_slug);
 
       if (error) {
@@ -439,10 +439,10 @@ export async function handleCollectionTool(
       }
 
       // Delete items first
-      await supabase.from("collection_items").delete().eq("collection_id", collection_id);
+      await supabase.from("list_items").delete().eq("list_id", collection_id);
 
       // Delete collection
-      const { error } = await supabase.from("collections").delete().eq("id", collection_id);
+      const { error } = await supabase.from("lists").delete().eq("id", collection_id);
 
       if (error) {
         return { content: [{ type: "text", text: `Error: ${error.message}` }] };

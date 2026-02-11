@@ -66,7 +66,7 @@ export default function CollectionDetailPage() {
       try {
         // Fetch collection
         const { data: collectionData, error: collectionError } = await supabase
-          .from('collections')
+          .from('lists')
           .select('*')
           .eq('id', collectionId)
           .eq('user_id', user.id)
@@ -119,7 +119,7 @@ export default function CollectionDetailPage() {
     setUpdating(true);
     try {
       const { error } = await (supabase
-        .from('collections')
+        .from('lists')
         .update as any)({
           name: editName.trim(),
           description: editDescription.trim() || null,
@@ -156,7 +156,7 @@ export default function CollectionDetailPage() {
 
       // Delete collection
       const { error } = await supabase
-        .from('collections')
+        .from('lists')
         .delete()
         .eq('id', collectionId)
         .eq('user_id', user.id);
@@ -187,7 +187,7 @@ export default function CollectionDetailPage() {
 
       // Update count
       await (supabase
-        .from('collections')
+        .from('lists')
         .update as any)({ destination_count: Math.max(0, (collection.destination_count || 0) - 1) })
         .eq('id', collectionId);
 

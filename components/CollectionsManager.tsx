@@ -165,7 +165,7 @@ export function CollectionsManager({ destinationId, onCollectionSelect, onClose 
 
       // Delete the collection
       const { error } = await supabaseClient
-        .from('collections')
+        .from('lists')
         .delete()
         .eq('id', collectionToDelete)
         .eq('user_id', user.id);

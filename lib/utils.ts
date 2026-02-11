@@ -254,6 +254,16 @@ export function toSlug(str: string): string {
 }
 
 /**
+ * Generate a URL-friendly slug with an optional unique suffix
+ * Uses toSlug for the base transformation, then appends a suffix for uniqueness
+ * @example generateSlug("Top Hotels", "a1b2c3d4") → "top-hotels-a1b2c3d4"
+ */
+export function generateSlug(name: string, uniqueSuffix?: string): string {
+  const base = toSlug(name);
+  return uniqueSuffix ? `${base}-${uniqueSuffix}` : base;
+}
+
+/**
  * Convert a string to Title Case
  * Handles hyphenated words and multi-word strings
  * @example toTitleCase("new york") → "New York"

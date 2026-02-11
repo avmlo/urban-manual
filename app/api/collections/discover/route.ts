@@ -11,7 +11,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
   const supabase = await createServerClient();
 
   let dbQuery = supabase
-    .from('collections')
+    .from('lists')
     .select(`
       id,
       name,
@@ -21,7 +21,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
       destination_count,
       view_count,
       created_at,
-      user_profiles!collections_user_id_fkey (
+      user_profiles!lists_user_id_fkey (
         user_id,
         username,
         display_name,

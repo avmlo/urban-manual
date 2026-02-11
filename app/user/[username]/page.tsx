@@ -16,7 +16,7 @@ export default function UserProfilePage() {
 
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
-  const [collections, setCollections] = useState<any[]>([]);
+  const [lists, setLists] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
@@ -45,7 +45,7 @@ export default function UserProfilePage() {
 
       setProfile(data.profile);
       setStats(data.stats);
-      setCollections(data.collections);
+      setLists(data.lists || data.collections || []);
       setIsFollowing(data.isFollowing);
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -194,48 +194,57 @@ export default function UserProfilePage() {
           </div>
         </div>
 
-        {/* Public Collections */}
+        {/* Public Lists */}
         <div className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {isOwnProfile ? 'Your Collections' : 'Collections'}
+              {isOwnProfile ? 'Your Lists' : 'Lists'}
             </h2>
-            {collections.length > 0 && (
+            {lists.length > 0 && (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {collections.length} {collections.length === 1 ? 'collection' : 'collections'}
+                {lists.length} {lists.length === 1 ? 'list' : 'lists'}
               </p>
             )}
           </div>
 
-          {collections.length === 0 ? (
+          {lists.length === 0 ? (
             <div className="text-center py-16 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-gray-900">
-              <div className="text-5xl mb-4">📚</div>
+              <div className="text-5xl mb-4">📋</div>
               <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                {isOwnProfile ? 'No public collections yet' : 'No collections yet'}
+                {isOwnProfile ? 'No public lists yet' : 'No lists yet'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {isOwnProfile 
-                  ? 'Create a collection and make it public to share with others'
-                  : 'This user hasn\'t shared any collections yet'}
+                {isOwnProfile
+                  ? 'Create a list and make it public to share with others'
+                  : 'This user hasn\'t shared any lists yet'}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {collections.map((collection) => (
+              {lists.map((list) => (
                 <button
-                  key={collection.id}
-                  onClick={() => router.push(`/collection/${collection.id}`)}
+                  key={list.id}
+                  onClick={() => router.push(
+                    list.slug
+                      ? `/user/${username}/lists/${list.slug}`
+                      : `/lists/${list.id}`
+                  )}
                   className="text-left p-6 border border-gray-200 dark:border-gray-800 rounded-lg hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-md transition-all bg-white dark:bg-gray-900"
                 >
                   <div className="flex items-start gap-4 mb-4">
-                    <span className="text-4xl flex-shrink-0">{collection.emoji || '📚'}</span>
+                    <span className="text-4xl flex-shrink-0">{list.emoji || '📋'}</span>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-lg mb-1 line-clamp-1 text-gray-900 dark:text-white">
-                        {collection.name}
+                        {list.name}
                       </h3>
-                      {collection.description && (
+                      {list.category_filter && (
+                        <span className="inline-block px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400 mb-1">
+                          {list.category_filter}
+                        </span>
+                      )}
+                      {list.description && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                          {collection.description}
+                          {list.description}
                         </p>
                       )}
                     </div>
@@ -243,12 +252,12 @@ export default function UserProfilePage() {
                   <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 pt-3 border-t border-gray-100 dark:border-gray-800">
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      {collection.destination_count || 0} {collection.destination_count === 1 ? 'place' : 'places'}
+                      {list.destination_count || 0} {list.destination_count === 1 ? 'place' : 'places'}
                     </span>
-                    {collection.view_count > 0 && (
+                    {list.view_count > 0 && (
                       <span className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        {collection.view_count} {collection.view_count === 1 ? 'view' : 'views'}
+                        {list.view_count} {list.view_count === 1 ? 'view' : 'views'}
                       </span>
                     )}
                   </div>

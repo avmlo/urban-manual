@@ -24,7 +24,7 @@ export function useCollections(userId: string | undefined) {
       setError(null);
 
       const { data, error: err } = await supabase
-        .from('collections')
+        .from('lists')
         .select(`
           *,
           saved_destinations(count)
@@ -95,7 +95,7 @@ export function useCollections(userId: string | undefined) {
 
     try {
       const { error: err } = await (supabase
-        .from('collections')
+        .from('lists')
         .update as any)({
           ...updates,
           updated_at: new Date().toISOString(),
@@ -123,7 +123,7 @@ export function useCollections(userId: string | undefined) {
 
       // Delete the collection
       const { error: err } = await supabase
-        .from('collections')
+        .from('lists')
         .delete()
         .eq('id', collectionId)
         .eq('user_id', userId);

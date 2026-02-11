@@ -508,7 +508,7 @@ async function getUserVisited(supabase: ReturnType<typeof createServiceClient>, 
 
 async function getUserCollections(supabase: ReturnType<typeof createServiceClient>, userId: string) {
   const { data, error } = await supabase
-    .from("collections")
+    .from("lists")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });

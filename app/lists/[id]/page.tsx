@@ -27,10 +27,15 @@ interface List {
   id: string;
   user_id: string;
   name: string;
+  slug?: string;
   description?: string | null;
   is_public: boolean;
   is_collaborative: boolean;
   cover_image?: string | null;
+  emoji?: string;
+  color?: string;
+  category_filter?: string | null;
+  destination_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +45,8 @@ interface ListItem {
   list_id: string;
   destination_slug: string;
   added_at: string;
+  rank?: number | null;
+  notes?: string | null;
 }
 
 export default function ListDetailPage() {
@@ -61,6 +68,14 @@ export default function ListDetailPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPublic, setEditPublic] = useState(true);
+
+  // Edit form - category filter
+  const [editCategoryFilter, setEditCategoryFilter] = useState<string>("");
+
+  // Rank/notes editing state
+  const [itemMeta, setItemMeta] = useState<Map<string, { rank: string; notes: string }>>(new Map());
+  const [savingRanks, setSavingRanks] = useState(false);
+  const [editingRanks, setEditingRanks] = useState(false);
 
   // Add destination state
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,12 +119,14 @@ export default function ListDetailPage() {
     setEditName(list.name);
     setEditDescription(list.description || "");
     setEditPublic(list.is_public);
+    setEditCategoryFilter(list.category_filter || "");
 
-    // Fetch list items
+    // Fetch list items ordered by rank, then added_at
     const { data: itemsData, error: itemsError } = await supabase
       .from('list_items')
       .select('*')
       .eq('list_id', listId)
+      .order('rank', { ascending: true, nullsFirst: false })
       .order('added_at', { ascending: false });
 
     if (itemsError) {
@@ -118,16 +135,31 @@ export default function ListDetailPage() {
       return;
     }
 
+    // Build item metadata map for rank/notes editing
+    const meta = new Map<string, { rank: string; notes: string }>();
+    if (itemsData) {
+      (itemsData as ListItem[]).forEach((item) => {
+        meta.set(item.destination_slug, {
+          rank: item.rank != null ? String(item.rank) : '',
+          notes: item.notes || '',
+        });
+      });
+    }
+    setItemMeta(meta);
+
     // Fetch destination details for each item
     if (itemsData && itemsData.length > 0) {
-      const slugs = itemsData.map((item: ListItem) => item.destination_slug);
+      const slugs = (itemsData as ListItem[]).map((item) => item.destination_slug);
       const { data: destinationsData, error: destError } = await supabase
         .from('destinations')
         .select('*')
         .in('slug', slugs);
 
       if (!destError && destinationsData) {
-        setDestinations(destinationsData);
+        // Order destinations to match list_items order
+        const destMap = new Map(destinationsData.map((d: any) => [d.slug, d]));
+        const ordered = slugs.map((slug) => destMap.get(slug)).filter(Boolean) as Destination[];
+        setDestinations(ordered);
       }
     }
 
@@ -144,6 +176,7 @@ export default function ListDetailPage() {
         name: editName.trim(),
         description: editDescription.trim() || null,
         is_public: editPublic,
+        category_filter: editCategoryFilter.trim() || null,
       })
       .eq('id', list.id);
 
@@ -156,10 +189,49 @@ export default function ListDetailPage() {
         name: editName.trim(),
         description: editDescription.trim() || null,
         is_public: editPublic,
+        category_filter: editCategoryFilter.trim() || null,
       });
       setShowEditModal(false);
     }
     setIsUpdating(false);
+  };
+
+  const saveRanksAndNotes = async () => {
+    if (!user || !list) return;
+
+    setSavingRanks(true);
+    try {
+      // Update each item's rank and notes
+      const updates = Array.from(itemMeta.entries()).map(([slug, meta]) => {
+        const rankVal = meta.rank.trim() === '' ? null : parseInt(meta.rank, 10);
+        return supabase
+          .from('list_items')
+          .update({ rank: isNaN(rankVal as number) ? null : rankVal, notes: meta.notes.trim() || null } as any)
+          .eq('list_id', list.id)
+          .eq('destination_slug', slug);
+      });
+
+      await Promise.all(updates);
+      toast.success('Rankings and notes saved');
+      setEditingRanks(false);
+
+      // Re-fetch to get correct ordering
+      await fetchListDetails();
+    } catch (error) {
+      console.error('Error saving ranks:', error);
+      toast.error('Failed to save rankings');
+    } finally {
+      setSavingRanks(false);
+    }
+  };
+
+  const updateItemMeta = (slug: string, field: 'rank' | 'notes', value: string) => {
+    setItemMeta((prev) => {
+      const next = new Map(prev);
+      const current = next.get(slug) || { rank: '', notes: '' };
+      next.set(slug, { ...current, [field]: value });
+      return next;
+    });
   };
 
   const deleteList = async () => {
@@ -330,9 +402,9 @@ export default function ListDetailPage() {
           </div>
         </div>
 
-        {/* Add Destination Button */}
+        {/* Owner Action Bar */}
         {user?.id === list.user_id && (
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-3 flex-wrap">
             <button
               onClick={() => setShowAddModal(true)}
               disabled={addingDestination}
@@ -350,6 +422,45 @@ export default function ListDetailPage() {
                 </>
               )}
             </button>
+
+            {destinations.length > 0 && !editingRanks && (
+              <button
+                onClick={() => setEditingRanks(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm font-medium"
+              >
+                <Edit2 className="h-4 w-4" />
+                Rank & Annotate
+              </button>
+            )}
+
+            {editingRanks && (
+              <>
+                <button
+                  onClick={saveRanksAndNotes}
+                  disabled={savingRanks}
+                  className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-80 transition-opacity font-medium disabled:opacity-50"
+                >
+                  {savingRanks ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Rankings'
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingRanks(false);
+                    // Re-fetch to discard unsaved changes
+                    fetchListDetails();
+                  }}
+                  className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -369,52 +480,92 @@ export default function ListDetailPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 items-start">
-            {destinations.map((destination) => (
-              <div key={destination.slug} className={`${CARD_WRAPPER} group flex flex-col`}>
-                <Link href={`/destination/${destination.slug}`} className="flex flex-col flex-1">
-                  <div className={`${CARD_MEDIA} mb-2 hover-lift`}>
-                    {(destination.image_thumbnail || destination.image) ? (
-                      <Image
-                        src={destination.image_thumbnail || destination.image!}
-                        alt={destination.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-700">
-                        <MapPin className="h-8 w-8 opacity-20" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-0 flex-1 flex flex-col">
-                    <h3 className={`${CARD_TITLE} line-clamp-2 min-h-[2.5rem]`}>
-                      {destination.name}
-                    </h3>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
-                      {destination.micro_description || 
-                       (destination.category && destination.city 
-                         ? `${destination.category} in ${capitalizeCity(destination.city)}`
-                         : destination.city 
-                           ? capitalizeCity(destination.city)
-                           : destination.category || '')}
+            {destinations.map((destination) => {
+              const meta = itemMeta.get(destination.slug);
+              const rankNum = meta?.rank ? parseInt(meta.rank, 10) : null;
+              return (
+                <div key={destination.slug} className={`${CARD_WRAPPER} group flex flex-col`}>
+                  <Link href={`/destination/${destination.slug}`} className="flex flex-col flex-1">
+                    <div className={`${CARD_MEDIA} mb-2 hover-lift`}>
+                      {(destination.image_thumbnail || destination.image) ? (
+                        <Image
+                          src={destination.image_thumbnail || destination.image!}
+                          alt={destination.name}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-700">
+                          <MapPin className="h-8 w-8 opacity-20" />
+                        </div>
+                      )}
+                      {/* Rank Badge */}
+                      {rankNum != null && !isNaN(rankNum) && !editingRanks && (
+                        <div className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/80 dark:bg-white/90 flex items-center justify-center z-10">
+                          <span className="text-xs font-bold text-white dark:text-black">
+                            {rankNum}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </Link>
-                {user?.id === list.user_id && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      removeDestinationFromList(destination.slug, destination.name);
-                    }}
-                    className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-900 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/20 z-10"
-                    title="Remove from list"
-                  >
-                    <X className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  </button>
-                )}
-              </div>
-            ))}
+                    <div className="space-y-0 flex-1 flex flex-col">
+                      <h3 className={`${CARD_TITLE} line-clamp-2 min-h-[2.5rem]`}>
+                        {destination.name}
+                      </h3>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                        {destination.micro_description ||
+                         (destination.category && destination.city
+                           ? `${destination.category} in ${capitalizeCity(destination.city)}`
+                           : destination.city
+                             ? capitalizeCity(destination.city)
+                             : destination.category || '')}
+                      </div>
+                      {/* Show curator notes (view mode) */}
+                      {!editingRanks && meta?.notes && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic line-clamp-2">
+                          &ldquo;{meta.notes}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+
+                  {/* Rank/Notes Editing (owner, edit mode) */}
+                  {editingRanks && user?.id === list.user_id && (
+                    <div className="mt-2 space-y-1.5 border-t border-gray-100 dark:border-gray-800 pt-2">
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Rank"
+                        value={meta?.rank || ''}
+                        onChange={(e) => updateItemMeta(destination.slug, 'rank', e.target.value)}
+                        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      />
+                      <textarea
+                        placeholder="Curator notes..."
+                        rows={2}
+                        value={meta?.notes || ''}
+                        onChange={(e) => updateItemMeta(destination.slug, 'notes', e.target.value)}
+                        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none"
+                      />
+                    </div>
+                  )}
+
+                  {user?.id === list.user_id && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        removeDestinationFromList(destination.slug, destination.name);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-900 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/20 z-10"
+                      title="Remove from list"
+                    >
+                      <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -452,6 +603,25 @@ export default function ListDetailPage() {
                   rows={3}
                   className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white resize-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Category Filter</label>
+                <select
+                  value={editCategoryFilter}
+                  onChange={(e) => setEditCategoryFilter(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                >
+                  <option value="">None (all categories)</option>
+                  <option value="Dining">Dining</option>
+                  <option value="Hotel">Hotel</option>
+                  <option value="Bar">Bar</option>
+                  <option value="Cafe">Cafe</option>
+                  <option value="Culture">Culture</option>
+                  <option value="Shopping">Shopping</option>
+                  <option value="Bakery">Bakery</option>
+                  <option value="Park">Park</option>
+                </select>
               </div>
 
               <div className="flex items-center gap-3">

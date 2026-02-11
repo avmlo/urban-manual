@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Plus, Lock, Globe, Trash2, Loader2, Heart, MapPin, X } from "lucide-react";
+import { generateSlug } from '@/lib/utils';
 import { Skeleton } from "@/ui/skeleton";
 import { toast } from "@/ui/sonner";
 import {
@@ -50,6 +51,8 @@ export default function ListsPage() {
   const [newListName, setNewListName] = useState("");
   const [newListDescription, setNewListDescription] = useState("");
   const [newListPublic, setNewListPublic] = useState(true);
+  const [newListCategoryFilter, setNewListCategoryFilter] = useState("");
+  const [newListEmoji, setNewListEmoji] = useState("📍");
   const [creating, setCreating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listToDelete, setListToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -134,15 +137,19 @@ export default function ListsPage() {
     if (!user || !newListName.trim()) return;
 
     setCreating(true);
+    const slug = generateSlug(newListName.trim(), crypto.randomUUID().slice(0, 8));
     const { data, error } = await (supabase
       .from('lists')
       .insert as any)([
         {
           user_id: user.id,
           name: newListName.trim(),
+          slug,
           description: newListDescription.trim() || null,
           is_public: newListPublic,
           is_collaborative: false,
+          category_filter: newListCategoryFilter.trim() || null,
+          emoji: newListEmoji || '📍',
         },
       ])
       .select()
@@ -157,6 +164,8 @@ export default function ListsPage() {
       setNewListName("");
       setNewListDescription("");
       setNewListPublic(true);
+      setNewListCategoryFilter("");
+      setNewListEmoji("📍");
     }
 
     setCreating(false);
@@ -334,6 +343,37 @@ export default function ListsPage() {
                   rows={3}
                   className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white resize-none"
                 />
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium mb-2">Category Filter</label>
+                  <select
+                    value={newListCategoryFilter}
+                    onChange={(e) => setNewListCategoryFilter(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                  >
+                    <option value="">None</option>
+                    <option value="Dining">Dining</option>
+                    <option value="Hotel">Hotel</option>
+                    <option value="Bar">Bar</option>
+                    <option value="Cafe">Cafe</option>
+                    <option value="Culture">Culture</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Bakery">Bakery</option>
+                    <option value="Park">Park</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Emoji</label>
+                  <input
+                    type="text"
+                    value={newListEmoji}
+                    onChange={(e) => setNewListEmoji(e.target.value)}
+                    maxLength={2}
+                    className="w-16 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-center text-lg"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-3">

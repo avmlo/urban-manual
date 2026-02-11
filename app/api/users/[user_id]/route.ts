@@ -62,7 +62,7 @@ export const GET = withOptionalAuth(async (
       .select('destination_slug', { count: 'exact' })
       .eq('user_id', user_id),
     supabase
-      .from('collections')
+      .from('lists')
       .select('*')
       .eq('user_id', user_id)
       .eq('is_public', true)
@@ -82,16 +82,20 @@ export const GET = withOptionalAuth(async (
     isFollowing = !!followData;
   }
 
+  const publicLists = collections || [];
+
   return createSuccessResponse({
     profile,
     stats: {
       savedCount: savedPlaces?.length || 0,
       visitedCount: visitedPlaces?.length || 0,
-      collectionsCount: collections?.length || 0,
+      collectionsCount: publicLists.length,
+      listsCount: publicLists.length,
       followerCount: profile.follower_count || 0,
       followingCount: profile.following_count || 0
     },
-    collections: collections || [],
+    collections: publicLists,
+    lists: publicLists,
     isFollowing
   });
 });

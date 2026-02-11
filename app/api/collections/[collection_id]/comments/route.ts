@@ -49,7 +49,7 @@ export const POST = withAuth(async (
 
   // Check if collection is public
   const { data: collection } = await supabase
-    .from('collections')
+    .from('lists')
     .select('is_public')
     .eq('id', collection_id)
     .single();

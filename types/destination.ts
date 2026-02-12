@@ -13,6 +13,7 @@ export interface Destination {
   description?: string;
   content?: string;
   image?: string;
+  image_copyright?: string | null; // Copyright/attribution for the image
   image_thumbnail?: string; // Optimized thumbnail from Supabase Storage
   image_original?: string; // Backup of original URL before migration
   michelin_stars?: number;

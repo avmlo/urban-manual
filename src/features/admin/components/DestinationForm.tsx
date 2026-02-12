@@ -82,6 +82,7 @@ export function DestinationForm({
     formatted_address: destination?.formatted_address || '',
     // Media
     image: destination?.image || '',
+    image_copyright: destination?.image_copyright || '',
     // Content
     description: htmlToPlainText(destination?.description || ''),
     content: htmlToPlainText(destination?.content || ''),
@@ -161,6 +162,7 @@ export function DestinationForm({
         longitude: destination.longitude || null,
         formatted_address: destination.formatted_address || '',
         image: destination.image || '',
+        image_copyright: destination.image_copyright || '',
         description: htmlToPlainText(destination.description || ''),
         content: htmlToPlainText(destination.content || ''),
         editorial_summary: destination.editorial_summary || '',
@@ -208,7 +210,7 @@ export function DestinationForm({
         slug: '', name: '', city: '', country: '', neighborhood: '', category: '',
         brand: '', micro_description: '', tags: [], crown: false, michelin_stars: null,
         parent_destination_id: null, latitude: null, longitude: null, formatted_address: '',
-        image: '', description: '', content: '', editorial_summary: '', design_firm: '',
+        image: '', image_copyright: '', description: '', content: '', editorial_summary: '', design_firm: '',
         architectural_style: '', design_period: '',
         construction_year: null, architectural_significance: '', design_story: '',
         website: '', phone_number: '', instagram_handle: '', opentable_url: '',
@@ -892,6 +894,12 @@ export function DestinationForm({
                   onChange={(e) => { setFormData({ ...formData, image: e.target.value }); if (!imageFile) setImagePreview(e.target.value || null); }}
                   placeholder="https://..." className={cn(inputClasses, "pl-9")} />
               </div>
+            </div>
+            <div>
+              <label className={labelClasses}>Image Copyright</label>
+              <input type="text" value={formData.image_copyright}
+                onChange={(e) => setFormData({ ...formData, image_copyright: e.target.value })}
+                placeholder="e.g. Photo by John Doe / Source Name" className={inputClasses} />
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); setFormData({ ...formData, image: '' }); }}

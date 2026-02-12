@@ -29,6 +29,9 @@ import TravelTime from '@/features/trip/components/items/TravelTime';
 import { DropZoneBetweenItems } from '@/features/trip/components/sidebar/DestinationPalette';
 import TransportForm from '@/features/trip/components/day/TransportForm';
 
+// Day colors - matches TripInteractiveMap for visual sync
+const DAY_COLORS = ['#1e40af', '#059669', '#d97706', '#e11d48', '#7c3aed', '#0d9488', '#ea580c'];
+
 // Activity options for quick-add
 const ACTIVITY_OPTIONS: { type: ActivityType; icon: typeof BedDouble; label: string; defaultDuration: number }[] = [
   { type: 'nap', icon: BedDouble, label: 'Nap / Rest', defaultDuration: 60 },
@@ -73,6 +76,9 @@ interface DaySectionProps {
   checkInHotel?: EnrichedItineraryItem | null;
   breakfastHotel?: EnrichedItineraryItem | null;
   onSelectItem?: (item: EnrichedItineraryItem) => void;
+  hoveredItemId?: string | null;
+  onItemHover?: (itemId: string | null) => void;
+  selectedItemId?: string | null;
 }
 
 export default function DaySection({
@@ -101,6 +107,9 @@ export default function DaySection({
   checkInHotel,
   breakfastHotel,
   onSelectItem,
+  hoveredItemId,
+  onItemHover,
+  selectedItemId,
 }: DaySectionProps) {
   // Make this day a drop target
   const { setNodeRef, isOver } = useDroppable({
@@ -469,27 +478,30 @@ export default function DaySection({
     <div
       ref={setNodeRef}
       id={`day-${dayNumber}`}
-      className={`scroll-mt-20 rounded-xl transition-all duration-200 ${
+      className={`scroll-mt-20 rounded-xl trip-transition ${
         showDropState
-          ? 'bg-[var(--editorial-accent)]/10 ring-2 ring-[var(--editorial-accent)]/50 ring-inset p-3 -mx-3'
+          ? 'trip-drop-zone is-over p-3 -mx-3'
           : ''
       }`}
     >
-      {/* Day header - TRIP-inspired: item count circle + date + cost + menu */}
+      {/* Day header - color-coded dot + date + weather + intelligence */}
       <div className="flex items-center justify-between mb-3 mt-2">
         <div className="flex items-center gap-3">
-          {/* Item count circle - neutral gray like TRIP */}
-          <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{items.length}</span>
+          {/* Day color dot + item count */}
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 trip-transition"
+            style={{ backgroundColor: DAY_COLORS[(dayNumber - 1) % DAY_COLORS.length] }}
+          >
+            <span className="text-sm font-bold text-white">{items.length}</span>
           </div>
           <div>
             <h3 className="text-base font-semibold text-[var(--editorial-text-primary)]">
               {dateDisplay || `Day ${dayNumber}`}
             </h3>
           </div>
-          {/* Weather badge - compact */}
+          {/* Weather badge - glassmorphism */}
           {weather && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] rounded-full">
+            <div className="glass-button flex items-center gap-1.5 px-2.5 py-1 border border-[var(--editorial-border)] rounded-full">
               <WeatherIcon code={weather.weatherCode} className="w-3.5 h-3.5 text-[var(--editorial-accent)]" />
               <span className="text-xs text-[var(--editorial-text-secondary)]">
                 {weather.tempMax}°
@@ -845,12 +857,16 @@ export default function DaySection({
                     item={item}
                     isExpanded={expandedItemId === item.id}
                     isEditMode={isEditMode}
+                    isSelected={selectedItemId === item.id}
                     onToggle={() => onToggleItem(item.id)}
                     onRemove={() => onRemove(item.id)}
                     onUpdateItem={onUpdateItem}
                     onUpdateTime={onUpdateTime}
                     onDragEnd={handleReorderComplete}
                     onSelect={onSelectItem ? () => onSelectItem(item) : undefined}
+                    onHoverStart={() => onItemHover?.(item.id)}
+                    onHoverEnd={() => onItemHover?.(null)}
+                    staggerIndex={index}
                   />
                 )}
                 {/* Drop zone after each item */}

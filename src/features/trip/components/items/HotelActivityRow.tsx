@@ -35,22 +35,24 @@ export default function HotelActivityRow({
   const hotelName = item.title || 'Hotel';
 
   const getActivityDetails = () => {
+    // Warm amber tint for hotel activity icons
+    const iconCls = "w-3.5 h-3.5 text-amber-600 dark:text-amber-400";
     switch (activityType) {
       case 'checkin':
         return {
-          icon: <DoorOpen className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />,
+          icon: <DoorOpen className={iconCls} />,
           label: 'Check in',
           time: item.parsedNotes?.checkInTime || '',
         };
       case 'breakfast':
         return {
-          icon: <Coffee className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />,
+          icon: <Coffee className={iconCls} />,
           label: 'Breakfast',
           time: item.parsedNotes?.breakfastTime?.split('-')[0] || '08:00',
         };
       case 'checkout':
         return {
-          icon: <LogOut className="w-3.5 h-3.5 text-[var(--editorial-text-tertiary)]" />,
+          icon: <LogOut className={iconCls} />,
           label: 'Check out',
           time: item.parsedNotes?.checkOutTime || '',
         };
@@ -70,8 +72,8 @@ export default function HotelActivityRow({
     >
       <div
         onClick={onSelect}
-        className={`relative overflow-hidden rounded-xl cursor-pointer transition-all bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] ${
-          isDragging ? 'shadow-xl ring-2 ring-blue-400 dark:ring-blue-500' : 'hover:shadow-sm'
+        className={`trip-item-row relative overflow-hidden rounded-xl cursor-pointer bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] ${
+          isDragging ? 'shadow-xl ring-2 ring-blue-400 dark:ring-blue-500' : ''
         }`}
       >
         <div className="px-3 py-2.5">

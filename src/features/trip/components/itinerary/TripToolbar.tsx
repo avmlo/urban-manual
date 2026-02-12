@@ -110,7 +110,7 @@ export default function TripToolbar({
     <div
       className={`
         flex items-center gap-2 px-3 h-11 flex-shrink-0
-        bg-[var(--editorial-bg)]/95 backdrop-blur-md
+        glass-control !rounded-none !border-x-0 !border-t-0
         border-b border-[var(--editorial-border)]/50
         ${className}
       `}
@@ -118,7 +118,7 @@ export default function TripToolbar({
       {/* ── Left: Back + Title ── */}
       <Link
         href="/trips"
-        className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors flex-shrink-0"
+        className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-[var(--editorial-border-subtle)] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] trip-transition-fast hover:scale-105 flex-shrink-0"
       >
         <ArrowLeft className="w-4 h-4" />
       </Link>

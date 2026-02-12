@@ -44,6 +44,7 @@ interface TripInteractiveMapProps {
   days: TripDay[];
   selectedDayNumber?: number;
   activeItemId?: string | null;
+  hoveredItemId?: string | null;
   tripDestination?: string;
   onMarkerClick?: (itemId: string) => void;
   onAddPlace?: (place: Partial<Destination>, dayNumber: number) => void;
@@ -56,15 +57,15 @@ interface TripInteractiveMapProps {
   hasHeader?: boolean; // When true, offsets controls for external header
 }
 
-// Day colors - monochromatic scheme per design system
+// Day colors - distinct, distinguishable colors per day (inspired by itskovacs/trip)
 const DAY_COLORS = [
-  { bg: '#111827', border: '#ffffff', text: '#ffffff' }, // Day 1 - Dark (gray-900)
-  { bg: '#374151', border: '#ffffff', text: '#ffffff' }, // Day 2 - Medium (gray-700)
-  { bg: '#6b7280', border: '#ffffff', text: '#ffffff' }, // Day 3 - Gray (gray-500)
-  { bg: '#1f2937', border: '#ffffff', text: '#ffffff' }, // Day 4 - Charcoal (gray-800)
-  { bg: '#4b5563', border: '#ffffff', text: '#ffffff' }, // Day 5 - Slate (gray-600)
-  { bg: '#030712', border: '#ffffff', text: '#ffffff' }, // Day 6 - Near black (gray-950)
-  { bg: '#9ca3af', border: '#111827', text: '#111827' }, // Day 7 - Light gray (gray-400)
+  { bg: '#1e40af', border: '#ffffff', text: '#ffffff' }, // Day 1 - Blue
+  { bg: '#059669', border: '#ffffff', text: '#ffffff' }, // Day 2 - Emerald
+  { bg: '#d97706', border: '#ffffff', text: '#ffffff' }, // Day 3 - Amber
+  { bg: '#e11d48', border: '#ffffff', text: '#ffffff' }, // Day 4 - Rose
+  { bg: '#7c3aed', border: '#ffffff', text: '#ffffff' }, // Day 5 - Violet
+  { bg: '#0d9488', border: '#ffffff', text: '#ffffff' }, // Day 6 - Teal
+  { bg: '#ea580c', border: '#ffffff', text: '#ffffff' }, // Day 7 - Orange
 ];
 
 // Grayscale map style for Google Maps
@@ -97,6 +98,7 @@ export default function TripInteractiveMap({
   days,
   selectedDayNumber,
   activeItemId,
+  hoveredItemId,
   tripDestination,
   onMarkerClick,
   onAddPlace,
@@ -605,10 +607,14 @@ export default function TripInteractiveMap({
         zIndex: isActive ? 1000 : marker.index || 1,
       });
 
+      // Store item ID on the marker element for hover sync
+      (markerEl as HTMLElement & { _itemId?: string })._itemId = marker.item.id;
+
       advancedMarker.addListener('click', () => {
         setSelectedMarker(marker);
         showMarkerInfoWindow(marker, advancedMarker);
-        onMarkerClick?.(marker.id);
+        // Use the original item ID (not departure/arrival suffixed)
+        onMarkerClick?.(marker.item.id);
       });
 
       markersRef.current.push(advancedMarker);
@@ -706,6 +712,34 @@ export default function TripInteractiveMap({
       google.maps.event.removeListener(listener);
     });
   }, [markers, mapLoaded, activeItemId, onMarkerClick, googleLoaded]);
+
+  // Hover highlight: when an item is hovered in the list, highlight its marker on the map
+  useEffect(() => {
+    if (!mapLoaded || markersRef.current.length === 0) return;
+
+    markersRef.current.forEach((advMarker) => {
+      const el = advMarker.content as HTMLElement | null;
+      if (!el) return;
+
+      const itemId = (el as HTMLElement & { _itemId?: string })._itemId;
+      if (!hoveredItemId) {
+        // No hover — reset all markers
+        el.style.opacity = '1';
+        el.style.transform = '';
+        el.style.zIndex = '';
+      } else if (itemId === hoveredItemId) {
+        // Highlighted marker
+        el.style.opacity = '1';
+        el.style.transform = 'scale(1.3)';
+        el.style.zIndex = '100';
+      } else {
+        // Dimmed marker
+        el.style.opacity = '0.5';
+        el.style.transform = 'scale(0.8)';
+        el.style.zIndex = '';
+      }
+    });
+  }, [hoveredItemId, mapLoaded]);
 
   // Show info window for a marker
   const showMarkerInfoWindow = useCallback(

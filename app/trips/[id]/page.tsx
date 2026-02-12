@@ -23,6 +23,8 @@ import { useHotelLogic } from '@/lib/hooks/useHotelLogic';
 import { parseDestinations, type ActivityData } from '@/types/trip';
 import { calculateDayNumberFromDate } from '@/lib/utils/time-calculations';
 import { PageLoader } from '@/components/LoadingStates';
+import TripSkeleton from '@/features/trip/components/TripSkeleton';
+import MobileBottomSheet from '@/features/trip/components/MobileBottomSheet';
 import { createClient } from '@/lib/supabase/client';
 import type { Destination } from '@/types/destination';
 import TripSettingsBox from '@/features/trip/components/TripSettingsBox';
@@ -90,6 +92,9 @@ export default function TripPage() {
   // Expanded states
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [showTripNotes, setShowTripNotes] = useState(false);
+
+  // Hover sync state (bidirectional map ↔ list highlighting)
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
   // Day selection state (for map highlighting - auto-updated by scroll observer)
   const [selectedDayNumber, setSelectedDayNumber] = useState(1);
@@ -322,6 +327,16 @@ export default function TripPage() {
     setShowTripSettings(false);
   }, []);
 
+  // Scroll to item in itinerary list and highlight it (Map → List sync)
+  const scrollToItem = useCallback((itemId: string) => {
+    const el = document.querySelector(`[data-item-id="${itemId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('highlight-item');
+      setTimeout(() => el.classList.remove('highlight-item'), 2000);
+    }
+  }, []);
+
   // Handle trip deletion
   const handleDelete = useCallback(async () => {
     if (!user || !trip) return;
@@ -339,13 +354,9 @@ export default function TripPage() {
     }
   }, [user, trip, router]);
 
-  // Show loader while auth or trip is loading
+  // Show skeleton loader while auth or trip is loading
   if (authLoading || loading) {
-    return (
-      <main className="h-[calc(100dvh-84px)] md:h-[calc(100dvh-100px)] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
-        <div className="max-w-xl"><PageLoader /></div>
-      </main>
-    );
+    return <TripSkeleton />;
   }
 
   // If not authenticated, the useEffect will redirect - show loader in meantime
@@ -380,7 +391,7 @@ export default function TripPage() {
       onDragEnd={handleDragEnd}
     >
     <UndoProvider>
-    <main className="h-[calc(100dvh-84px)] md:h-[calc(100dvh-100px)] overflow-hidden bg-[var(--editorial-bg)]">
+    <main className="h-[calc(100dvh-84px)] md:h-[calc(100dvh-100px)] overflow-hidden bg-[var(--editorial-bg)] pb-12 lg:pb-0">
       {/* Full-viewport application shell: itinerary (left) + map (right) on desktop */}
       <div className="flex h-full">
         {/* LEFT PANEL - Itinerary (scrolls independently) */}
@@ -446,12 +457,49 @@ export default function TripPage() {
             </div>
           </div>
 
+          {/* DAY NAVIGATION PILLS - quick jump to day */}
+          {leftPanelTab === 'plans' && days.length > 1 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto scrollbar-hide flex-shrink-0 border-b border-[var(--editorial-border)]/30">
+              {days.map((day) => {
+                const isActive = selectedDayNumber === day.dayNumber;
+                const dayColor = ['#1e40af', '#059669', '#d97706', '#e11d48', '#7c3aed', '#0d9488', '#ea580c'][(day.dayNumber - 1) % 7];
+                const shortDate = day.date
+                  ? new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+                  : null;
+                return (
+                  <button
+                    key={day.dayNumber}
+                    onClick={() => {
+                      const el = document.getElementById(`day-${day.dayNumber}`);
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium trip-transition-fast ${
+                      isActive
+                        ? 'text-white shadow-sm'
+                        : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)]'
+                    }`}
+                    style={isActive ? { backgroundColor: dayColor } : undefined}
+                  >
+                    <span>Day {day.dayNumber}</span>
+                    {shortDate && <span className={isActive ? 'opacity-80' : 'opacity-60'}>{shortDate}</span>}
+                    <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${
+                      isActive ? 'bg-white/20' : 'bg-[var(--editorial-border-subtle)]'
+                    }`}>
+                      {day.items.length}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* SCROLLABLE CONTENT - Tab-based (independent scroll region) */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 pb-6">
+          <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin px-4 sm:px-6 pb-6">
 
           {/* === PLANS TAB - Continuous day scroll (TRIP-style) === */}
+          <AnimatePresence mode="wait">
           {leftPanelTab === 'plans' && (
-            <>
+            <motion.div key="plans" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
             {/* "Plans / Your itinerary" header with action toolbar */}
             <div className="flex items-center justify-between pt-4 pb-2">
               <div>
@@ -535,6 +583,9 @@ export default function TripPage() {
                 checkInHotel={checkInHotel}
                 breakfastHotel={breakfastHotel}
                 onSelectItem={handleSelectItem}
+                hoveredItemId={hoveredItemId}
+                onItemHover={setHoveredItemId}
+                selectedItemId={selectedItem?.id}
                 onRemove={removeItem}
                 onUpdateItem={updateItem}
                 onUpdateTime={updateItemTime}
@@ -620,12 +671,12 @@ export default function TripPage() {
               />
             </div>
           </div>
-            </>
+            </motion.div>
           )}
 
           {/* === NOTES TAB === */}
           {leftPanelTab === 'notes' && (
-            <div className="mt-4 space-y-4">
+            <motion.div key="notes" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }} className="mt-4 space-y-4">
               <div className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
                 <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Trip Notes</h3>
                 <TripChecklist
@@ -633,12 +684,12 @@ export default function TripPage() {
                   onSave={(notes) => updateTrip({ notes })}
                 />
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* === LISTS TAB === */}
           {leftPanelTab === 'lists' && (
-            <div className="mt-4 space-y-4">
+            <motion.div key="lists" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }} className="mt-4 space-y-4">
               <div id="trip-checklist-section" className="bg-[var(--editorial-bg-elevated)] rounded-xl border border-[var(--editorial-border)] p-4">
                 <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Checklist</h3>
                 <TripChecklist
@@ -654,8 +705,9 @@ export default function TripPage() {
                   onSave={(json) => updateTrip({ packing_list: json })}
                 />
               </div>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
 
           </div>
           {/* END SCROLLABLE CONTENT */}
@@ -672,7 +724,12 @@ export default function TripPage() {
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="hidden lg:flex lg:flex-col flex-shrink-0 border-r border-[var(--editorial-border)] bg-[var(--editorial-bg)] overflow-hidden z-10"
             >
-              <div className="flex-1 overflow-y-auto p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.05, duration: 0.2 }}
+                className="flex-1 overflow-y-auto scrollbar-thin p-4"
+              >
                 {sidebarAddDay !== null ? (
                   <AddPlacePanel
                     city={primaryCity}
@@ -753,7 +810,7 @@ export default function TripPage() {
                     onClose={() => setShowTripSettings(false)}
                   />
                 ) : null}
-              </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -761,7 +818,7 @@ export default function TripPage() {
         {/* RIGHT PANEL - Map / Places (persistent, z-0 base layer) */}
         <div className="hidden lg:flex flex-1 flex-col relative z-0 overflow-hidden">
           {/* Floating toolbar overlay - application-style control */}
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-[var(--editorial-bg)]/80 backdrop-blur-md rounded-lg p-1 shadow-sm border border-[var(--editorial-border)]">
+          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 glass-control rounded-lg p-1 trip-fade-scale-in">
             <button
               onClick={() => setRightPanelTab('days')}
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
@@ -794,10 +851,14 @@ export default function TripPage() {
               <TripInteractiveMap
                 days={days}
                 selectedDayNumber={selectedDayNumber}
+                hoveredItemId={hoveredItemId}
                 tripDestination={primaryCity}
                 onMarkerClick={(itemId) => {
                   const item = days.flatMap(d => d.items).find(i => i.id === itemId);
-                  if (item) handleSelectItem(item);
+                  if (item) {
+                    handleSelectItem(item);
+                    scrollToItem(item.id);
+                  }
                 }}
                 onAddPlace={(place, dayNum) => {
                   if (place.slug) addPlace(place as unknown as Destination, dayNum);
@@ -815,29 +876,67 @@ export default function TripPage() {
           )}
         </div>
 
-        {/* Mobile map toggle - floating app toolbar */}
-        <button
-          onClick={() => setShowMobileMap(!showMobileMap)}
-          className="lg:hidden fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full bg-[var(--editorial-text-primary)] text-[var(--editorial-bg)] shadow-lg shadow-black/20 flex items-center justify-center backdrop-blur-sm"
-        >
-          <MapIcon className="w-4.5 h-4.5" />
-        </button>
+        {/* Mobile bottom tab bar - glassmorphism */}
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 glass-control !rounded-none !border-x-0 !border-b-0 safe-area-bottom">
+          <div className="flex items-center justify-around h-12">
+            {([
+              { id: 'plans', label: 'Plans', icon: <CheckSquare className="w-4 h-4" /> },
+              { id: 'map', label: 'Map', icon: <MapIcon className="w-4 h-4" /> },
+              { id: 'notes', label: 'Notes', icon: <Diamond className="w-4 h-4" /> },
+              { id: 'lists', label: 'Lists', icon: <Filter className="w-4 h-4" /> },
+            ] as const).map((tab) => {
+              const isActive = tab.id === 'map'
+                ? showMobileMap
+                : (!showMobileMap && leftPanelTab === tab.id);
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (tab.id === 'map') {
+                      setShowMobileMap(!showMobileMap);
+                    } else {
+                      setShowMobileMap(false);
+                      setLeftPanelTab(tab.id as 'plans' | 'notes' | 'lists');
+                    }
+                  }}
+                  className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg trip-transition-fast ${
+                    isActive
+                      ? 'text-[var(--editorial-accent)]'
+                      : 'text-[var(--editorial-text-tertiary)]'
+                  }`}
+                >
+                  {tab.icon}
+                  <span className="text-[10px] font-medium">{tab.label}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="mobile-tab-indicator"
+                      className="w-4 h-0.5 rounded-full bg-[var(--editorial-accent)]"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Mobile fullscreen map overlay */}
         <AnimatePresence>
           {showMobileMap && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="lg:hidden fixed inset-0 z-50 bg-[var(--editorial-bg)]"
             >
+              {/* Drag handle hint */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 w-10 h-1 rounded-full bg-[var(--editorial-text-tertiary)]/30" />
               <div className="absolute top-4 left-4 z-10">
                 <button
                   onClick={() => setShowMobileMap(false)}
-                  className="w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center"
+                  className="glass-button w-10 h-10 rounded-full shadow-lg flex items-center justify-center border border-[var(--editorial-border)]"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 text-[var(--editorial-text-primary)]" />
                 </button>
               </div>
               <TripInteractiveMap

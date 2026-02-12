@@ -29,12 +29,16 @@ interface ItemRowProps {
   item: EnrichedItineraryItem;
   isExpanded: boolean;
   isEditMode?: boolean;
+  isSelected?: boolean;
   onToggle: () => void;
   onRemove?: () => void;
   onUpdateItem: (id: string, updates: Record<string, unknown>) => void;
   onUpdateTime: (id: string, time: string) => void;
   onDragEnd: () => void;
   onSelect?: () => void;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
+  staggerIndex?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -99,12 +103,16 @@ export default function ItemRow({
   item,
   isExpanded,
   isEditMode,
+  isSelected,
   onToggle,
   onRemove,
   onUpdateItem,
   onUpdateTime,
   onDragEnd,
   onSelect,
+  onHoverStart,
+  onHoverEnd,
+  staggerIndex = 0,
 }: ItemRowProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -177,11 +185,22 @@ export default function ItemRow({
       onDragEnd={() => { setIsDragging(false); onDragEnd(); }}
       className={`${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''} ${isDragging ? 'z-10' : ''}`}
       dragListener={isEditMode}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -16 }}
+      transition={{ duration: 0.25, delay: staggerIndex * 0.03, ease: [0.16, 1, 0.3, 1] }}
+      data-item-id={item.id}
     >
       <div
         onClick={handleClick}
-        className={`relative overflow-hidden rounded-xl cursor-pointer transition-all bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] ${
-          isDragging ? 'shadow-xl ring-2 ring-blue-400 dark:ring-blue-500' : 'hover:shadow-sm'
+        onMouseEnter={onHoverStart}
+        onMouseLeave={onHoverEnd}
+        className={`trip-item-row relative overflow-hidden rounded-xl cursor-pointer bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)] ${
+          isDragging
+            ? 'shadow-xl ring-2 ring-blue-400 dark:ring-blue-500'
+            : isSelected
+              ? 'is-selected shadow-sm'
+              : ''
         }`}
       >
         <div className="px-3 py-2.5">

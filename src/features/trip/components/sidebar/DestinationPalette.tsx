@@ -34,15 +34,15 @@ export function DropZoneBetweenItems({
     <div
       ref={setNodeRef}
       className={`
-        transition-all duration-200 ease-out
+        trip-drop-zone trip-transition-fast
         ${isOver
-          ? 'h-12 bg-green-100 dark:bg-green-900/30 border-2 border-dashed border-green-500 rounded-lg my-1 flex items-center justify-center'
+          ? 'is-over h-12 rounded-lg my-1 flex items-center justify-center'
           : 'h-1 hover:h-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full mx-8'
         }
       `}
     >
       {isOver && (
-        <span className="text-xs font-medium text-green-600 dark:text-green-400">Drop here to insert</span>
+        <span className="text-xs font-medium text-[var(--editorial-accent)] trip-fade-scale-in">Drop here to insert</span>
       )}
     </div>
   );
@@ -147,7 +147,7 @@ export function DragPreviewCard({ destination, isOverTarget }: { destination: De
   return (
     <div className={`pointer-events-none transition-all duration-200 ease-out ${isOverTarget ? 'scale-105 rotate-1' : 'scale-100 rotate-0'}`}>
       <div
-        className={`flex items-center gap-3 p-3 rounded-xl bg-[var(--editorial-bg-elevated)] shadow-2xl border-2 transition-all duration-200 ${isOverTarget ? 'border-green-500 dark:border-green-400 ring-4 ring-green-500/20' : 'border-[var(--editorial-border)]'}`}
+        className={`glass-panel flex items-center gap-3 p-3 rounded-xl shadow-2xl border-2 transition-all duration-200 ${isOverTarget ? 'border-[var(--editorial-accent)] ring-4 ring-[var(--editorial-accent)]/20' : 'border-[var(--editorial-border)]'}`}
         style={{ width: isOverTarget ? 240 : 180 }}
       >
         <div className={`rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 transition-all duration-200 ${isOverTarget ? 'w-12 h-12' : 'w-10 h-10'}`}>

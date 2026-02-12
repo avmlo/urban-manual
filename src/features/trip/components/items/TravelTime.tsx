@@ -117,14 +117,17 @@ export default function TravelTime({ from, to, onUpdateTravelMode }: TravelTimeP
   if (travelMinutes === null) return null;
 
   return (
-    <div className="flex items-center justify-center py-0.5">
+    <div className="trip-connector flex items-center justify-center py-0.5">
       <button
         onClick={cycleMode}
-        className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] rounded-md transition-all"
+        className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-secondary)] hover:bg-[var(--editorial-border-subtle)] rounded-md trip-transition-fast group"
         title={`${duration} by ${getModeLabel()} - click to change mode`}
       >
-        {getModeIcon()}
+        <span className="transition-transform duration-150 group-hover:scale-110 group-active:rotate-12">
+          {getModeIcon()}
+        </span>
         <span className="font-medium tabular-nums">{duration}</span>
+        {distanceDisplay && <span className="text-[var(--editorial-text-tertiary)] opacity-60">{distanceDisplay}</span>}
         {specialLabel && <span className="text-[var(--editorial-accent)]">{specialLabel}</span>}
       </button>
     </div>

@@ -28,11 +28,11 @@ export function SavingFeedback({ status, className = '' }: SavingFeedbackProps) 
         >
           <div
             className={`
-              flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-sm
+              glass-control flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg
               text-sm font-medium
-              ${status === 'saving' ? 'bg-gray-900/90 dark:bg-gray-800/90 text-white' : ''}
-              ${status === 'saved' ? 'bg-green-600/90 dark:bg-green-700/90 text-white' : ''}
-              ${status === 'error' ? 'bg-red-600/90 dark:bg-red-700/90 text-white' : ''}
+              ${status === 'saving' ? 'text-[var(--editorial-text-primary)]' : ''}
+              ${status === 'saved' ? 'text-green-600 dark:text-green-400' : ''}
+              ${status === 'error' ? 'text-red-600 dark:text-red-400' : ''}
             `}
           >
             {status === 'saving' && (
@@ -43,7 +43,13 @@ export function SavingFeedback({ status, className = '' }: SavingFeedbackProps) 
             )}
             {status === 'saved' && (
               <>
-                <Check className="w-3.5 h-3.5" />
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 12, stiffness: 400 }}
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </motion.div>
                 <span>Saved</span>
               </>
             )}

@@ -296,7 +296,224 @@
 }
 
 .animate-save-glow {
-  animation: saveGlow 0.6s ease-out;
+  animation: saveGlow 0.8s ease-out;
+}
+
+/* ============================================
+   TRIP UI — Glass-morphism & Animation System
+   Inspired by itskovacs/trip (MIT)
+   ============================================ */
+
+/* --- Trip Keyframes --- */
+
+/* Horizontal panel slide (detail panel, sidebar) */
+@keyframes tripSlideXIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes tripSlideXOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(16px); }
+}
+
+/* Vertical slide for sheets, menus, mobile panels */
+@keyframes tripSlideYIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes tripSlideYOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(12px); }
+}
+
+/* Card entrance — scale + opacity */
+@keyframes tripFadeScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Map route draw animation */
+@keyframes tripRouteDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Subtle ring pulse for active markers/items */
+@keyframes tripPulseRing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(166, 93, 76, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(166, 93, 76, 0); }
+}
+
+/* Soft breathing pulse for hovered elements */
+@keyframes tripPulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Item row entrance from left */
+@keyframes tripItemEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Item row exit to left */
+@keyframes tripItemExit {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-16px); }
+}
+
+/* Drop zone pulse */
+@keyframes tripDropPulse {
+  0%, 100% { border-color: rgba(166, 93, 76, 0.3); }
+  50% { border-color: rgba(166, 93, 76, 0.6); }
+}
+
+/* --- Trip Animation Utility Classes --- */
+
+.trip-slide-x-in { animation: tripSlideXIn 0.3s ease-out both; }
+.trip-slide-x-out { animation: tripSlideXOut 0.3s ease-out both; }
+.trip-slide-y-in { animation: tripSlideYIn 0.3s ease-out both; }
+.trip-slide-y-out { animation: tripSlideYOut 0.3s ease-out both; }
+.trip-fade-scale-in { animation: tripFadeScaleIn 0.25s ease-out both; }
+.trip-item-enter { animation: tripItemEnter 0.25s ease-out both; }
+.trip-item-exit { animation: tripItemExit 0.2s ease-out both; }
+.trip-pulse-ring { animation: tripPulseRing 2s ease-in-out infinite; }
+.trip-pulse-soft { animation: tripPulseSoft 2s ease-in-out infinite; }
+.trip-drop-pulse { animation: tripDropPulse 1.5s ease-in-out infinite; }
+
+/* Stagger delays for list items (30ms increments) */
+.trip-stagger-1 { animation-delay: 30ms; }
+.trip-stagger-2 { animation-delay: 60ms; }
+.trip-stagger-3 { animation-delay: 90ms; }
+.trip-stagger-4 { animation-delay: 120ms; }
+.trip-stagger-5 { animation-delay: 150ms; }
+.trip-stagger-6 { animation-delay: 180ms; }
+.trip-stagger-7 { animation-delay: 210ms; }
+.trip-stagger-8 { animation-delay: 240ms; }
+
+/* --- Glass-morphism Utility Classes --- */
+
+/* Panel glass — full sidebar/panel treatment */
+.glass-panel {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background-color: color-mix(in srgb, var(--editorial-bg) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--editorial-border) 50%, transparent);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark .glass-panel {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Control glass — floating toolbars, pill groups */
+.glass-control {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: color-mix(in srgb, var(--editorial-bg) 80%, transparent);
+  border: 1px solid var(--editorial-border);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass-control {
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Button glass — individual floating buttons */
+.glass-button {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: color-mix(in srgb, var(--editorial-bg-elevated) 80%, transparent);
+  transition: background-color 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.glass-button:hover {
+  background-color: var(--editorial-bg-elevated);
+  transform: scale(1.02);
+}
+
+.glass-button:active {
+  transform: scale(0.98);
+}
+
+/* --- Trip Transition Utilities --- */
+.trip-transition { transition: all 0.3s ease-out; }
+.trip-transition-fast { transition: all 0.15s ease-out; }
+.trip-transition-color { transition: color 0.15s ease-out, background-color 0.15s ease-out; }
+
+/* --- Trip Item Row States --- */
+.trip-item-row {
+  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out, border-color 0.15s ease-out;
+}
+
+.trip-item-row:hover {
+  background-color: color-mix(in srgb, var(--editorial-bg-elevated) 60%, transparent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.trip-item-row.is-selected {
+  border-left: 2px solid var(--editorial-accent);
+  background-color: color-mix(in srgb, var(--editorial-bg-elevated) 80%, transparent);
+}
+
+/* --- Trip Connector Line (between items) --- */
+.trip-connector {
+  position: relative;
+}
+
+.trip-connector::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  border-left: 1px dashed var(--editorial-border);
+}
+
+/* --- Trip Map Route Animation --- */
+.trip-route-animated {
+  stroke-dasharray: var(--route-length, 1000);
+  stroke-dashoffset: var(--route-length, 1000);
+  animation: tripRouteDraw 1s ease-out forwards;
+}
+
+.trip-route-dim {
+  opacity: 0.2;
+  transition: opacity 0.3s ease-out;
+}
+
+.trip-route-active {
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+}
+
+/* --- Trip Map Marker States --- */
+.trip-marker {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.trip-marker-dim {
+  opacity: 0.5;
+  transform: scale(0.7);
+}
+
+.trip-marker-highlight {
+  opacity: 1;
+  transform: scale(1.3);
+  z-index: 10;
+}
+
+/* --- Trip Drop Zone --- */
+.trip-drop-zone {
+  border: 2px dashed transparent;
+  border-radius: 8px;
+  transition: border-color 0.2s ease-out, background-color 0.2s ease-out;
+}
+
+.trip-drop-zone.is-over {
+  border-color: var(--editorial-accent);
+  background-color: color-mix(in srgb, var(--editorial-accent) 5%, transparent);
+  animation: tripDropPulse 1.5s ease-in-out infinite;
 }
 
 /* Slide up animation for modals */

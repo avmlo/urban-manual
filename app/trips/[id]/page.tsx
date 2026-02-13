@@ -18,6 +18,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { useAuth } from '@/contexts/AuthContext';
+import { useViewportFit } from '@/lib/hooks/useViewportFit';
 import { useTripEditor, type EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 import { useHotelLogic } from '@/lib/hooks/useHotelLogic';
 import { parseDestinations, type ActivityData } from '@/types/trip';
@@ -61,6 +62,9 @@ export default function TripPage() {
       router.replace('/signin');
     }
   }, [authLoading, user, router]);
+
+  // Fit header + content + footer within viewport
+  useViewportFit();
 
   const {
     trip,
@@ -342,7 +346,7 @@ export default function TripPage() {
   // Show loader while auth or trip is loading
   if (authLoading || loading) {
     return (
-      <main className="h-[calc(100dvh-84px)] md:h-[calc(100dvh-100px)] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="flex-1 min-h-0 overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="max-w-xl"><PageLoader /></div>
       </main>
     );
@@ -351,7 +355,7 @@ export default function TripPage() {
   // If not authenticated, the useEffect will redirect - show loader in meantime
   if (!user) {
     return (
-      <main className="h-[calc(100dvh-84px)] md:h-[calc(100dvh-100px)] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="flex-1 min-h-0 overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="max-w-xl"><PageLoader /></div>
       </main>
     );
@@ -359,7 +363,7 @@ export default function TripPage() {
 
   if (!trip) {
     return (
-      <main className="h-[calc(100dvh-84px)] md:h-[calc(100dvh-100px)] overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
+      <main className="flex-1 min-h-0 overflow-hidden bg-[var(--editorial-bg)] flex items-center justify-center">
         <div className="text-center">
           <p className="text-[var(--editorial-text-secondary)] mb-4">Trip not found</p>
           <Link href="/trips" className="text-[var(--editorial-text-primary)] hover:opacity-70">Back to trips</Link>
@@ -380,7 +384,7 @@ export default function TripPage() {
       onDragEnd={handleDragEnd}
     >
     <UndoProvider>
-    <main className="h-[calc(100dvh-84px)] md:h-[calc(100dvh-100px)] overflow-hidden bg-[var(--editorial-bg)]">
+    <main className="flex-1 min-h-0 overflow-hidden bg-[var(--editorial-bg)]">
       {/* Full-viewport application shell: itinerary (left) + map (right) on desktop */}
       <div className="flex h-full">
         {/* LEFT PANEL - Itinerary (scrolls independently) */}

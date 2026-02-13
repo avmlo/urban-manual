@@ -6,6 +6,8 @@ import { HomepageContent } from '@/features/homepage/components/HomepageContent'
 import { AISearchChatWrapper } from '@/features/homepage/components/AISearchChatWrapper';
 import InteractiveHero from '@/features/homepage/components/InteractiveHero';
 import NavigationBar from '@/features/homepage/components/NavigationBar';
+import { IntelligenceCards } from '@/components/IntelligenceCards';
+import { TripAwarenessBanner } from '@/components/TripAwarenessBanner';
 
 /**
  * Homepage - Progressive Loading Architecture with Client Fallback
@@ -83,8 +85,16 @@ export default async function HomePage() {
             </div>
           </section>
 
+          {/* Proactive Intelligence Cards - contextual AI insights for logged-in users */}
+          <div className="w-full px-4 sm:px-6 md:px-10">
+            <IntelligenceCards />
+          </div>
+
           {/* Content Section - Full width */}
           <div className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
+            {/* Trip awareness banner - persistent nudge for upcoming/completed trips */}
+            <TripAwarenessBanner />
+
             {/* Navigation bar */}
             <NavigationBar />
 

@@ -98,8 +98,6 @@ export default function DestinationBox({
   const [editPriority, setEditPriority] = useState(item.parsedNotes?.priority || '');
   const [editBookingStatus, setEditBookingStatus] = useState(item.parsedNotes?.bookingStatus || '');
   const [editTags, setEditTags] = useState<string[]>(item.parsedNotes?.tags || []);
-  const [editCostEstimate, setEditCostEstimate] = useState(item.parsedNotes?.costEstimate || 0);
-  const [editCurrency, setEditCurrency] = useState(item.parsedNotes?.currency || 'EUR');
   const [imageError, setImageError] = useState(false);
 
   // Flight-specific fields
@@ -152,8 +150,6 @@ export default function DestinationBox({
     setEditPriority(item.parsedNotes?.priority || '');
     setEditBookingStatus(item.parsedNotes?.bookingStatus || '');
     setEditTags(item.parsedNotes?.tags || []);
-    setEditCostEstimate(item.parsedNotes?.costEstimate || 0);
-    setEditCurrency(item.parsedNotes?.currency || 'EUR');
     setEditTerminal(item.parsedNotes?.terminal || '');
     setEditGate(item.parsedNotes?.gate || '');
     setEditSeat(item.parsedNotes?.seatNumber || '');
@@ -212,12 +208,6 @@ export default function DestinationBox({
         break;
       case 'seatNumber':
         updates.seatNumber = value as string;
-        break;
-      case 'costEstimate':
-        updates.costEstimate = value as number;
-        break;
-      case 'currency':
-        updates.currency = value as string;
         break;
     }
 
@@ -499,14 +489,8 @@ export default function DestinationBox({
             </Field>
           </div>
 
-          {/* Cost and Booking */}
+          {/* Booking */}
           <div className="flex gap-2">
-            <Field label="Price" className="flex-1">
-              <input type="number" value={editCostEstimate || ''} placeholder="0"
-                onChange={(e) => setEditCostEstimate(Number(e.target.value))}
-                onBlur={() => saveChanges('costEstimate', editCostEstimate)}
-                className={`${inputBase} font-mono`} />
-            </Field>
             <Field label="Booking" className="flex-1">
               <select value={editBookingStatus}
                 onChange={(e) => { setEditBookingStatus(e.target.value); saveChanges('bookingStatus', e.target.value); }}

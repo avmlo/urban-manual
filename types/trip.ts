@@ -264,8 +264,6 @@ export interface ItineraryItemV2 {
   partySize?: number;
 
   // Cost
-  costEstimate?: number;
-  currency: string;
   priceRange?: '$' | '$$' | '$$$' | '$$$$';
 
   // Travel to next
@@ -669,9 +667,6 @@ export interface ItineraryItemNotes {
   // Reservation details
   partySize?: number;
   bookingStatus?: 'need-to-book' | 'booked' | 'waitlist' | 'walk-in';
-  // Cost tracking
-  costEstimate?: number; // Estimated cost for this item
-  currency?: string; // ISO currency code (EUR, USD, etc.)
   // Planning & Organization
   priority?: 'must-do' | 'want-to' | 'if-time';
   visitedStatus?: 'planned' | 'visited' | 'skipped';

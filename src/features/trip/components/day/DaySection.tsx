@@ -557,20 +557,6 @@ export default function DaySection({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Day cost total - pill badge like TRIP */}
-          {(() => {
-            const dayCost = items.reduce((sum, i) => sum + (i.parsedNotes?.costEstimate || 0), 0);
-            if (dayCost > 0) {
-              const curr = items.find(i => i.parsedNotes?.currency)?.parsedNotes?.currency || '\u20AC';
-              return (
-                <span className="text-sm font-medium text-[var(--editorial-text-secondary)] tabular-nums px-2.5 py-1 rounded-lg bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]">
-                  {dayCost.toLocaleString()} {curr}
-                </span>
-              );
-            }
-            return null;
-          })()}
-
           {/* Three-dot menu */}
           <div className="relative">
             <button
@@ -930,13 +916,8 @@ export default function DaySection({
                   {nightlyHotel.title || 'Hotel'}
                 </span>
               </div>
-              {/* Cost + status */}
+              {/* Status */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                {nightlyHotel.parsedNotes?.costEstimate && nightlyHotel.parsedNotes.costEstimate > 0 && (
-                  <span className="text-xs font-medium tabular-nums text-[var(--editorial-text-secondary)] bg-[var(--editorial-bg)] border border-[var(--editorial-border)] rounded-lg px-2 py-0.5">
-                    {nightlyHotel.parsedNotes.costEstimate} {nightlyHotel.parsedNotes.currency || '\u20AC'}
-                  </span>
-                )}
                 <Tag
                   value="booked"
                   severity="success"

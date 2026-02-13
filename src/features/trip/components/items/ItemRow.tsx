@@ -160,9 +160,6 @@ export default function ItemRow({
   const bookingStatus = item.parsedNotes?.bookingStatus;
   const statusDotColor = getStatusDotColor(bookingStatus);
   const statusSeverity = getStatusSeverity(bookingStatus);
-  const cost = item.parsedNotes?.costEstimate;
-  const currency = item.parsedNotes?.currency || '\u20AC';
-
   // ------- Click handler -------
   const handleClick = () => {
     const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -225,13 +222,6 @@ export default function ItemRow({
             <span className="text-sm font-medium text-[var(--editorial-text-primary)] truncate flex-1 min-w-0">
               {title}
             </span>
-
-            {/* Cost pill */}
-            {cost != null && cost > 0 && (
-              <span className="flex-shrink-0 text-xs font-medium tabular-nums text-[var(--editorial-text-secondary)] bg-[var(--editorial-bg)] border border-[var(--editorial-border)] rounded-lg px-2 py-0.5">
-                {cost} {currency}
-              </span>
-            )}
 
             {/* Status badge - PrimeReact Tag */}
             {statusSeverity && bookingStatus && (

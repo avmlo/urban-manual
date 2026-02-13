@@ -90,7 +90,6 @@ export * from "./components/QuickActions";
 export * from "./components/SavingFeedback";
 export * from "./components/UndoToast";
 export * from "./components/ItemStatus";
-export * from "./components/FinancialSummary";
 export * from "./components/NeighborhoodBreakdown";
 export * from "./components/LocalEvents";
 export * from "./components/OpeningHoursIndicator";

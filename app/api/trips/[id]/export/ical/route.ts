@@ -143,13 +143,6 @@ export const GET = withErrorHandling(
       if (notes?.type) {
         descriptionParts.push(`Type: ${notes.type}`);
       }
-      if (notes?.costEstimate != null && notes?.currency) {
-        descriptionParts.push(
-          `Estimated cost: ${notes.costEstimate} ${notes.currency}`
-        );
-      } else if (notes?.costEstimate != null) {
-        descriptionParts.push(`Estimated cost: ${notes.costEstimate}`);
-      }
       if (notes?.raw) {
         descriptionParts.push(notes.raw);
       }

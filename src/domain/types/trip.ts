@@ -264,8 +264,6 @@ export interface ItineraryItemV2 {
   partySize?: number;
 
   // Cost
-  costEstimate?: number;
-  currency: string;
   priceRange?: '$' | '$$' | '$$$' | '$$$$';
 
   // Travel to next

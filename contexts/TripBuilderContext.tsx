@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Destination } from '@/types/destination';
+import { DayWeather } from '@/types/trip';
 import { useAuth } from './AuthContext';
 import {
   getEstimatedDuration,
@@ -10,6 +11,8 @@ import {
   predictCrowdLevel,
   isOutdoorCategory,
   formatDuration,
+  suggestWeatherSwaps,
+  WeatherSwapSuggestion,
 } from '@/lib/trip-intelligence';
 import { isClosedOnDay, getHoursForDay } from '@/lib/utils/opening-hours';
 
@@ -133,6 +136,15 @@ export interface TripBuilderContextType {
   getDayInsights: (dayNumber: number) => DayInsight[];
   getTripHealth: () => TripHealth;
 
+  // Weather
+  weatherForecast: (DayWeather & { isRainy?: boolean })[];
+  weatherSwapSuggestions: WeatherSwapSuggestion[];
+  isLoadingWeather: boolean;
+  weatherError: string | null;
+  fetchWeather: () => Promise<void>;
+  applyWeatherSwap: (suggestion: WeatherSwapSuggestion) => void;
+  dismissWeatherSwaps: () => void;
+
   // Computed
   totalItems: number;
   tripDuration: number;
@@ -240,6 +252,12 @@ export function TripBuilderProvider({ children }: { children: React.ReactNode })
   const [isBuilding, setIsBuilding] = useState(false);
   const [isLoadingTrips, setIsLoadingTrips] = useState(false);
   const [isSuggestingNext, setIsSuggestingNext] = useState(false);
+  const [weatherForecast, setWeatherForecast] = useState<(DayWeather & { isRainy?: boolean })[]>([]);
+  const [weatherSwapSuggestions, setWeatherSwapSuggestions] = useState<WeatherSwapSuggestion[]>([]);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [weatherDismissed, setWeatherDismissed] = useState(false);
+  const weatherFetchKey = useRef<string>('');
 
   // Fetch saved trips from server
   const refreshSavedTrips = useCallback(async () => {
@@ -1303,6 +1321,144 @@ export function TripBuilderProvider({ children }: { children: React.ReactNode })
     await loadTrip(tripId);
   }, [activeTrip, loadTrip]);
 
+  // Fetch weather forecast for the trip
+  const fetchWeather = useCallback(async () => {
+    if (!activeTrip?.city || !activeTrip.startDate || !activeTrip.endDate) return;
+
+    // Deduplicate requests using a key
+    const key = `${activeTrip.city}-${activeTrip.startDate}-${activeTrip.endDate}`;
+    if (key === weatherFetchKey.current && weatherForecast.length > 0) return;
+    weatherFetchKey.current = key;
+
+    setIsLoadingWeather(true);
+    setWeatherError(null);
+
+    try {
+      const params = new URLSearchParams({
+        city: activeTrip.city,
+        startDate: activeTrip.startDate,
+        endDate: activeTrip.endDate,
+        tempUnit: 'C',
+      });
+
+      const response = await fetch(`/api/weather/forecast?${params.toString()}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to fetch weather');
+      }
+
+      const data = await response.json();
+      const forecast: (DayWeather & { isRainy?: boolean })[] = data.data?.forecast || [];
+      setWeatherForecast(forecast);
+
+      // Update day weather in active trip
+      setActiveTrip(prev => {
+        if (!prev) return null;
+
+        const days = prev.days.map(day => {
+          const dayForecast = forecast.find(f => f.date === day.date);
+          if (dayForecast) {
+            return {
+              ...day,
+              weather: {
+                condition: dayForecast.condition,
+                temp: dayForecast.tempHigh,
+                isRainy: dayForecast.isRainy || dayForecast.precipitation >= 60,
+              },
+            };
+          }
+          return day;
+        });
+
+        return { ...prev, days };
+      });
+
+      // Compute weather swap suggestions
+      setWeatherDismissed(false);
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      setWeatherError(error instanceof Error ? error.message : 'Failed to fetch weather');
+    } finally {
+      setIsLoadingWeather(false);
+    }
+  }, [activeTrip?.city, activeTrip?.startDate, activeTrip?.endDate, weatherForecast.length]);
+
+  // Auto-fetch weather when trip has city and dates
+  useEffect(() => {
+    if (activeTrip?.city && activeTrip?.startDate && activeTrip?.endDate) {
+      fetchWeather();
+    }
+  }, [activeTrip?.city, activeTrip?.startDate, activeTrip?.endDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Compute weather swap suggestions when forecast or items change
+  useEffect(() => {
+    if (!activeTrip || weatherForecast.length === 0 || weatherDismissed) {
+      setWeatherSwapSuggestions([]);
+      return;
+    }
+
+    const daysData = activeTrip.days.map(day => ({
+      dayNumber: day.dayNumber,
+      date: day.date || null,
+      weather: day.weather,
+      items: day.items.map(item => ({
+        id: item.id,
+        title: item.destination.name,
+        category: item.destination.category,
+      })),
+    }));
+
+    const swaps = suggestWeatherSwaps(daysData);
+    setWeatherSwapSuggestions(swaps);
+  }, [activeTrip?.days, weatherForecast, weatherDismissed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Apply a weather swap suggestion (swap items between days)
+  const applyWeatherSwap = useCallback((suggestion: WeatherSwapSuggestion) => {
+    setActiveTrip(prev => {
+      if (!prev) return null;
+
+      const days = [...prev.days];
+      const affectedDayIdx = suggestion.affectedDay - 1;
+      const targetDayIdx = suggestion.targetDay - 1;
+
+      if (affectedDayIdx >= days.length || targetDayIdx >= days.length) return prev;
+
+      const affectedDay = { ...days[affectedDayIdx] };
+      const targetDay = { ...days[targetDayIdx] };
+
+      // Find the items to swap
+      const affectedItemIdx = affectedDay.items.findIndex(i => i.id === suggestion.affectedItem.id);
+      const targetItemIdx = targetDay.items.findIndex(i => i.id === suggestion.targetItem.id);
+
+      if (affectedItemIdx === -1 || targetItemIdx === -1) return prev;
+
+      // Swap the items
+      const affectedItem = { ...affectedDay.items[affectedItemIdx], day: suggestion.targetDay };
+      const targetItem = { ...targetDay.items[targetItemIdx], day: suggestion.affectedDay };
+
+      const newAffectedItems = [...affectedDay.items];
+      newAffectedItems[affectedItemIdx] = targetItem;
+
+      const newTargetItems = [...targetDay.items];
+      newTargetItems[targetItemIdx] = affectedItem;
+
+      days[affectedDayIdx] = { ...affectedDay, items: newAffectedItems };
+      days[targetDayIdx] = { ...targetDay, items: newTargetItems };
+
+      return {
+        ...prev,
+        days: calculateTripMetrics(days),
+        isModified: true,
+      };
+    });
+  }, []);
+
+  // Dismiss weather swap suggestions
+  const dismissWeatherSwaps = useCallback(() => {
+    setWeatherDismissed(true);
+    setWeatherSwapSuggestions([]);
+  }, []);
+
   // Panel controls
   const openPanel = useCallback(() => {
     setIsPanelOpen(true);
@@ -1373,6 +1529,13 @@ export function TripBuilderProvider({ children }: { children: React.ReactNode })
     autoScheduleDay,
     getDayInsights,
     getTripHealth,
+    weatherForecast,
+    weatherSwapSuggestions,
+    isLoadingWeather,
+    weatherError,
+    fetchWeather,
+    applyWeatherSwap,
+    dismissWeatherSwaps,
     totalItems,
     tripDuration,
     canAddMore,

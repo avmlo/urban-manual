@@ -121,7 +121,7 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
   }, [userId, router]);
 
   return (
-    <main className="w-full px-4 sm:px-6 md:px-10 py-20 min-h-screen bg-[var(--editorial-bg)]">
+    <main className="w-full px-4 sm:px-6 md:px-10 pt-20 bg-[var(--editorial-bg)]">
         {/* Header - Editorial style */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">

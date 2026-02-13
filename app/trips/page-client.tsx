@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -34,6 +34,73 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
   const [trips] = useState<TripWithStats[]>(initialTrips);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [showWizard, setShowWizard] = useState(false);
+
+  // Make page fit viewport with no scrolling
+  useEffect(() => {
+    const mainContent = document.getElementById('main-content');
+    const header = document.querySelector('header[role="banner"]') as HTMLElement | null;
+    const footer = document.querySelector('footer[role="contentinfo"]') as HTMLElement | null;
+
+    // Prevent page-level scrolling
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.display = 'flex';
+    document.body.style.flexDirection = 'column';
+    document.body.style.height = '100dvh';
+    document.body.style.overflow = 'hidden';
+
+    // Any wrapper between body and main-content (e.g. SwipeBack) needs to flex too
+    let wrapper: HTMLElement | null = null;
+    if (mainContent && mainContent.parentElement !== document.body) {
+      wrapper = mainContent.parentElement as HTMLElement;
+      wrapper.style.display = 'flex';
+      wrapper.style.flexDirection = 'column';
+      wrapper.style.flex = '1';
+      wrapper.style.minHeight = '0';
+    }
+
+    if (header) {
+      header.style.position = 'relative';
+      header.style.flexShrink = '0';
+    }
+    if (mainContent) {
+      mainContent.style.minHeight = '0';
+      mainContent.style.flex = '1';
+      mainContent.style.display = 'flex';
+      mainContent.style.flexDirection = 'column';
+    }
+    if (footer) {
+      footer.style.marginTop = '0';
+      footer.style.flexShrink = '0';
+    }
+
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.display = '';
+      document.body.style.flexDirection = '';
+      document.body.style.height = '';
+      document.body.style.overflow = '';
+      if (wrapper) {
+        wrapper.style.display = '';
+        wrapper.style.flexDirection = '';
+        wrapper.style.flex = '';
+        wrapper.style.minHeight = '';
+      }
+      if (header) {
+        header.style.position = '';
+        header.style.flexShrink = '';
+      }
+      if (mainContent) {
+        mainContent.style.minHeight = '';
+        mainContent.style.flex = '';
+        mainContent.style.display = '';
+        mainContent.style.flexDirection = '';
+      }
+      if (footer) {
+        footer.style.marginTop = '';
+        footer.style.flexShrink = '';
+      }
+    };
+  }, []);
 
   // Categorize trips by state
   const categorizedTrips = useMemo(() => {
@@ -121,9 +188,9 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
   }, [userId, router]);
 
   return (
-    <main className="w-full px-4 sm:px-6 md:px-10 pt-20 bg-[var(--editorial-bg)]">
+    <main className="flex flex-col w-full px-4 sm:px-6 md:px-10 pt-10 pb-4 bg-[var(--editorial-bg)] flex-1 min-h-0 overflow-hidden">
         {/* Header - Editorial style */}
-        <div className="mb-12">
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <h1
               className="text-3xl font-normal text-[var(--editorial-text-primary)]"
@@ -146,7 +213,7 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
 
         {/* Tab Navigation - Editorial style */}
         {categorizedTrips.upcoming.length > 0 && categorizedTrips.past.length > 0 && (
-          <div className="mb-12">
+          <div className="mb-6">
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
               {(['all', 'upcoming', 'past'] as FilterTab[]).map((tab) => (
                 <button
@@ -166,33 +233,35 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
         )}
 
         {/* Trip List */}
-        {trips.length === 0 ? (
-          /* Empty State - No trips at all */
-          <div className="text-center py-16 border border-dashed border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)]">
-            <MapPin className="h-12 w-12 mx-auto text-[var(--editorial-text-tertiary)] mb-4" />
-            <p className="text-sm text-[var(--editorial-text-secondary)] mb-6">No trips yet</p>
-            <button
-              onClick={() => setShowWizard(true)}
-              className="px-5 py-2.5 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
-            >
-              Create your first trip
-            </button>
-          </div>
-        ) : filteredTrips.length === 0 ? (
-          /* Empty State - Filter has no results */
-          <div className="text-center py-12">
-            <p className="text-sm text-[var(--editorial-text-tertiary)]">
-              No {activeFilter === 'upcoming' ? 'upcoming' : 'past'} trips
-            </p>
-          </div>
-        ) : (
-          /* Trip Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredTrips.map((trip) => (
-              <TripCard key={trip.id} trip={trip} />
-            ))}
-          </div>
-        )}
+        <div className="flex-1 min-h-0 overflow-auto">
+          {trips.length === 0 ? (
+            /* Empty State - No trips at all */
+            <div className="text-center py-16 border border-dashed border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)]">
+              <MapPin className="h-12 w-12 mx-auto text-[var(--editorial-text-tertiary)] mb-4" />
+              <p className="text-sm text-[var(--editorial-text-secondary)] mb-6">No trips yet</p>
+              <button
+                onClick={() => setShowWizard(true)}
+                className="px-5 py-2.5 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
+              >
+                Create your first trip
+              </button>
+            </div>
+          ) : filteredTrips.length === 0 ? (
+            /* Empty State - Filter has no results */
+            <div className="text-center py-12">
+              <p className="text-sm text-[var(--editorial-text-tertiary)]">
+                No {activeFilter === 'upcoming' ? 'upcoming' : 'past'} trips
+              </p>
+            </div>
+          ) : (
+            /* Trip Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredTrips.map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+            </div>
+          )}
+        </div>
 
       {/* Trip Modal */}
       <TripModal

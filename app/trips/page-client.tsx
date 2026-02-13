@@ -13,6 +13,7 @@ import {
 } from '@/lib/trip';
 import type { Trip } from '@/types/trip';
 import { TripModal } from '@/components/TripModal';
+import { useViewportFit } from '@/lib/hooks/useViewportFit';
 
 export interface TripWithStats extends Trip {
   stats: TripStatsType;
@@ -34,6 +35,9 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
   const [trips] = useState<TripWithStats[]>(initialTrips);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [showWizard, setShowWizard] = useState(false);
+
+  // Fit header + content + footer within viewport
+  useViewportFit();
 
   // Categorize trips by state
   const categorizedTrips = useMemo(() => {
@@ -121,9 +125,9 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
   }, [userId, router]);
 
   return (
-    <main className="w-full px-4 sm:px-6 md:px-10 py-20 min-h-screen bg-[var(--editorial-bg)]">
+    <main className="flex flex-col w-full px-4 sm:px-6 md:px-10 pt-10 pb-4 bg-[var(--editorial-bg)] flex-1 min-h-0 overflow-hidden">
         {/* Header - Editorial style */}
-        <div className="mb-12">
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <h1
               className="text-3xl font-normal text-[var(--editorial-text-primary)]"
@@ -146,7 +150,7 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
 
         {/* Tab Navigation - Editorial style */}
         {categorizedTrips.upcoming.length > 0 && categorizedTrips.past.length > 0 && (
-          <div className="mb-12">
+          <div className="mb-6">
             <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
               {(['all', 'upcoming', 'past'] as FilterTab[]).map((tab) => (
                 <button
@@ -166,33 +170,35 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
         )}
 
         {/* Trip List */}
-        {trips.length === 0 ? (
-          /* Empty State - No trips at all */
-          <div className="text-center py-16 border border-dashed border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)]">
-            <MapPin className="h-12 w-12 mx-auto text-[var(--editorial-text-tertiary)] mb-4" />
-            <p className="text-sm text-[var(--editorial-text-secondary)] mb-6">No trips yet</p>
-            <button
-              onClick={() => setShowWizard(true)}
-              className="px-5 py-2.5 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
-            >
-              Create your first trip
-            </button>
-          </div>
-        ) : filteredTrips.length === 0 ? (
-          /* Empty State - Filter has no results */
-          <div className="text-center py-12">
-            <p className="text-sm text-[var(--editorial-text-tertiary)]">
-              No {activeFilter === 'upcoming' ? 'upcoming' : 'past'} trips
-            </p>
-          </div>
-        ) : (
-          /* Trip Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredTrips.map((trip) => (
-              <TripCard key={trip.id} trip={trip} />
-            ))}
-          </div>
-        )}
+        <div className="flex-1 min-h-0 overflow-auto">
+          {trips.length === 0 ? (
+            /* Empty State - No trips at all */
+            <div className="text-center py-16 border border-dashed border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)]">
+              <MapPin className="h-12 w-12 mx-auto text-[var(--editorial-text-tertiary)] mb-4" />
+              <p className="text-sm text-[var(--editorial-text-secondary)] mb-6">No trips yet</p>
+              <button
+                onClick={() => setShowWizard(true)}
+                className="px-5 py-2.5 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
+              >
+                Create your first trip
+              </button>
+            </div>
+          ) : filteredTrips.length === 0 ? (
+            /* Empty State - Filter has no results */
+            <div className="text-center py-12">
+              <p className="text-sm text-[var(--editorial-text-tertiary)]">
+                No {activeFilter === 'upcoming' ? 'upcoming' : 'past'} trips
+              </p>
+            </div>
+          ) : (
+            /* Trip Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredTrips.map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+            </div>
+          )}
+        </div>
 
       {/* Trip Modal */}
       <TripModal

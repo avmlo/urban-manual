@@ -264,7 +264,7 @@ export function DataQualityWidget() {
             variant="outline"
             size="sm"
             className="flex-1"
-            onClick={() => router.push('/admin/enrich')}
+            onClick={() => router.push('/admin/destinations?enriched=not_enriched')}
           >
             <Sparkles className="w-4 h-4 mr-2" />
             Enrich Data

@@ -7,7 +7,6 @@ import {
   X,
   LayoutDashboard,
   BarChart3,
-  Sparkles,
   Users,
   Settings,
   Layers,
@@ -17,7 +16,6 @@ const NAV_LINKS = [
   { href: '/admin', label: 'Overview', value: 'overview', icon: LayoutDashboard },
   { href: '/admin/destinations', label: 'CMS', value: 'cms', icon: Layers },
   { href: '/admin/analytics', label: 'Analytics', value: 'analytics', icon: BarChart3 },
-  { href: '/admin/enrich', label: 'Enrich', value: 'enrich', icon: Sparkles },
   { href: '/admin/users', label: 'Users', value: 'users', icon: Users },
   { href: '/admin/settings', label: 'Settings', value: 'settings', icon: Settings },
 ];

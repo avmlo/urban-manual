@@ -71,6 +71,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/ui/command';
+import { EnrichmentPanel } from './EnrichmentPanel';
 
 interface ContentManagerProps {
   onEditDestination?: (destination: Destination) => void;
@@ -174,6 +175,7 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
   const [showFilters, setShowFilters] = useState(
     !!(searchParams?.get('category') || searchParams?.get('city') || searchParams?.get('enriched') || searchParams?.get('crown') || searchParams?.get('michelin') || searchParams?.get('missing'))
   );
+  const [showEnrichment, setShowEnrichment] = useState(false);
   const [cities, setCities] = useState<string[]>([]);
   const [citySearchQuery, setCitySearchQuery] = useState('');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
@@ -497,17 +499,23 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     if (selectedItems.size === 0) return;
     setBulkActionLoading(true);
     try {
-      // Get slugs for selected items
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('Not authenticated');
+
       const selectedDests = destinations.filter(d => selectedItems.has(d.id!));
       const slugs = selectedDests.map(d => d.slug);
 
-      // Call enrich API for each (could batch this)
       for (const slug of slugs) {
         await fetch('/api/enrich-google', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify({ slug }),
         });
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       setSelectedItems(new Set());
@@ -635,6 +643,18 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
                 {activeFilterCount}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => setShowEnrichment(!showEnrichment)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${
+              showEnrichment
+                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>Enrich</span>
           </button>
 
           {/* Column Toggle - Only show in table view */}
@@ -933,6 +953,10 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               </div>
             </div>
           </div>
+        )}
+        {/* Enrichment Panel */}
+        {showEnrichment && (
+          <EnrichmentPanel cities={cities} onEnrichmentComplete={fetchDestinations} />
         )}
       </div>
 

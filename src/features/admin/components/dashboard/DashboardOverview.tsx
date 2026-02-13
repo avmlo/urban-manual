@@ -105,10 +105,10 @@ export function DashboardOverview() {
   }, []);
 
   const attentionItems = stats ? [
-    stats.missingImages > 0 && { icon: <ImageOff className="w-3.5 h-3.5" />, label: 'Missing images', count: stats.missingImages },
-    stats.missingDescriptions > 0 && { icon: <FileText className="w-3.5 h-3.5" />, label: 'Missing descriptions', count: stats.missingDescriptions },
-    stats.notEnriched > 0 && { icon: <Sparkles className="w-3.5 h-3.5" />, label: 'Not enriched', count: stats.notEnriched },
-  ].filter(Boolean) as { icon: React.ReactNode; label: string; count: number }[] : [];
+    stats.missingImages > 0 && { icon: <ImageOff className="w-3.5 h-3.5" />, label: 'Missing images', count: stats.missingImages, href: '/admin/destinations?missing=no_image' },
+    stats.missingDescriptions > 0 && { icon: <FileText className="w-3.5 h-3.5" />, label: 'Missing descriptions', count: stats.missingDescriptions, href: '/admin/destinations?missing=no_description' },
+    stats.notEnriched > 0 && { icon: <Sparkles className="w-3.5 h-3.5" />, label: 'Not enriched', count: stats.notEnriched, href: '/admin/destinations?enriched=not_enriched' },
+  ].filter(Boolean) as { icon: React.ReactNode; label: string; count: number; href: string }[] : [];
 
   return (
     <div className="space-y-10">
@@ -128,7 +128,7 @@ export function DashboardOverview() {
           {attentionItems.map((item) => (
             <button
               key={item.label}
-              onClick={() => router.push('/admin/enrich')}
+              onClick={() => router.push(item.href)}
               className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
             >
               {item.icon}

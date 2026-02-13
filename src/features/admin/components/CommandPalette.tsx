@@ -202,8 +202,8 @@ export function CommandPalette() {
       description: 'Google Places enrichment',
       icon: Sparkles,
       section: 'Tools',
-      href: '/admin/enrich',
-      keywords: ['google', 'places', 'api'],
+      href: '/admin/destinations',
+      keywords: ['google', 'places', 'api', 'enrich'],
     },
     {
       id: 'reindex',

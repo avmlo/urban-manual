@@ -3,7 +3,7 @@
 import React from 'react';
 import { Footprints, Car, Train, ArrowDown } from 'lucide-react';
 
-export type TravelMode = 'walking' | 'driving' | 'transit';
+export type TravelMode = 'walking' | 'driving' | 'transit' | 'taxi';
 
 interface TravelConnectorProps {
   durationMinutes?: number;
@@ -16,18 +16,43 @@ const modeIcons: Record<TravelMode, typeof Car> = {
   walking: Footprints,
   driving: Car,
   transit: Train,
+  taxi: Car,
+};
+
+const modeLabels: Record<TravelMode, string> = {
+  walking: 'Walk',
+  driving: 'Drive',
+  transit: 'Transit',
+  taxi: 'Taxi',
 };
 
 /**
+ * Suggest the best travel mode based on straight-line distance.
+ *   <1.5km  → walking
+ *   1.5-5km → transit
+ *   >5km    → taxi
+ */
+function autoDetectMode(distanceKm?: number): TravelMode {
+  if (!distanceKm) return 'walking';
+  if (distanceKm < 1.5) return 'walking';
+  if (distanceKm <= 5) return 'transit';
+  return 'taxi';
+}
+
+/**
  * TravelConnector - Clean connector showing travel time between items
- * Shows: "↓ 25 min · 1.6 km" style
+ * Auto-detects transit mode from distance when no explicit mode is provided.
+ * Shows: "↓ Walk · 25 min · 1.6 km" style
  */
 export default function TravelConnector({
   durationMinutes,
   distanceKm,
-  mode = 'walking',
+  mode,
   className = '',
 }: TravelConnectorProps) {
+  // Auto-detect mode from distance if not explicitly provided
+  const resolvedMode = mode || autoDetectMode(distanceKm);
+
   // Format duration
   const formatDuration = (mins?: number): string => {
     if (!mins) return '--';
@@ -44,7 +69,7 @@ export default function TravelConnector({
     return `${km.toFixed(1)} km`;
   };
 
-  const ModeIcon = modeIcons[mode];
+  const ModeIcon = modeIcons[resolvedMode];
   const durationText = formatDuration(durationMinutes);
   const distanceText = formatDistance(distanceKm);
 
@@ -56,6 +81,9 @@ export default function TravelConnector({
 
         {/* Mode Icon */}
         <ModeIcon className="w-3 h-3" />
+
+        {/* Mode Label */}
+        <span className="font-medium">{modeLabels[resolvedMode]}</span>
 
         {/* Duration */}
         <span className="tabular-nums">{durationText}</span>
@@ -87,17 +115,19 @@ interface InteractiveTravelConnectorProps {
 
 /**
  * InteractiveTravelConnector - Connector with mode selector
- * Allows switching between walking, transit, and driving
+ * Allows switching between walking, transit, and taxi.
+ * Auto-selects the recommended mode based on distance.
  */
 export function InteractiveTravelConnector({
   durationMinutes,
   distanceKm,
-  mode = 'walking',
+  mode,
   onModeChange,
   durations,
   className = '',
 }: InteractiveTravelConnectorProps) {
-  const [selectedMode, setSelectedMode] = React.useState<TravelMode>(mode);
+  const recommendedMode = autoDetectMode(distanceKm);
+  const [selectedMode, setSelectedMode] = React.useState<TravelMode>(mode || recommendedMode);
 
   const handleModeChange = (newMode: TravelMode) => {
     setSelectedMode(newMode);
@@ -121,6 +151,7 @@ export function InteractiveTravelConnector({
   };
 
   const distanceText = formatDistance(distanceKm);
+  const selectableModes: TravelMode[] = ['walking', 'transit', 'taxi'];
 
   return (
     <div className={`flex items-center justify-end py-2 ${className}`}>
@@ -130,10 +161,11 @@ export function InteractiveTravelConnector({
 
         {/* Mode selector pills */}
         <div className="flex items-center gap-0.5 p-0.5 bg-stone-100 dark:bg-gray-800 rounded-full">
-          {(['walking', 'transit', 'driving'] as TravelMode[]).map((m) => {
+          {selectableModes.map((m) => {
             const ModeIcon = modeIcons[m];
             const duration = durations?.[m] ?? (m === selectedMode ? durationMinutes : undefined);
             const isSelected = selectedMode === m;
+            const isRecommended = m === recommendedMode;
 
             return (
               <button
@@ -145,6 +177,7 @@ export function InteractiveTravelConnector({
                     ? 'bg-white dark:bg-gray-700 text-stone-900 dark:text-white shadow-sm'
                     : 'text-stone-400 dark:text-gray-500 hover:text-stone-600 dark:hover:text-gray-300'
                   }
+                  ${isRecommended && !isSelected ? 'ring-1 ring-stone-300 dark:ring-gray-600' : ''}
                 `}
               >
                 <ModeIcon className="w-3 h-3" strokeWidth={1.5} />
@@ -190,6 +223,7 @@ export function CompactTravelConnector({
     walking: 'walk',
     driving: 'drive',
     transit: 'transit',
+    taxi: 'taxi',
   };
 
   const formatDuration = (mins?: number): string => {

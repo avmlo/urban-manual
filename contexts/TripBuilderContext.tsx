@@ -10,6 +10,8 @@ import {
   predictCrowdLevel,
   isOutdoorCategory,
   formatDuration,
+  suggestTravelMode,
+  estimateRealisticTravelMinutes,
 } from '@/lib/trip-intelligence';
 import { isClosedOnDay, getHoursForDay } from '@/lib/utils/opening-hours';
 
@@ -852,7 +854,7 @@ export function TripBuilderProvider({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  // Optimize a single day's routing
+  // Optimize a single day's routing using 2-opt + time-window constraints
   const optimizeDay = useCallback((dayNumber: number) => {
     setActiveTrip(prev => {
       if (!prev) return null;
@@ -863,43 +865,157 @@ export function TripBuilderProvider({ children }: { children: React.ReactNode })
       const day = prev.days[dayIndex];
       if (day.items.length <= 1) return prev;
 
-      // TSP-lite: sort by nearest neighbor
-      const items = [...day.items];
-      const optimized: TripItem[] = [];
+      // --- Time-window grouping ---
+      const BREAKFAST_CATS = ['breakfast', 'bakery', 'brunch', 'coffee shop', 'cafe'];
+      const DINNER_CATS = ['fine dining', 'dinner'];
+      const DAYTIME_CATS = ['museum', 'art museum', 'history museum', 'science museum', 'gallery', 'exhibition', 'zoo', 'aquarium', 'botanical garden'];
+      const BAR_CATS = ['bar', 'cocktail', 'pub'];
 
-      // Start with first item
-      let current = items.shift()!;
-      optimized.push(current);
+      function getWindowPriority(cat?: string | null): number {
+        if (!cat) return 12;
+        const c = cat.toLowerCase();
+        for (const k of BREAKFAST_CATS) { if (c.includes(k)) return 8; }
+        for (const k of DAYTIME_CATS) { if (c.includes(k)) return 10; }
+        if (c.includes('restaurant')) return 13;
+        for (const k of BAR_CATS) { if (c.includes(k)) return 19; }
+        for (const k of DINNER_CATS) { if (c.includes(k)) return 19; }
+        return 12;
+      }
 
-      while (items.length > 0) {
-        let nearestIdx = 0;
-        let nearestDist = Infinity;
+      // Travel time helper using realistic estimation
+      function travelTime(a: TripItem, b: TripItem): number {
+        const travel = calculateTravelTime(
+          a.destination.latitude, a.destination.longitude,
+          b.destination.latitude, b.destination.longitude
+        );
+        return travel?.minutes ?? 0;
+      }
 
-        for (let i = 0; i < items.length; i++) {
-          const travel = calculateTravelTime(
-            current.destination.latitude,
-            current.destination.longitude,
-            items[i].destination.latitude,
-            items[i].destination.longitude
-          );
-          const dist = travel?.distance || Infinity;
-          if (dist < nearestDist) {
-            nearestDist = dist;
-            nearestIdx = i;
+      function routeCost(route: TripItem[]): number {
+        let cost = 0;
+        for (let i = 0; i < route.length - 1; i++) {
+          cost += travelTime(route[i], route[i + 1]);
+        }
+        return cost;
+      }
+
+      // Group items by time-window priority
+      const groupMap = new Map<number, TripItem[]>();
+      for (const item of day.items) {
+        const p = getWindowPriority(item.destination.category);
+        if (!groupMap.has(p)) groupMap.set(p, []);
+        groupMap.get(p)!.push(item);
+      }
+
+      const groups = Array.from(groupMap.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([, items]) => items);
+
+      // Within each group: nearest-neighbor + 2-opt
+      const orderedItems: TripItem[] = [];
+
+      for (const group of groups) {
+        if (group.length <= 1) {
+          orderedItems.push(...group);
+          continue;
+        }
+
+        // Nearest-neighbor starting from last placed item or first in group
+        const remaining = [...group];
+        const nn: TripItem[] = [];
+
+        let startIdx = 0;
+        const prev = orderedItems[orderedItems.length - 1];
+        if (prev) {
+          let minDist = Infinity;
+          for (let i = 0; i < remaining.length; i++) {
+            const d = travelTime(prev, remaining[i]);
+            if (d < minDist) { minDist = d; startIdx = i; }
           }
         }
 
-        current = items.splice(nearestIdx, 1)[0];
-        optimized.push(current);
+        let curr = remaining.splice(startIdx, 1)[0];
+        nn.push(curr);
+
+        while (remaining.length > 0) {
+          let nearIdx = 0;
+          let nearTime = Infinity;
+          for (let i = 0; i < remaining.length; i++) {
+            const t = travelTime(curr, remaining[i]);
+            if (t < nearTime) { nearTime = t; nearIdx = i; }
+          }
+          curr = remaining.splice(nearIdx, 1)[0];
+          nn.push(curr);
+        }
+
+        // 2-opt improvement
+        if (nn.length >= 4) {
+          let best = [...nn];
+          let bestCost = routeCost(best);
+          let improved = true;
+          let passes = 0;
+
+          while (improved && passes < 10) {
+            improved = false;
+            passes++;
+            for (let i = 1; i < best.length - 1; i++) {
+              for (let j = i + 1; j < best.length; j++) {
+                const candidate = [
+                  ...best.slice(0, i),
+                  ...best.slice(i, j + 1).reverse(),
+                  ...best.slice(j + 1),
+                ];
+                const cCost = routeCost(candidate);
+                if (cCost < bestCost - 0.01) {
+                  best = candidate;
+                  bestCost = cCost;
+                  improved = true;
+                }
+              }
+            }
+          }
+          orderedItems.push(...best);
+        } else {
+          orderedItems.push(...nn);
+        }
       }
 
-      // Reassign order indexes and time slots
-      const timeSlots = ['09:30', '11:30', '13:30', '15:30', '18:00', '20:00'];
-      const reordered = optimized.map((item, idx) => ({
-        ...item,
-        orderIndex: idx,
-        timeSlot: timeSlots[idx] || timeSlots[timeSlots.length - 1],
-      }));
+      // Assign time slots respecting time windows
+      const TIME_WINDOWS: Record<string, { earliest: number; latest: number }> = {};
+      for (const k of BREAKFAST_CATS) TIME_WINDOWS[k] = { earliest: 7 * 60, latest: 10 * 60 };
+      for (const k of DAYTIME_CATS) TIME_WINDOWS[k] = { earliest: 9 * 60, latest: 17 * 60 };
+      for (const k of DINNER_CATS) TIME_WINDOWS[k] = { earliest: 19 * 60, latest: 22 * 60 };
+      for (const k of BAR_CATS) TIME_WINDOWS[k] = { earliest: 17 * 60, latest: 24 * 60 };
+
+      function getEarliestMinute(cat?: string | null): number {
+        if (!cat) return 0;
+        const c = cat.toLowerCase();
+        for (const [key, win] of Object.entries(TIME_WINDOWS)) {
+          if (c.includes(key)) return win.earliest;
+        }
+        if (c.includes('restaurant')) return 11 * 60;
+        return 0;
+      }
+
+      let currentMinute = 9 * 60;
+      const reordered = orderedItems.map((item, idx) => {
+        const earliest = getEarliestMinute(item.destination.category);
+        if (currentMinute < earliest) currentMinute = earliest;
+
+        const h = Math.floor(currentMinute / 60);
+        const m = currentMinute % 60;
+        const slot = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+        // Advance by visit duration + travel to next
+        const visitDuration = item.duration || getEstimatedDuration(item.destination.category);
+        let travelToNext = 0;
+        if (idx < orderedItems.length - 1) {
+          travelToNext = travelTime(item, orderedItems[idx + 1]);
+        }
+        currentMinute += visitDuration + travelToNext;
+
+        return { ...item, orderIndex: idx, timeSlot: slot };
+      });
 
       const days = [...prev.days];
       days[dayIndex] = { ...days[dayIndex], items: reordered };

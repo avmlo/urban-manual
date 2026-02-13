@@ -614,38 +614,98 @@ export default function TripInteractiveMap({
       markersRef.current.push(advancedMarker);
     });
 
-    // Draw polylines for each day (excluding departure airports - they shouldn't connect to ground routes)
+    // Draw polylines for each day with mode-appropriate styling
+    // Walking: dotted (small dots), Transit: dashed, Taxi: solid
     Object.entries(markersByDay).forEach(([dayNumber, dayMarkers]) => {
-      // Filter out departure airport markers - only arrival airports should connect to ground routes
-      // isArrivalAirport === false means departure, isArrivalAirport === true means arrival
-      // undefined means not a flight (hotel/place), so include those
+      // Filter out departure airport markers
       const groundMarkers = dayMarkers.filter((m) => m.isArrivalAirport !== false);
       if (groundMarkers.length < 2) return;
 
       const colors = DAY_COLORS[(parseInt(dayNumber) - 1) % DAY_COLORS.length];
-      const path = groundMarkers.map((m) => ({ lat: m.lat, lng: m.lng }));
 
-      const polyline = new google.maps.Polyline({
-        path,
-        geodesic: true,
-        strokeColor: colors.bg,
-        strokeOpacity: 0,
-        strokeWeight: 3,
-        map: mapRef.current,
-        icons: [
-          {
-            icon: {
-              path: 'M 0,-1 0,1',
-              strokeOpacity: 0.6,
-              scale: 3,
-            },
-            offset: '0',
-            repeat: '12px',
-          },
-        ],
-      });
+      // Draw per-segment polylines so each leg can have its own style
+      for (let s = 0; s < groundMarkers.length - 1; s++) {
+        const from = groundMarkers[s];
+        const to = groundMarkers[s + 1];
+        const segPath = [
+          { lat: from.lat, lng: from.lng },
+          { lat: to.lat, lng: to.lng },
+        ];
 
-      polylinesRef.current.push(polyline);
+        // Calculate distance to determine travel mode
+        const R = 6371;
+        const dLat = ((to.lat - from.lat) * Math.PI) / 180;
+        const dLon = ((to.lng - from.lng) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((from.lat * Math.PI) / 180) *
+            Math.cos((to.lat * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distKm = R * c;
+
+        // Mode-based line styling
+        let polylineOptions: google.maps.PolylineOptions;
+        if (distKm < 1.5) {
+          // Walking: small dotted line
+          polylineOptions = {
+            path: segPath,
+            geodesic: true,
+            strokeColor: colors.bg,
+            strokeOpacity: 0,
+            strokeWeight: 2,
+            map: mapRef.current,
+            icons: [
+              {
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  fillOpacity: 0.6,
+                  fillColor: colors.bg,
+                  strokeOpacity: 0,
+                  scale: 2,
+                },
+                offset: '0',
+                repeat: '8px',
+              },
+            ],
+          };
+        } else if (distKm <= 5) {
+          // Transit: dashed line
+          polylineOptions = {
+            path: segPath,
+            geodesic: true,
+            strokeColor: colors.bg,
+            strokeOpacity: 0,
+            strokeWeight: 3,
+            map: mapRef.current,
+            icons: [
+              {
+                icon: {
+                  path: 'M 0,-1 0,1',
+                  strokeOpacity: 0.6,
+                  scale: 3,
+                },
+                offset: '0',
+                repeat: '12px',
+              },
+            ],
+          };
+        } else {
+          // Taxi: solid line
+          polylineOptions = {
+            path: segPath,
+            geodesic: true,
+            strokeColor: colors.bg,
+            strokeOpacity: 0.5,
+            strokeWeight: 3,
+            map: mapRef.current,
+          };
+        }
+
+        const polyline = new google.maps.Polyline(polylineOptions);
+        polylinesRef.current.push(polyline);
+      }
     });
 
     // Draw flight route lines (departure airport → arrival airport)

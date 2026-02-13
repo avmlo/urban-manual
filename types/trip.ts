@@ -680,7 +680,7 @@ export interface ItineraryItemNotes {
   // Travel time to next item
   travelTimeToNext?: number; // in minutes
   travelDistanceToNext?: number; // in km
-  travelModeToNext?: 'walking' | 'driving' | 'transit' | 'flight';
+  travelModeToNext?: 'walking' | 'driving' | 'transit' | 'taxi' | 'flight';
   // Event-specific fields
   eventType?: 'concert' | 'show' | 'sports' | 'exhibition' | 'festival' | 'tour' | 'other';
   venue?: string;

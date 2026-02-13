@@ -185,17 +185,55 @@ export function formatDuration(minutes: number): string {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
+export type RealisticTravelMode = 'walking' | 'transit' | 'taxi';
+
 /**
- * Calculate travel time between two coordinates (Haversine formula)
- * Returns time in minutes assuming average city speed
+ * Suggest the best travel mode based on straight-line distance
+ *   <1.5km  → walking (15 min/km effective pace)
+ *   1.5-5km → transit (5 min/km + 10 min wait overhead)
+ *   >5km    → taxi/ride (3 min/km effective)
+ */
+export function suggestTravelMode(distanceKm: number): RealisticTravelMode {
+  if (distanceKm < 1.5) return 'walking';
+  if (distanceKm <= 5) return 'transit';
+  return 'taxi';
+}
+
+/**
+ * Estimate realistic travel time in minutes for a given mode and distance.
+ * Uses urban-realistic speeds accounting for non-straight paths:
+ *   walking: 15 min/km (4 km/h, 1.3x urban factor)
+ *   transit: 5 min/km + 10 min wait/transfer overhead
+ *   taxi:    3 min/km (20 km/h avg urban with traffic)
+ */
+export function estimateRealisticTravelMinutes(
+  distanceKm: number,
+  mode: RealisticTravelMode
+): number {
+  switch (mode) {
+    case 'walking':
+      return Math.round(distanceKm * 15);
+    case 'transit':
+      return Math.round(distanceKm * 5 + 10);
+    case 'taxi':
+      return Math.round(distanceKm * 3);
+  }
+}
+
+/**
+ * Calculate travel time between two coordinates using Haversine distance
+ * and realistic mode-based estimation.
+ *
+ * If no mode is provided, automatically selects the best mode based on distance.
+ * Returns minutes, distance in km, and the travel mode used.
  */
 export function calculateTravelTime(
   lat1?: number | null,
   lon1?: number | null,
   lat2?: number | null,
   lon2?: number | null,
-  mode: 'walking' | 'transit' | 'driving' = 'transit'
-): { minutes: number; distance: number } | null {
+  mode?: 'walking' | 'transit' | 'driving' | RealisticTravelMode
+): { minutes: number; distance: number; mode: RealisticTravelMode } | null {
   if (!lat1 || !lon1 || !lat2 || !lon2) return null;
 
   // Haversine formula
@@ -211,16 +249,21 @@ export function calculateTravelTime(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
 
-  // Average speeds by mode (km/h)
-  const speeds = {
-    walking: 5,
-    transit: 25,
-    driving: 35,
-  };
+  // Normalize legacy mode names to RealisticTravelMode
+  let resolvedMode: RealisticTravelMode;
+  if (!mode) {
+    resolvedMode = suggestTravelMode(distance);
+  } else if (mode === 'driving') {
+    resolvedMode = 'taxi';
+  } else if (mode === 'walking' || mode === 'transit' || mode === 'taxi') {
+    resolvedMode = mode;
+  } else {
+    resolvedMode = suggestTravelMode(distance);
+  }
 
-  const minutes = Math.round((distance / speeds[mode]) * 60);
+  const minutes = estimateRealisticTravelMinutes(distance, resolvedMode);
 
-  return { minutes, distance };
+  return { minutes, distance, mode: resolvedMode };
 }
 
 /**

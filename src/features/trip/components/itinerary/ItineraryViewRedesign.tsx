@@ -41,7 +41,7 @@ interface ItineraryViewRedesignProps {
   onAddItem?: (dayNumber: number) => void;
   onAddActivity?: (dayNumber: number, activityType: ActivityType) => void;
   onOptimizeDay?: (dayNumber: number) => void;
-  onUpdateTravelMode?: (itemId: string, mode: 'walking' | 'driving' | 'transit') => void;
+  onUpdateTravelMode?: (itemId: string, mode: 'walking' | 'driving' | 'transit' | 'taxi') => void;
   onRemoveItem?: (itemId: string) => void;
   onReorderItems?: (dayNumber: number, items: EnrichedItineraryItem[]) => void;
   isOptimizing?: boolean;
@@ -559,12 +559,15 @@ function shouldUseCard(item: EnrichedItineraryItem): boolean {
 }
 
 /**
- * Calculate travel time between two items
+ * Calculate travel time between two items using realistic estimation.
+ *   <1.5km  → walking (15 min/km)
+ *   1.5-5km → transit (5 min/km + 10 min wait)
+ *   >5km    → taxi (3 min/km)
  */
 function calculateTravelTime(
   from: EnrichedItineraryItem,
   to?: EnrichedItineraryItem
-): { durationMinutes: number; distanceKm: number; mode: 'walking' | 'driving' | 'transit' } | null {
+): { durationMinutes: number; distanceKm: number; mode: 'walking' | 'transit' | 'taxi' } | null {
   if (!to) return null;
 
   // Get coordinates
@@ -586,18 +589,34 @@ function calculateTravelTime(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
 
-  // Determine default mode based on distance
-  let mode: 'walking' | 'driving' | 'transit' = 'walking';
-  if (distance > 3) mode = 'transit';
-  if (distance > 10) mode = 'driving';
+  // Auto-detect mode based on distance
+  let mode: 'walking' | 'transit' | 'taxi' = 'walking';
+  if (distance >= 1.5) mode = 'transit';
+  if (distance > 5) mode = 'taxi';
 
-  // Use saved mode if available (excluding 'flight' which isn't a travel mode for this calculation)
+  // Use saved mode if available (normalize legacy 'driving' to 'taxi')
   const savedMode = from.parsedNotes?.travelModeToNext;
-  if (savedMode && savedMode !== 'flight') mode = savedMode;
+  if (savedMode && savedMode !== 'flight') {
+    if (savedMode === 'driving') {
+      mode = 'taxi';
+    } else if (savedMode === 'walking' || savedMode === 'transit' || savedMode === 'taxi') {
+      mode = savedMode;
+    }
+  }
 
-  // Estimate duration
-  const speeds = { walking: 5, transit: 25, driving: 40 };
-  const durationMinutes = Math.round((distance / speeds[mode]) * 60);
+  // Realistic travel time estimation
+  let durationMinutes: number;
+  switch (mode) {
+    case 'walking':
+      durationMinutes = Math.round(distance * 15);
+      break;
+    case 'transit':
+      durationMinutes = Math.round(distance * 5 + 10);
+      break;
+    case 'taxi':
+      durationMinutes = Math.round(distance * 3);
+      break;
+  }
 
   return {
     durationMinutes,

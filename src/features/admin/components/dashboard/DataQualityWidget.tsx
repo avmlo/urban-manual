@@ -15,6 +15,10 @@ import {
   Sparkles,
   TrendingUp,
   Crown,
+  Tag,
+  Building2,
+  Clock,
+  Star,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -43,7 +47,7 @@ export function DataQualityWidget() {
     try {
       const { data: destinations, error } = await supabase
         .from('destinations')
-        .select('id, image, description, content, last_enriched_at, crown, latitude, longitude');
+        .select('id, image, description, content, last_enriched_at, crown, latitude, longitude, tags, architect_id, opening_hours_json, reviews_json, rating');
 
       if (error) throw error;
 
@@ -55,6 +59,10 @@ export function DataQualityWidget() {
       const isEnriched = destinations?.filter((d) => d.last_enriched_at).length || 0;
       const hasCoordinates = destinations?.filter((d) => d.latitude && d.longitude).length || 0;
       const crownPicks = destinations?.filter((d) => d.crown).length || 0;
+      const hasTags = destinations?.filter((d) => d.tags && Array.isArray(d.tags) && d.tags.length > 0).length || 0;
+      const hasArchitect = destinations?.filter((d) => d.architect_id).length || 0;
+      const hasOpeningHours = destinations?.filter((d) => d.opening_hours_json && Object.keys(d.opening_hours_json).length > 0).length || 0;
+      const hasReviews = destinations?.filter((d) => d.reviews_json && Array.isArray(d.reviews_json) && d.reviews_json.length > 0).length || 0;
 
       const qualityMetrics: QualityMetric[] = [
         {
@@ -106,6 +114,46 @@ export function DataQualityWidget() {
           icon: MapPin,
           filterHref: '/admin/destinations?filter=no-coordinates',
           severity: 'critical',
+        },
+        {
+          id: 'tags',
+          label: 'Has Tags',
+          description: 'Destinations with at least one tag',
+          passing: hasTags,
+          total,
+          icon: Tag,
+          filterHref: '/admin/destinations?missing=no_tags',
+          severity: 'warning',
+        },
+        {
+          id: 'architect',
+          label: 'Architect Linked',
+          description: 'Connected to an architect record',
+          passing: hasArchitect,
+          total,
+          icon: Building2,
+          filterHref: '/admin/destinations?missing=no_architect',
+          severity: 'info',
+        },
+        {
+          id: 'opening_hours',
+          label: 'Opening Hours',
+          description: 'Has opening hours data',
+          passing: hasOpeningHours,
+          total,
+          icon: Clock,
+          filterHref: '/admin/destinations?missing=no_hours',
+          severity: 'warning',
+        },
+        {
+          id: 'reviews',
+          label: 'Has Reviews',
+          description: 'Has Google reviews data',
+          passing: hasReviews,
+          total,
+          icon: Star,
+          filterHref: '/admin/destinations?missing=no_reviews',
+          severity: 'info',
         },
         {
           id: 'crown',

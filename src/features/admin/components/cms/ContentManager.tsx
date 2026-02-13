@@ -33,11 +33,14 @@ import {
   Calendar,
   Columns3,
   Star,
+  Wand2,
+  Lightbulb,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Destination } from '@/types/destination';
 import { VALID_CATEGORIES } from '@/lib/categories';
 import { CARD_WRAPPER, CARD_MEDIA, CARD_TITLE, CARD_META } from '@/components/CardStyles';
+import { calculateQualityScore, getQualityBarColor } from '@/lib/admin/quality-scoring';
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Checkbox } from '@/ui/checkbox';
@@ -93,31 +96,9 @@ const DEFAULT_ITEMS_PER_PAGE = 24;
 // Column configuration for table view
 type ColumnId = 'city' | 'neighborhood' | 'category' | 'completeness' | 'status' | 'rating' | 'address' | 'brand';
 
-/** Compute a 0–100 completeness score for a destination based on key fields */
+/** Compute a 0–100 quality score for a destination using the shared scoring module */
 function getCompletenessScore(dest: Destination): number {
-  const fields: { key: keyof Destination; weight: number }[] = [
-    { key: 'image', weight: 20 },
-    { key: 'description', weight: 15 },
-    { key: 'micro_description', weight: 10 },
-    { key: 'content', weight: 10 },
-    { key: 'neighborhood', weight: 5 },
-    { key: 'country', weight: 5 },
-    { key: 'formatted_address', weight: 5 },
-    { key: 'latitude', weight: 5 },
-    { key: 'website', weight: 5 },
-    { key: 'phone_number', weight: 5 },
-    { key: 'rating', weight: 5 },
-    { key: 'tags', weight: 5 },
-    { key: 'last_enriched_at', weight: 5 },
-  ];
-  let score = 0;
-  for (const { key, weight } of fields) {
-    const val = dest[key];
-    if (val !== null && val !== undefined && val !== '' && !(Array.isArray(val) && val.length === 0)) {
-      score += weight;
-    }
-  }
-  return score;
+  return calculateQualityScore(dest).score;
 }
 
 interface ColumnConfig {
@@ -211,6 +192,9 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
   // Bulk action states
   const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
   const [bulkCategory, setBulkCategory] = useState<string>('');
+  // AI content enrichment states
+  const [aiActionLoading, setAiActionLoading] = useState<string | null>(null);
+  const [aiResults, setAiResults] = useState<{ type: string; message: string; data?: unknown } | null>(null);
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState<Set<ColumnId>>(new Set(DEFAULT_VISIBLE_COLUMNS));
 
@@ -587,8 +571,134 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
     URL.revokeObjectURL(url);
   };
 
+  // AI Content Enrichment: Generate Descriptions
+  const handleGenerateDescriptions = async () => {
+    const ids = Array.from(selectedItems);
+    if (ids.length === 0) return;
+
+    setAiActionLoading('descriptions');
+    setAiResults(null);
+    try {
+      const res = await fetch('/api/jobs/generate-descriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batchSize: ids.length }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setAiResults({
+          type: 'descriptions',
+          message: `Generated descriptions for ${json.data.processed} destination(s)`,
+          data: json.data,
+        });
+        fetchDestinations();
+      } else {
+        setAiResults({
+          type: 'descriptions',
+          message: `Error: ${json.errors?.[0]?.message || 'Unknown error'}`,
+        });
+      }
+    } catch (err) {
+      setAiResults({
+        type: 'descriptions',
+        message: `Failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    } finally {
+      setAiActionLoading(null);
+    }
+  };
+
+  // AI Content Enrichment: Auto-Tag
+  const handleAutoTag = async () => {
+    const ids = Array.from(selectedItems);
+    if (ids.length === 0) return;
+
+    setAiActionLoading('tags');
+    setAiResults(null);
+    try {
+      const res = await fetch('/api/admin/content/auto-tag', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinationIds: ids, applyDirectly: false }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setAiResults({
+          type: 'tags',
+          message: `Generated tag suggestions for ${json.data.processed} destination(s)`,
+          data: json.data,
+        });
+      } else {
+        setAiResults({
+          type: 'tags',
+          message: `Error: ${json.errors?.[0]?.message || 'Unknown error'}`,
+        });
+      }
+    } catch (err) {
+      setAiResults({
+        type: 'tags',
+        message: `Failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    } finally {
+      setAiActionLoading(null);
+    }
+  };
+
+  // AI Content Enrichment: Enrichment Suggestions
+  const handleEnrichmentSuggestions = async () => {
+    const ids = Array.from(selectedItems);
+    if (ids.length === 0) return;
+
+    setAiActionLoading('suggestions');
+    setAiResults(null);
+    try {
+      const res = await fetch('/api/admin/content/enrichment-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinationIds: ids }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setAiResults({
+          type: 'suggestions',
+          message: `Generated suggestions for ${json.data.processed} destination(s)`,
+          data: json.data,
+        });
+      } else {
+        setAiResults({
+          type: 'suggestions',
+          message: `Error: ${json.errors?.[0]?.message || 'Unknown error'}`,
+        });
+      }
+    } catch (err) {
+      setAiResults({
+        type: 'suggestions',
+        message: `Failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    } finally {
+      setAiActionLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* AI Results Banner */}
+      {aiResults && (
+        <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm ${
+          aiResults.message.startsWith('Error') || aiResults.message.startsWith('Failed')
+            ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+            : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 flex-shrink-0" />
+            <span>{aiResults.message}</span>
+          </div>
+          <button onClick={() => setAiResults(null)} className="flex-shrink-0 opacity-60 hover:opacity-100">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="flex items-center justify-between">
         <div>
@@ -1008,6 +1118,41 @@ export function ContentManager({ onEditDestination, onCreateNew, refreshTrigger 
               <span className="hidden sm:inline">Enrich</span>
             </Button>
 
+            {/* AI Content Actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={bulkActionLoading || !!aiActionLoading}
+                  className="shrink-0 text-white dark:text-gray-900 hover:bg-white/10 dark:hover:bg-gray-900/10"
+                >
+                  {aiActionLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin sm:mr-1.5" />
+                  ) : (
+                    <Wand2 className="w-3.5 h-3.5 sm:mr-1.5" />
+                  )}
+                  <span className="hidden sm:inline">AI</span>
+                  <ChevronDown className="w-3 h-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top" className="w-56">
+                <DropdownMenuItem onClick={handleGenerateDescriptions} disabled={!!aiActionLoading}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Generate Descriptions
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleAutoTag} disabled={!!aiActionLoading}>
+                  <Tag className="w-4 h-4 mr-2" />
+                  Auto-Tag
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleEnrichmentSuggestions} disabled={!!aiActionLoading}>
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                  Enrichment Suggestions
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Export */}
             <Button
               variant="ghost"
@@ -1201,7 +1346,7 @@ function TableView({
         return <span className="text-[11px] text-gray-500 dark:text-gray-400 capitalize">{dest.category}</span>;
       case 'completeness': {
         const score = getCompletenessScore(dest);
-        const color = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600';
+        const color = getQualityBarColor(score);
         return (
           <div className="flex items-center gap-1.5">
             <div className="w-12 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">

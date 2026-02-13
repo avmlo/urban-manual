@@ -10,17 +10,27 @@ import { Car, Footprints, Train as TrainIcon } from 'lucide-react';
 import type { EnrichedItineraryItem } from '@/lib/hooks/useTripEditor';
 import { getAirportCoordinates } from '@/lib/utils/airports';
 
+type TravelModeOption = 'walking' | 'transit' | 'taxi';
+
 interface TravelTimeProps {
   from: EnrichedItineraryItem;
   to: EnrichedItineraryItem;
-  onUpdateTravelMode?: (itemId: string, mode: 'walking' | 'driving' | 'transit') => void;
+  onUpdateTravelMode?: (itemId: string, mode: TravelModeOption) => void;
+}
+
+/**
+ * Auto-detect travel mode based on distance:
+ *   <1.5km  → walking
+ *   1.5-5km → transit
+ *   >5km    → taxi
+ */
+function autoDetectMode(distanceKm: number): TravelModeOption {
+  if (distanceKm < 1.5) return 'walking';
+  if (distanceKm <= 5) return 'transit';
+  return 'taxi';
 }
 
 export default function TravelTime({ from, to, onUpdateTravelMode }: TravelTimeProps) {
-  const [mode, setMode] = useState<'walking' | 'driving' | 'transit'>(
-    (from.parsedNotes?.travelModeToNext as 'walking' | 'driving' | 'transit') || 'driving'
-  );
-
   const fromType = from.parsedNotes?.type;
   const toType = to.parsedNotes?.type;
 
@@ -50,13 +60,25 @@ export default function TravelTime({ from, to, onUpdateTravelMode }: TravelTimeP
     distanceKm = R * c;
   }
 
+  // Determine initial mode: use saved preference or auto-detect from distance
+  const savedMode = from.parsedNotes?.travelModeToNext;
+  let initialMode: TravelModeOption;
+  if (savedMode === 'walking' || savedMode === 'transit' || savedMode === 'taxi') {
+    initialMode = savedMode;
+  } else if (savedMode === 'driving') {
+    initialMode = 'taxi'; // Normalize legacy 'driving' → 'taxi'
+  } else {
+    initialMode = autoDetectMode(distanceKm);
+  }
+
+  const [mode, setMode] = useState<TravelModeOption>(initialMode);
+
   const getTravelMinutes = (): number | null => {
     if (distanceKm === 0) return null;
     switch (mode) {
-      case 'walking': return Math.round(distanceKm * 12);
-      case 'driving': return Math.round(distanceKm * 2);
-      case 'transit': return Math.round(distanceKm * 3);
-      default: return Math.round(distanceKm * 12);
+      case 'walking': return Math.round(distanceKm * 15);  // 15 min/km (4 km/h, urban factor)
+      case 'transit': return Math.round(distanceKm * 5 + 10); // 5 min/km + 10 min wait
+      case 'taxi': return Math.round(distanceKm * 3);      // 3 min/km (20 km/h urban)
     }
   };
 
@@ -64,7 +86,7 @@ export default function TravelTime({ from, to, onUpdateTravelMode }: TravelTimeP
 
   const cycleMode = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const modes: Array<'walking' | 'driving' | 'transit'> = ['walking', 'driving', 'transit'];
+    const modes: TravelModeOption[] = ['walking', 'transit', 'taxi'];
     const currentIndex = modes.indexOf(mode);
     const nextMode = modes[(currentIndex + 1) % modes.length];
     setMode(nextMode);
@@ -74,7 +96,7 @@ export default function TravelTime({ from, to, onUpdateTravelMode }: TravelTimeP
   const getModeIcon = () => {
     switch (mode) {
       case 'walking': return <Footprints className="w-3 h-3" />;
-      case 'driving': return <Car className="w-3 h-3" />;
+      case 'taxi': return <Car className="w-3 h-3" />;
       case 'transit': return <TrainIcon className="w-3 h-3" />;
     }
   };
@@ -82,8 +104,8 @@ export default function TravelTime({ from, to, onUpdateTravelMode }: TravelTimeP
   const getModeLabel = () => {
     switch (mode) {
       case 'walking': return 'walk';
-      case 'driving': return 'drive';
-      case 'transit': return 'subway';
+      case 'taxi': return 'taxi';
+      case 'transit': return 'transit';
     }
   };
 

@@ -364,7 +364,7 @@ export default function DaySection({
     setShowAddMenu(false);
   };
 
-  // Optimize route
+  // Optimize route using 2-opt + time-window constraints
   const optimizeRoute = async () => {
     if (!canOptimize) return;
     setIsOptimizing(true);
@@ -386,10 +386,46 @@ export default function DaySection({
       if (response.ok) {
         const result = await response.json();
         if (result.optimizedOrder?.length === items.length) {
-          const orderedItems = result.optimizedOrder
+          const reorderedItems = result.optimizedOrder
             .map((id: string) => items.find(item => item.id === id))
-            .filter(Boolean);
-          onReorder(orderedItems);
+            .filter(Boolean) as EnrichedItineraryItem[];
+
+          // Apply suggested time slots and leg data from optimizer
+          if (result.timeSlots || result.legs) {
+            const legsMap = new Map<string, { mode: string; durationMinutes: number; distanceKm: number }>();
+            if (result.legs) {
+              for (const leg of result.legs) {
+                legsMap.set(leg.fromId, {
+                  mode: leg.mode,
+                  durationMinutes: leg.durationMinutes,
+                  distanceKm: leg.distanceKm,
+                });
+              }
+            }
+
+            reorderedItems.forEach((item) => {
+              const updates: Record<string, unknown> = {};
+
+              // Apply suggested time slot
+              if (result.timeSlots?.[item.id]) {
+                onUpdateTime(item.id, result.timeSlots[item.id]);
+              }
+
+              // Apply travel mode/time/distance to next item
+              const legData = legsMap.get(item.id);
+              if (legData) {
+                updates.travelModeToNext = legData.mode;
+                updates.travelTimeToNext = legData.durationMinutes;
+                updates.travelDistanceToNext = legData.distanceKm;
+              }
+
+              if (Object.keys(updates).length > 0) {
+                onUpdateItem(item.id, updates);
+              }
+            });
+          }
+
+          onReorder(reorderedItems);
         }
       }
     } catch (err) {

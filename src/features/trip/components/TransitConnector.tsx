@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Car, Footprints, Train } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/time-calculations';
 
-export type TransitMode = 'walking' | 'driving' | 'transit';
+export type TransitMode = 'walking' | 'driving' | 'transit' | 'taxi';
 
 interface Location {
   latitude?: number | null;
@@ -26,12 +26,14 @@ const modeIcons: Record<TransitMode, typeof Car> = {
   walking: Footprints,
   driving: Car,
   transit: Train,
+  taxi: Car,
 };
 
 const modeLabels: Record<TransitMode, string> = {
   walking: 'Walk',
   driving: 'Drive',
   transit: 'Transit',
+  taxi: 'Taxi',
 };
 
 /**
@@ -49,15 +51,22 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 /**
- * Estimate travel time based on distance and mode
+ * Estimate travel time based on distance and mode.
+ * Uses realistic urban estimates:
+ *   walking: 15 min/km (4 km/h, urban factor)
+ *   transit: 5 min/km + 10 min wait
+ *   taxi/driving: 3 min/km (20 km/h urban)
  */
 function estimateTravelTime(distanceKm: number, mode: TransitMode): number {
-  const speeds: Record<TransitMode, number> = {
-    walking: 5,  // 5 km/h walking
-    transit: 25, // 25 km/h average for public transit
-    driving: 40, // 40 km/h city driving average
-  };
-  return Math.round((distanceKm / speeds[mode]) * 60); // minutes
+  switch (mode) {
+    case 'walking':
+      return Math.round(distanceKm * 15);
+    case 'transit':
+      return Math.round(distanceKm * 5 + 10);
+    case 'taxi':
+    case 'driving':
+      return Math.round(distanceKm * 3);
+  }
 }
 
 /**
@@ -91,6 +100,7 @@ export default function TransitConnector({
     walking: null,
     driving: null,
     transit: null,
+    taxi: null,
   });
   const [loading, setLoading] = useState(false);
 
@@ -114,6 +124,7 @@ export default function TransitConnector({
       walking: estimateTravelTime(distance, 'walking'),
       transit: estimateTravelTime(distance, 'transit'),
       driving: estimateTravelTime(distance, 'driving'),
+      taxi: estimateTravelTime(distance, 'taxi'),
       distance,
     };
   }, [from?.latitude, from?.longitude, to?.latitude, to?.longitude, hasValidCoords]);
@@ -125,7 +136,7 @@ export default function TransitConnector({
 
       setLoading(true);
       try {
-        const modes: TransitMode[] = ['walking', 'driving', 'transit'];
+        const modes: TransitMode[] = ['walking', 'transit', 'taxi'];
         const results = await Promise.all(
           modes.map(async (m) => {
             try {
@@ -149,7 +160,7 @@ export default function TransitConnector({
           })
         );
 
-        const newDurations: Record<TransitMode, number | null> = { walking: null, driving: null, transit: null };
+        const newDurations: Record<TransitMode, number | null> = { walking: null, driving: null, transit: null, taxi: null };
         results.forEach((r) => {
           newDurations[r.mode] = r.minutes;
         });
@@ -185,7 +196,7 @@ export default function TransitConnector({
     <div className={`relative flex items-center justify-end py-1 gap-2 ${className}`}>
       {/* Mode Selector Pills */}
       <div className="flex items-center gap-0.5 p-0.5 bg-gray-100/80 dark:bg-gray-800/80 rounded-lg backdrop-blur-sm">
-        {(['walking', 'transit', 'driving'] as TransitMode[]).map((m) => {
+        {(['walking', 'transit', 'taxi'] as TransitMode[]).map((m) => {
           const ModeIcon = modeIcons[m];
           const duration = getDuration(m);
           const isSelected = selectedMode === m;

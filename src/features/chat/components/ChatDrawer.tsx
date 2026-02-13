@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Send, Brain } from 'lucide-react';
 import { ConversationBubble } from '@/app/components/chat/ConversationBubble';
 import { useAuth } from '@/contexts/AuthContext';
 import { Drawer } from '@/ui/Drawer';
@@ -28,6 +28,8 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
   const [streamingContent, setStreamingContent] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [guestSessionToken, setGuestSessionToken] = useState<string | null>(null);
+  const [hasMemory, setHasMemory] = useState(false);
+  const [memoryEnabled, setMemoryEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
@@ -69,15 +71,37 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
         const data = await response.json();
         setMessages(data.messages || []);
         setSessionId(data.session_id || null);
+        if (data.memory_enabled !== undefined) setMemoryEnabled(data.memory_enabled);
+        if (data.has_memory_context !== undefined) setHasMemory(data.has_memory_context);
         if (isGuest && data.session_token) {
           persistConversationSessionToken(data.session_token);
           setGuestSessionToken(data.session_token);
         }
       }
+
+      // Check memory status for authenticated users
+      if (user?.id) {
+        fetchMemoryStatus();
+      }
     } catch (error) {
       console.error('Error loading conversation:', error);
     }
   }
+
+  const fetchMemoryStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/memory/profile');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.profile) {
+          setHasMemory(data.profile.memoryCount > 0);
+          setMemoryEnabled(true);
+        }
+      }
+    } catch {
+      // Memory status is optional
+    }
+  }, []);
 
   async function handleSubmitStreaming(userMessage: string) {
     setIsStreaming(true);
@@ -121,9 +145,14 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
               if (data.type === 'chunk') {
                 fullResponse += data.content;
                 setStreamingContent(fullResponse);
+              } else if (data.type === 'memory_status') {
+                setHasMemory(data.has_memory || false);
+                setMemoryEnabled(data.memory_enabled || false);
               } else if (data.type === 'complete') {
                 setSessionId(data.session_id || sessionId);
                 lastSuggestions = data.suggestions || [];
+                if (data.has_memory !== undefined) setHasMemory(data.has_memory);
+                if (data.memory_enabled !== undefined) setMemoryEnabled(data.memory_enabled);
               }
             } catch {}
           }
@@ -159,9 +188,17 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
   }
 
   const statusBadge = (
-    <div className="flex items-center gap-2">
-      <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-      <span className="text-xs text-gray-500">Online</span>
+    <div className="flex items-center gap-3">
+      {user && hasMemory && (
+        <div className="flex items-center gap-1" title="Memory active - I remember your preferences">
+          <Brain className="h-3.5 w-3.5 text-violet-500" />
+          <span className="text-xs text-violet-500">Memory</span>
+        </div>
+      )}
+      <div className="flex items-center gap-1.5">
+        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+        <span className="text-xs text-gray-500">Online</span>
+      </div>
     </div>
   );
 
@@ -173,7 +210,9 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
         {messages.length === 0 && !isStreaming && (
           <DrawerSection>
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
-              Ask about destinations, restaurants, or travel tips.
+              {user && hasMemory
+                ? 'Welcome back! I remember your preferences. Ask me anything.'
+                : 'Ask about destinations, restaurants, or travel tips.'}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {['Best restaurants in Tokyo', 'Hotels in Paris', 'Romantic dinner spots'].map((suggestion) => (

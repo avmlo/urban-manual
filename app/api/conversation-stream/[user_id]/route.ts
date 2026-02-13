@@ -33,6 +33,8 @@ import { getDiscoveryEngineService } from '@/services/search/discovery-engine';
 import { unifiedSearch } from '@/lib/discovery-engine/integration';
 import { getUser } from '@/lib/errors';
 import { createServerClient } from '@/lib/supabase/server';
+import { mem0Service, isMem0Available } from '@/lib/ai/mem0';
+import { extendedConversationMemoryService } from '@/services/intelligence/conversation-memory';
 
 const CONVERSATION_MODEL = process.env.OPENAI_CONVERSATION_MODEL || OPENAI_MODEL;
 
@@ -153,6 +155,44 @@ export async function POST(
 
           const intent = await extractIntent(message, messages, userContext);
 
+          // Fetch Mem0 memory context and cross-session context in parallel (non-blocking)
+          let memoryContext = '';
+          let crossSessionContext = '';
+          let hasMemory = false;
+
+          if (userId) {
+            const [mem0Result, crossSessionResult] = await Promise.allSettled([
+              isMem0Available()
+                ? mem0Service.getConversationContext(userId, message)
+                : Promise.resolve(''),
+              extendedConversationMemoryService.getCrossSessionContext(userId, 3),
+            ]);
+
+            if (mem0Result.status === 'fulfilled' && mem0Result.value) {
+              memoryContext = mem0Result.value;
+              hasMemory = true;
+            }
+
+            if (crossSessionResult.status === 'fulfilled' && crossSessionResult.value.length > 0) {
+              const sessions = crossSessionResult.value;
+              const summaries = sessions
+                .filter((s) => s.summary)
+                .map((s) => `- ${s.summary}`)
+                .join('\n');
+              if (summaries) {
+                crossSessionContext = `Previous conversation context:\n${summaries}`;
+                hasMemory = true;
+              }
+            }
+          }
+
+          // Send memory status to client
+          controller.enqueue(encoder.encode(createSSEMessage({
+            type: 'memory_status',
+            has_memory: hasMemory,
+            memory_enabled: userId ? isMem0Available() : false,
+          })));
+
           // Save user message
           await saveMessage(session.sessionId, {
             role: 'user',
@@ -185,10 +225,17 @@ export async function POST(
             context: { ...session.context, ...contextUpdates }
           })));
 
-          // Build messages for Gemini (simpler format)
-          const contextInfo = Object.keys({ ...session.context, ...contextUpdates }).length > 0
+          // Build messages for Gemini (simpler format) with memory context
+          let contextInfo = Object.keys({ ...session.context, ...contextUpdates }).length > 0
             ? `\n\nContext: ${JSON.stringify({ ...session.context, ...contextUpdates })}`
             : '';
+
+          if (memoryContext) {
+            contextInfo += `\n\n${memoryContext}`;
+          }
+          if (crossSessionContext) {
+            contextInfo += `\n\n${crossSessionContext}`;
+          }
 
           const recentMessages = messages.slice(-10);
           const conversationHistory = recentMessages.map((msg) => ({
@@ -435,6 +482,25 @@ export async function POST(
             content: assistantResponse,
           });
 
+          // Store conversation exchange in Mem0 for long-term memory (non-blocking)
+          if (userId && isMem0Available()) {
+            mem0Service.addFromConversation(
+              [
+                { role: 'user', content: message },
+                { role: 'assistant', content: assistantResponse },
+              ],
+              userId,
+              {
+                source: 'conversation',
+                city: contextUpdates.city || session.context?.city || undefined,
+                category: contextUpdates.category || session.context?.category || undefined,
+                session_id: session.sessionId,
+              }
+            ).catch((error) => {
+              console.debug('[Mem0] Failed to store conversation memory (non-blocking):', error);
+            });
+          }
+
           // Log metrics
           await logConversationMetrics({
             userId: userId || session.sessionToken || session_token || 'anonymous',
@@ -455,6 +521,8 @@ export async function POST(
             session_id: session.sessionId,
             session_token: session.sessionToken,
             model: usedModel,
+            memory_enabled: userId ? isMem0Available() : false,
+            has_memory: hasMemory,
           })));
 
           controller.close();

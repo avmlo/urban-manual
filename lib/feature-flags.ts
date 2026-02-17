@@ -36,6 +36,13 @@ export interface FeatureFlagConfig {
    * Default: false (in development)
    */
   unifiedTripModel: boolean;
+
+  /**
+   * Simplified hero variant for A/B testing
+   * When true, shows the streamlined hero with single headline + CTAs
+   * Default: false (control = current hero behavior)
+   */
+  simplifiedHero: boolean;
 }
 
 /**
@@ -46,6 +53,7 @@ const defaultFlags: FeatureFlagConfig = {
   batchedReorderUpdates: true,
   serverSideWeather: true,
   unifiedTripModel: false,
+  simplifiedHero: false,
 };
 
 /**
@@ -56,6 +64,7 @@ const envVarMapping: Record<keyof FeatureFlagConfig, string> = {
   batchedReorderUpdates: 'NEXT_PUBLIC_FEATURE_BATCHED_REORDER',
   serverSideWeather: 'NEXT_PUBLIC_FEATURE_SERVER_WEATHER',
   unifiedTripModel: 'NEXT_PUBLIC_FEATURE_UNIFIED_TRIP_MODEL',
+  simplifiedHero: 'NEXT_PUBLIC_FEATURE_SIMPLIFIED_HERO',
 };
 
 /**

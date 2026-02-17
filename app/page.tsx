@@ -4,8 +4,10 @@ import { generateHomeBreadcrumb } from '@/lib/metadata';
 import { HomepageDataProvider } from '@/features/homepage/components/HomepageDataProvider';
 import { HomepageContent } from '@/features/homepage/components/HomepageContent';
 import { AISearchChatWrapper } from '@/features/homepage/components/AISearchChatWrapper';
-import InteractiveHero from '@/features/homepage/components/InteractiveHero';
+import { HeroABWrapper } from '@/features/homepage/components/HeroABWrapper';
 import NavigationBar from '@/features/homepage/components/NavigationBar';
+import { TrustStrip } from '@/features/homepage/components/TrustStrip';
+import { CuratedCollections } from '@/features/homepage/components/CuratedCollections';
 
 /**
  * Homepage - Progressive Loading Architecture with Client Fallback
@@ -79,12 +81,18 @@ export default async function HomePage() {
           {/* Hero Section - Full width layout */}
           <section className="min-h-[50vh] flex flex-col pl-6 md:pl-10 pr-0 py-10 pb-6 md:pb-10">
             <div className="w-full flex md:justify-start flex-1 items-center">
-              <InteractiveHero />
+              <HeroABWrapper />
             </div>
           </section>
 
+          {/* Trust strip - social proof beneath hero */}
+          <TrustStrip />
+
+          {/* Curated collections - editorial journey modules */}
+          <CuratedCollections />
+
           {/* Content Section - Full width */}
-          <div className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
+          <div id="destination-grid" className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
             {/* Navigation bar */}
             <NavigationBar />
 

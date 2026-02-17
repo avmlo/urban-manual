@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Sparkles, Loader2, X, MapPin, ArrowRight, RefreshCw, Search, Bookmark, CheckCircle, Map } from 'lucide-react';
+import { Sparkles, Loader2, X, MapPin, ArrowRight, RefreshCw, Search, Bookmark, CheckCircle, Map, ChevronDown } from 'lucide-react';
 import { capitalizeCity, capitalizeCategory } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHomepageData } from './HomepageDataProvider';
@@ -109,15 +109,8 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const FEATURED_CITIES = ['Taipei', 'Tokyo', 'New York', 'London'];
 
-// AI-style rotating placeholders
-const AI_PLACEHOLDERS = [
-  'Ask me anything about travel...',
-  'Where would you like to go?',
-  'Find restaurants, hotels, or hidden gems...',
-  'Try: "best cafes in Tokyo"',
-  'Try: "romantic dinner in Paris"',
-  'Try: "budget hotels near me"',
-];
+// Static search placeholder (simplified from rotating AI placeholders)
+const SEARCH_PLACEHOLDER = 'Search by city, cuisine, or vibe...';
 
 // Helper to safely normalize follow-up suggestions from API
 // Handles both string[] and ActionPatch[] formats, filtering out invalid entries
@@ -225,9 +218,12 @@ export default function InteractiveHero() {
   const { startTrip, addToTrip, activeTrip } = useTripBuilder();
   const [localSearchTerm, setLocalSearchTerm] = useState('');
   const [showAllCities, setShowAllCities] = useState(false);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  // Progressive disclosure: filters start collapsed unless already active
+  const [showFilters, setShowFilters] = useState(
+    () => !!(selectedCity || selectedCategory || michelinOnly)
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -274,17 +270,6 @@ export default function InteractiveHero() {
       setLastFilters({});
     }
   }, [setSelectedCity, setSelectedCategory]);
-
-  // Rotate placeholders when input is empty and not focused
-  useEffect(() => {
-    if (localSearchTerm.trim() || isFocused || showChatResults) return;
-
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % AI_PLACEHOLDERS.length);
-    }, 3500);
-
-    return () => clearInterval(interval);
-  }, [localSearchTerm, isFocused, showChatResults]);
 
   // Keyboard shortcut: Press '/' to focus search
   useEffect(() => {
@@ -435,6 +420,7 @@ export default function InteractiveHero() {
     setShowInstantResults(false);
     setIsSearching(true);
     setShowChatResults(true);
+    setShowFilters(true);
     setLastQuery(query);
     setChatResponse('');
     setChatDestinations([]);
@@ -630,21 +616,43 @@ export default function InteractiveHero() {
             Curated Travel Guide
           </p>
 
-          {/* Main Headline - Large Serif */}
+          {/* Personalized greeting - subtle, only when logged in */}
+          {userName && (
+            <p className="text-xs text-[var(--editorial-text-tertiary)] mb-2">
+              {getGreeting()}, {userName}
+            </p>
+          )}
+
+          {/* Main Headline - Single confident editorial statement */}
           <h2
-            className="text-[2.5rem] md:text-[3.5rem] lg:text-[4rem] leading-[1.05] font-normal tracking-[-0.02em] text-[var(--editorial-text-primary)] mb-6"
+            className="text-editorial-headline text-[2.25rem] md:text-[3.25rem] lg:text-[3.75rem] font-normal mb-6"
             style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
           >
-            {userName ? `${getGreeting()}, ${userName}` : 'Discover the world\'s finest'}
+            The world&apos;s finest, found.
           </h2>
 
-          {/* Subheadline */}
-          <p
-            className="text-sm md:text-base text-[var(--editorial-text-secondary)] mb-10 leading-relaxed max-w-md"
-            style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
-          >
-            {destinationCount}+ handpicked hotels, restaurants, and destinations across the globe.
+          {/* Subheadline - Sans-serif, punchy */}
+          <p className="text-sm md:text-base text-[var(--editorial-text-secondary)] mb-8 leading-relaxed max-w-md">
+            {destinationCount}+ hotels, restaurants, and destinations &mdash; curated, not aggregated.
           </p>
+
+          {/* Primary + Secondary CTAs */}
+          <div className="flex items-center gap-4 mb-8">
+            <button
+              type="button"
+              onClick={() => document.getElementById('destination-grid')?.scrollIntoView({ behavior: 'smooth' })}
+              className="btn-editorial-primary"
+            >
+              Explore destinations
+            </button>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.focus()}
+              className="text-sm text-[var(--editorial-text-secondary)] hover:text-[var(--editorial-text-primary)] transition-colors underline underline-offset-4 decoration-[var(--editorial-border)]"
+            >
+              Ask our AI concierge
+            </button>
+          </div>
 
           {/* Search Input - Minimal Editorial Style */}
           <form onSubmit={handleSearch} className="mb-0">
@@ -665,7 +673,7 @@ export default function InteractiveHero() {
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setTimeout(() => setIsFocused(false), 150)}
                 onKeyDown={handleInputKeyDown}
-                placeholder={showChatResults ? 'Ask a follow-up question...' : AI_PLACEHOLDERS[placeholderIndex]}
+                placeholder={showChatResults ? 'Ask a follow-up question...' : SEARCH_PLACEHOLDER}
                 className="w-full h-12 pl-11 pr-14 text-sm bg-[var(--editorial-bg-elevated)] rounded-lg
                            border border-[var(--editorial-border)] text-[var(--editorial-text-primary)]
                            placeholder:text-[var(--editorial-text-tertiary)]
@@ -1429,9 +1437,22 @@ export default function InteractiveHero() {
         </div>
       </div>
 
-      {/* City/Category Filters - Below the grid */}
+      {/* City/Category Filters - Progressive disclosure */}
       {!showChatResults && (
         <div className="pt-12 lg:pt-16">
+          {/* Refine toggle */}
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--editorial-text-tertiary)] mb-4 flex items-center gap-2 hover:text-[var(--editorial-text-secondary)] transition-colors"
+          >
+            Refine
+            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Collapsible filter panel */}
+          {showFilters && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="w-full">
             <div className="mb-6">
               <div className="flex flex-wrap gap-x-4 gap-y-2">
@@ -1595,6 +1616,8 @@ export default function InteractiveHero() {
               </div>
             )}
           </div>
+          </div>
+          )}
         </div>
       )}
     </div>

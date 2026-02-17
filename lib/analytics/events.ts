@@ -26,7 +26,10 @@ export type AnalyticsEvent =
   | { type: 'comparison_started'; destinationIds: string[] }
   | { type: 'comparison_completed'; chosenId: string; rejectedIds: string[] }
   | { type: 'onboarding_step'; step: number; stepName: string; completed: boolean }
-  | { type: 'error_occurred'; errorType: string; errorMessage: string; context?: string };
+  | { type: 'error_occurred'; errorType: string; errorMessage: string; context?: string }
+  | { type: 'hero_impression'; variant: 'control' | 'simplified' }
+  | { type: 'hero_cta_clicked'; variant: 'control' | 'simplified'; ctaType: 'explore' | 'ai_concierge' }
+  | { type: 'hero_search_submitted'; variant: 'control' | 'simplified'; query: string };
 
 interface EventMetadata {
   timestamp: number;
@@ -288,6 +291,21 @@ export function trackOnboardingStep(
     stepName,
     completed,
   });
+}
+
+/**
+ * Track hero A/B test events
+ */
+export function trackHeroImpression(variant: 'control' | 'simplified'): void {
+  trackEvent({ type: 'hero_impression', variant });
+}
+
+export function trackHeroCTAClick(variant: 'control' | 'simplified', ctaType: 'explore' | 'ai_concierge'): void {
+  trackEvent({ type: 'hero_cta_clicked', variant, ctaType });
+}
+
+export function trackHeroSearchSubmit(variant: 'control' | 'simplified', query: string): void {
+  trackEvent({ type: 'hero_search_submitted', variant, query });
 }
 
 export { getSessionId };

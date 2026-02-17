@@ -111,7 +111,7 @@ export const DestinationCard = memo(function DestinationCard({
             className={`
               object-cover
               transition-all duration-500 ease-out
-              group-hover:scale-105
+              group-hover:scale-[1.03]
               ${isLoaded ? 'opacity-100' : 'opacity-0'}
             `}
             quality={80}
@@ -203,7 +203,7 @@ export const DestinationCard = memo(function DestinationCard({
         <div>
         <h3
           className={`
-            text-sm font-medium text-[var(--editorial-text-primary)]
+            text-sm font-medium tracking-[-0.01em] text-[var(--editorial-text-primary)]
               line-clamp-2
             transition-colors duration-200
             group-hover:text-[var(--editorial-text-secondary)]
@@ -212,19 +212,22 @@ export const DestinationCard = memo(function DestinationCard({
           {destination.name}
         </h3>
 
-        {/* Micro Description - Always show with fallback, stuck to title */}
-        <div className="text-xs text-[var(--editorial-text-secondary)] line-clamp-1">
+        {/* Editorial deck - 2-line description with enriched fallback */}
+        <p className="text-xs text-[var(--editorial-text-secondary)] line-clamp-2 mt-0.5 leading-relaxed">
           {destination.micro_description ||
-           (destination.category && destination.city
-             ? `${destination.category} in ${capitalizeCity(destination.city)}`
-             : destination.city
-               ? `Located in ${capitalizeCity(destination.city)}`
-               : destination.category || '')}
-        </div>
+           destination.editorial_summary ||
+           (destination.neighborhood && destination.city
+             ? `${destination.category ? destination.category.charAt(0).toUpperCase() + destination.category.slice(1) : 'Destination'} in ${destination.neighborhood}, ${capitalizeCity(destination.city)}`
+             : destination.category && destination.city
+               ? `${destination.category.charAt(0).toUpperCase() + destination.category.slice(1)} in ${capitalizeCity(destination.city)}`
+               : destination.city
+                 ? `Located in ${capitalizeCity(destination.city)}`
+                 : destination.category || '')}
+        </p>
 
-        {/* ML Forecasting Badges */}
+        {/* ML Forecasting Badges - visible on hover only to reduce metadata density */}
         {showBadges && destination.id && (
-          <div className="mt-2">
+          <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <DestinationBadges destinationId={destination.id} compact={true} showTiming={false} />
           </div>
         )}

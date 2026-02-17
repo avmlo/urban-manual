@@ -1,10 +1,11 @@
 :root {
   --um-content-max: 1280px;
   --um-content-padding: 48px;
-  --motion-fast: 140ms;
-  --motion-medium: 200ms;
-  --motion-slow: 320ms;
+  --motion-fast: 180ms;
+  --motion-medium: 280ms;
+  --motion-slow: 420ms;
   --ease-soft: cubic-bezier(0.22, 0.11, 0.1, 1);
+  --ease-editorial: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Universal editorial container */

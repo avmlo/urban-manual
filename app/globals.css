@@ -146,9 +146,16 @@
 .text-editorial-headline {
   font-family: var(--font-editorial-serif);
   font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
   color: var(--editorial-text-primary);
+}
+
+@media (max-width: 768px) {
+  .text-editorial-headline {
+    letter-spacing: -0.015em;
+    line-height: 1.12;
+  }
 }
 
 .text-editorial-title {
@@ -168,9 +175,9 @@
 
 /* Small caps labels - key editorial element */
 .text-editorial-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--editorial-text-tertiary);
 }
@@ -394,6 +401,11 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: none;
+}
+
+/* Only animate shimmer when search is focused */
+.search-focused .shimmer-text {
   animation: shimmerText 2.5s linear infinite;
 }
 
@@ -531,6 +543,11 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  animation: none;
+}
+
+/* Only animate shimmer when search is focused */
+.search-focused .shimmer-placeholder::placeholder {
   animation: placeholderShimmer 3s linear infinite;
 }
 
@@ -569,9 +586,14 @@
     transparent 100%
   );
   background-size: 200% 100%;
-  animation: inputShimmer 4s ease-in-out infinite;
+  animation: none;
   pointer-events: none;
   border-radius: 2px;
+}
+
+/* Only animate shimmer when search is focused */
+.search-focused .search-input-shimmer::before {
+  animation: inputShimmer 4s ease-in-out infinite;
 }
 
 .dark .search-input-shimmer::before {

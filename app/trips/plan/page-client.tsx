@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useCallback } from "react";
 import { TripPlannerProvider } from "@/src/features/trip-planner/context";
 import { TripPlannerHeader } from "@/src/features/trip-planner/components/TripPlannerHeader";
 import { TripPlannerHero } from "@/src/features/trip-planner/components/TripPlannerHero";
@@ -12,15 +12,12 @@ import { LodgingSection } from "@/src/features/trip-planner/components/lodging/L
 import { PricingSection } from "@/src/features/trip-planner/components/pricing/PricingSection";
 import type { SectionId } from "@/src/features/trip-planner/types";
 
-function TripPlannerContent() {
-  const sectionRefs = useRef<Record<SectionId, HTMLElement | null>>({
-    itinerary: null,
-    travelers: null,
-    transportation: null,
-    lodging: null,
-    pricing: null,
-  });
+interface TripPlannerClientProps {
+  userId?: string;
+  tripId?: string;
+}
 
+function TripPlannerContent() {
   const handleNavigate = useCallback((section: SectionId) => {
     const el = document.getElementById(section);
     if (el) {
@@ -29,17 +26,13 @@ function TripPlannerContent() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-[var(--editorial-bg)] dark:bg-gray-950">
       <TripPlannerHeader />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-10">
-        {/* Hero */}
         <TripPlannerHero />
-
-        {/* Module Navigation */}
         <ModuleNavCards onNavigate={handleNavigate} />
 
-        {/* Sections */}
         <div className="space-y-12">
           <ItinerarySection />
           <TravelersSection />
@@ -52,9 +45,12 @@ function TripPlannerContent() {
   );
 }
 
-export default function TripPlannerClient() {
+export default function TripPlannerClient({
+  userId,
+  tripId,
+}: TripPlannerClientProps) {
   return (
-    <TripPlannerProvider>
+    <TripPlannerProvider userId={userId} tripId={tripId}>
       <TripPlannerContent />
     </TripPlannerProvider>
   );

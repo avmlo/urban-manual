@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Save, Globe } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Save, Globe, Cloud, Loader2 } from "lucide-react";
 import { Button } from "@/src/ui/button";
 import { useTripPlanner } from "../context";
 import { toast } from "@/lib/toast";
 
 export function TripPlannerHeader() {
-  const { state, saveDraft } = useTripPlanner();
+  const router = useRouter();
+  const { state, saveDraft, supabaseTripId, isSyncing } = useTripPlanner();
 
   const handleSaveDraft = () => {
     saveDraft();
@@ -23,11 +25,16 @@ export function TripPlannerHeader() {
       toast.error("Please add a trip location before publishing");
       return;
     }
-    toast.success("Trip published successfully!");
+    // Save first, then navigate to the trip view
+    saveDraft();
+    toast.success("Trip published!");
+    if (supabaseTripId) {
+      router.push(`/trips/${supabaseTripId}`);
+    }
   };
 
   const lastSavedText = state.ui.lastSaved
-    ? `Last saved ${new Date(state.ui.lastSaved).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    ? `Saved ${new Date(state.ui.lastSaved).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
     : state.ui.isDirty
       ? "Unsaved changes"
       : "";
@@ -49,11 +56,19 @@ export function TripPlannerHeader() {
               <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Trip Planner
               </h1>
-              {lastSavedText && (
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {lastSavedText}
-                </p>
-              )}
+              <div className="flex items-center gap-1.5">
+                {isSyncing && (
+                  <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />
+                )}
+                {!isSyncing && supabaseTripId && (
+                  <Cloud className="w-3 h-3 text-green-500" />
+                )}
+                {lastSavedText && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {lastSavedText}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 

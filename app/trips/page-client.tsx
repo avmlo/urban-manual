@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, MapPin, Calendar } from 'lucide-react';
+import { Plus, MapPin, Calendar, Compass } from 'lucide-react';
 import { formatDestinationsFromField } from '@/types/trip';
 import {
   getTripState,
@@ -135,13 +135,22 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
             >
               Trips
             </h1>
-            <button
-              onClick={() => setShowWizard(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Trip
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/trips/plan"
+                className="flex items-center gap-2 px-4 py-2 border border-[var(--editorial-border)] text-[var(--editorial-text-primary)] text-sm font-medium rounded-lg hover:bg-[var(--editorial-border-subtle)] transition-colors"
+              >
+                <Compass className="w-4 h-4" />
+                Plan a Trip
+              </Link>
+              <button
+                onClick={() => setShowWizard(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Trip
+              </button>
+            </div>
           </div>
           <p className="text-sm text-[var(--editorial-text-secondary)]">
             {trips.length} {trips.length === 1 ? 'trip' : 'trips'}
@@ -176,12 +185,20 @@ export default function TripsPageClient({ initialTrips, userId }: TripsPageClien
             <div className="text-center py-16 border border-dashed border-[var(--editorial-border)] rounded-lg bg-[var(--editorial-bg-elevated)]">
               <MapPin className="h-12 w-12 mx-auto text-[var(--editorial-text-tertiary)] mb-4" />
               <p className="text-sm text-[var(--editorial-text-secondary)] mb-6">No trips yet</p>
-              <button
-                onClick={() => setShowWizard(true)}
-                className="px-5 py-2.5 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
-              >
-                Create your first trip
-              </button>
+              <div className="flex items-center justify-center gap-3">
+                <Link
+                  href="/trips/plan"
+                  className="px-5 py-2.5 bg-[var(--editorial-accent)] text-white text-sm font-medium rounded-lg hover:bg-[var(--editorial-accent-hover)] transition-colors"
+                >
+                  Plan a Trip
+                </Link>
+                <button
+                  onClick={() => setShowWizard(true)}
+                  className="px-5 py-2.5 border border-[var(--editorial-border)] text-[var(--editorial-text-primary)] text-sm font-medium rounded-lg hover:bg-[var(--editorial-border-subtle)] transition-colors"
+                >
+                  Quick Create
+                </button>
+              </div>
             </div>
           ) : filteredTrips.length === 0 ? (
             /* Empty State - Filter has no results */

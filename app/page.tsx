@@ -2,11 +2,10 @@ import { Metadata } from 'next';
 import { prefetchHomepageData } from '@/lib/data/fetch-destinations';
 import { generateHomeBreadcrumb } from '@/lib/metadata';
 import { HomepageDataProvider } from '@/features/homepage/components/HomepageDataProvider';
-import { HomepageContent } from '@/features/homepage/components/HomepageContent';
 import { AISearchChatWrapper } from '@/features/homepage/components/AISearchChatWrapper';
 import InteractiveHero from '@/features/homepage/components/InteractiveHero';
-import NavigationBar from '@/features/homepage/components/NavigationBar';
 import { CuratedCollections } from '@/features/homepage/components/CuratedCollections';
+import { HomepageGridSection } from '@/features/homepage/components/HomepageGridSection';
 
 /**
  * Homepage - Progressive Loading Architecture with Client Fallback
@@ -85,14 +84,8 @@ export default async function HomePage() {
           {/* Curated collections - editorial journey modules */}
           <CuratedCollections />
 
-          {/* Content Section - Full width */}
-          <div id="destination-grid" className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
-            {/* Navigation bar */}
-            <NavigationBar />
-
-            {/* Grid or Map view - switches based on viewMode */}
-            <HomepageContent />
-          </div>
+          {/* Destination row preview (default) or full grid (after "Show All") */}
+          <HomepageGridSection />
         </main>
 
         {/* Destination Drawer - now handled by IntelligentDrawer in layout.tsx */}

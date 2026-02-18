@@ -50,6 +50,9 @@ interface HomepageDataContextType {
   michelinOnly: boolean;
   crownOnly: boolean;
 
+  // Grid visibility
+  showGrid: boolean;
+
   // Actions
   setCurrentPage: (page: number) => void;
   setSelectedCity: (city: string) => void;
@@ -63,6 +66,7 @@ interface HomepageDataContextType {
   closeAIChat: () => void;
   setMichelinOnly: (value: boolean) => void;
   setCrownOnly: (value: boolean) => void;
+  setShowGrid: (value: boolean) => void;
   refetch: () => Promise<void>;
 }
 
@@ -142,6 +146,9 @@ function HomepageDataProviderInner({
   // Advanced filters
   const [michelinOnly, setMichelinOnly] = useState(false);
   const [crownOnly, setCrownOnly] = useState(false);
+
+  // Grid visibility - hidden by default, shown via "Show All"
+  const [showGrid, setShowGrid] = useState(false);
 
   // Initialize view mode from URL
   useEffect(() => {
@@ -334,6 +341,7 @@ function HomepageDataProviderInner({
     aiChatInitialQuery,
     michelinOnly,
     crownOnly,
+    showGrid,
     setCurrentPage,
     setSelectedCity,
     setSelectedCategory,
@@ -346,6 +354,7 @@ function HomepageDataProviderInner({
     closeAIChat,
     setMichelinOnly,
     setCrownOnly,
+    setShowGrid,
     refetch: fetchDestinations,
   };
 

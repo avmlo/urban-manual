@@ -214,6 +214,8 @@ export default function InteractiveHero() {
     openDestination,
     michelinOnly,
     setMichelinOnly,
+    showGrid,
+    setShowGrid,
   } = useHomepageData();
 
   const router = useRouter();
@@ -853,11 +855,15 @@ export default function InteractiveHero() {
           </form>
 
           {/* Show All Button */}
-          {!showChatResults && (
+          {!showChatResults && !showGrid && (
             <button
               onClick={() => {
-                const grid = document.getElementById('destination-grid');
-                if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                setShowGrid(true);
+                // Scroll to grid after it renders
+                setTimeout(() => {
+                  const grid = document.getElementById('destination-grid');
+                  if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
               }}
               className="mt-6 px-6 py-3 text-sm font-medium
                          border border-[var(--editorial-text-primary)] text-[var(--editorial-text-primary)]

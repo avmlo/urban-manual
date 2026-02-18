@@ -19,6 +19,7 @@ const CMS_ROUTES = [
   '/admin/brands',
   '/admin/architects',
   '/admin/categories',
+  '/admin/resources',
 ];
 
 export default function AdminLayoutShell({ children }: { children: ReactNode }) {

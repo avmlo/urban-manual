@@ -26,6 +26,7 @@ const NAV_LINKS = [
 const CMS_ROUTES = [
   '/admin/destinations', '/admin/cities', '/admin/countries',
   '/admin/neighborhoods', '/admin/brands', '/admin/architects', '/admin/categories',
+  '/admin/resources',
 ];
 
 function getActiveValue(pathname: string) {

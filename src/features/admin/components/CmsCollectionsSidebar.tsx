@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { MapPin, Building2, Globe, Map, Compass, Layers, MoreHorizontal, Plus } from 'lucide-react';
+import { MapPin, Building2, Globe, Map, Compass, Layers, MoreHorizontal, Plus, Library } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface Collection {
@@ -21,6 +21,7 @@ const COLLECTIONS: Collection[] = [
   { id: 'brands', label: 'Brands', href: '/admin/brands', icon: Building2, table: 'brands' },
   { id: 'architects', label: 'Design Firms', href: '/admin/architects', icon: Compass, table: 'architects' },
   { id: 'categories', label: 'Categories', href: '/admin/categories', icon: Layers, table: '' },
+  { id: 'resources', label: 'Resources', href: '/admin/resources', icon: Library, table: '' },
 ];
 
 export function CmsCollectionsSidebar() {

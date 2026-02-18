@@ -6,22 +6,45 @@ import type { Destination } from "@/types/destination";
 import { useDestinationLibraryStore } from "./destination-store";
 import { cn } from "@/lib/utils";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
-const WORLD_CENTER: [number, number] = [10, 48];
+const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "";
+const GOOGLE_MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAP_ID || "URBAN_MANUAL_MAP";
+const WORLD_CENTER = { lat: 48, lng: 10 };
 const DEFAULT_ZOOM = 3;
 const SELECTED_ZOOM = 13;
 
-function ensureMapboxCss() {
-  if (typeof document === "undefined") return;
-  const id = "mapbox-gl-css";
-  if (document.getElementById(id)) return;
-  const link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.href = "https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css";
-  document.head.appendChild(link);
+/** Load Google Maps script once, returning when ready */
+function loadGoogleMaps(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.google?.maps?.Map) {
+      resolve();
+      return;
+    }
+
+    if (document.querySelector("script[data-google-maps]")) {
+      const check = setInterval(() => {
+        if (window.google?.maps?.Map) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 100);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=marker&loading=async`;
+    script.async = true;
+    script.defer = true;
+    script.setAttribute("data-google-maps", "true");
+    script.onload = () => {
+      const poll = () => {
+        if (window.google?.maps?.Map) resolve();
+        else setTimeout(poll, 50);
+      };
+      poll();
+    };
+    script.onerror = () => reject(new Error("Failed to load Google Maps"));
+    document.head.appendChild(script);
+  });
 }
 
 interface DestinationMapViewProps {
@@ -30,11 +53,11 @@ interface DestinationMapViewProps {
 
 export function DestinationMapView({ destinations }: DestinationMapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<Map<string, any>>(new Map());
-  const mbRef = useRef<any>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showPins, setShowPins] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedSlug = useDestinationLibraryStore((s) => s.selectedDestinationSlug);
   const selectDestination = useDestinationLibraryStore((s) => s.selectDestination);
@@ -42,34 +65,35 @@ export function DestinationMapView({ destinations }: DestinationMapViewProps) {
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current || !MAPBOX_TOKEN) return;
+    if (!mapContainerRef.current || !GOOGLE_API_KEY) return;
 
     let cancelled = false;
 
     async function initMap() {
-      ensureMapboxCss();
-      const mapboxgl = (await import("mapbox-gl")).default;
-      mbRef.current = mapboxgl;
+      try {
+        await loadGoogleMaps();
+        if (cancelled || !mapContainerRef.current) return;
 
-      if (cancelled || !mapContainerRef.current) return;
+        const map = new google.maps.Map(mapContainerRef.current, {
+          center: WORLD_CENTER,
+          zoom: DEFAULT_ZOOM,
+          minZoom: 3,
+          maxZoom: 20,
+          mapId: GOOGLE_MAP_ID,
+          disableDefaultUI: false,
+          zoomControl: true,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+        });
 
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-
-      const map = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/light-v11",
-        center: WORLD_CENTER,
-        zoom: DEFAULT_ZOOM,
-      });
-
-      map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
-
-      map.on("load", () => {
         if (!cancelled) {
           mapRef.current = map;
           setMapLoaded(true);
         }
-      });
+      } catch {
+        if (!cancelled) setError("Failed to load Google Maps");
+      }
     }
 
     initMap();
@@ -77,11 +101,11 @@ export function DestinationMapView({ destinations }: DestinationMapViewProps) {
     const markers = markersRef.current;
     return () => {
       cancelled = true;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      markers.forEach((marker) => {
+        marker.map = null;
+      });
       markers.clear();
+      mapRef.current = null;
       setMapLoaded(false);
     };
   }, []);
@@ -112,15 +136,13 @@ export function DestinationMapView({ destinations }: DestinationMapViewProps) {
 
   // Sync markers
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !mbRef.current) return;
-
-    const mb = mbRef.current;
+    if (!mapRef.current || !mapLoaded || !window.google?.maps) return;
 
     // Remove stale markers
     const currentSlugs = new Set(destinations.map((d) => d.slug));
     markersRef.current.forEach((marker, slug) => {
       if (!currentSlugs.has(slug)) {
-        marker.remove();
+        marker.map = null;
         markersRef.current.delete(slug);
       }
     });
@@ -132,52 +154,65 @@ export function DestinationMapView({ destinations }: DestinationMapViewProps) {
       const isActive = dest.slug === selectedSlug;
 
       if (existing) {
-        const el = existing.getElement();
-        el.style.background = isActive ? "#1A1A1A" : "#C75B2A";
-        el.style.width = isActive ? "36px" : "28px";
-        el.style.height = isActive ? "36px" : "28px";
-        el.style.display = showPins ? "block" : "none";
+        const el = existing.content as HTMLElement;
+        if (el) {
+          el.style.background = isActive ? "#1A1A1A" : "#C75B2A";
+          el.style.width = isActive ? "36px" : "28px";
+          el.style.height = isActive ? "36px" : "28px";
+          el.style.display = showPins ? "block" : "none";
+        }
       } else {
         const el = createMarkerEl(dest.slug, isActive);
         el.style.display = showPins ? "block" : "none";
 
-        const marker = new mb.Marker({ element: el })
-          .setLngLat([dest.longitude, dest.latitude])
-          .addTo(mapRef.current);
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+          map: mapRef.current!,
+          position: { lat: dest.latitude, lng: dest.longitude },
+          content: el,
+          title: dest.name || "",
+        });
         markersRef.current.set(dest.slug, marker);
       }
     });
   }, [destinations, selectedSlug, mapLoaded, showPins, createMarkerEl]);
 
-  // Fly to selected
+  // Pan to selected
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !selectedSlug) return;
 
     const dest = destinations.find((d) => d.slug === selectedSlug);
     if (dest?.latitude && dest?.longitude) {
-      mapRef.current.flyTo({
-        center: [dest.longitude, dest.latitude],
-        zoom: SELECTED_ZOOM,
-        duration: 800,
-      });
+      mapRef.current.panTo({ lat: dest.latitude, lng: dest.longitude });
+      mapRef.current.setZoom(SELECTED_ZOOM);
     }
   }, [selectedSlug, mapLoaded, destinations]);
 
   // Resize on layout change
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
-    requestAnimationFrame(() => { mapRef.current?.resize(); });
+    requestAnimationFrame(() => {
+      google.maps.event.trigger(mapRef.current!, "resize");
+    });
   }, [layoutMode, mapLoaded]);
 
   return (
     <div className="relative w-full h-full bg-gray-100">
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {!MAPBOX_TOKEN && (
+      {!GOOGLE_API_KEY && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-center p-6">
             <MapPin className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Map requires NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN</p>
+            <p className="text-sm text-gray-500">Map requires NEXT_PUBLIC_GOOGLE_API_KEY</p>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="text-center p-6">
+            <MapPin className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">{error}</p>
           </div>
         </div>
       )}

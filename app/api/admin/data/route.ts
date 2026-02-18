@@ -68,6 +68,25 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
+    // For cities, attach destination (POI) counts
+    if (type === 'cities' && data && data.length > 0) {
+      const cityNames = data.map((c: { name: string }) => c.name);
+      const { data: destinations } = await supabase
+        .from('destinations')
+        .select('city')
+        .in('city', cityNames);
+
+      if (destinations) {
+        const countMap = new Map<string, number>();
+        for (const d of destinations) {
+          countMap.set(d.city, (countMap.get(d.city) ?? 0) + 1);
+        }
+        for (const city of data as { name: string; poi_count?: number }[]) {
+          city.poi_count = countMap.get(city.name) ?? 0;
+        }
+      }
+    }
+
     if (paginate) {
       return NextResponse.json({ data, total: count ?? 0, page, pageSize });
     }

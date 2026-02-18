@@ -58,6 +58,7 @@ interface City {
   slug: string;
   image_url: string | null;
   description: string | null;
+  poi_count?: number;
 }
 
 interface Country {
@@ -159,6 +160,7 @@ export function DataManager({ type }: DataManagerProps) {
     name: true,
     category: true,
     location: true,
+    poiCount: true,
     code: true,
     nationality: true,
     slug: true,
@@ -630,6 +632,11 @@ export function DataManager({ type }: DataManagerProps) {
                     Location
                   </th>
                 )}
+                {type === 'cities' && visibleColumns.poiCount && (
+                  <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
+                    POIs
+                  </th>
+                )}
                 {type === 'countries' && visibleColumns.code && (
                   <th className="text-left text-[11px] font-medium text-black/25 dark:text-gray-600 uppercase tracking-wider px-2 py-2 hidden sm:table-cell">
                     Code
@@ -737,6 +744,13 @@ export function DataManager({ type }: DataManagerProps) {
                       <span className="text-[13px] text-gray-400 dark:text-gray-500">
                         {'city' in item && item.city ? `${item.city}, ` : ''}
                         {'country' in item ? item.country || '—' : '—'}
+                      </span>
+                    </td>
+                  )}
+                  {type === 'cities' && visibleColumns.poiCount && (
+                    <td className="px-2 py-2 hidden sm:table-cell">
+                      <span className="text-[13px] text-gray-400 dark:text-gray-500 tabular-nums">
+                        {'poi_count' in item ? (item as City).poi_count ?? 0 : 0}
                       </span>
                     </td>
                   )}

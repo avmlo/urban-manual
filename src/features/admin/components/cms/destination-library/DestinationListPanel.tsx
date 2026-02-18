@@ -15,6 +15,7 @@ interface DestinationListPanelProps {
   loading: boolean;
   cities: string[];
   onCreateNew: () => void;
+  headerSlot?: React.ReactNode;
 }
 
 export function DestinationListPanel({
@@ -23,6 +24,7 @@ export function DestinationListPanel({
   loading,
   cities,
   onCreateNew,
+  headerSlot,
 }: DestinationListPanelProps) {
   const layoutMode = useDestinationLibraryStore((s) => s.layoutMode);
   const setLayoutMode = useDestinationLibraryStore((s) => s.setLayoutMode);
@@ -39,7 +41,7 @@ export function DestinationListPanel({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h2 className="text-base font-semibold text-[#1A1A1A]">Destinations</h2>
+        {headerSlot || <h2 className="text-base font-semibold text-[#1A1A1A]">Destinations</h2>}
         <div className="flex items-center gap-1">
           <button
             onClick={() =>

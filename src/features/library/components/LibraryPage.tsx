@@ -14,7 +14,11 @@ import {
   ResizableHandle,
 } from "@/ui/resizable";
 
-function RightPanel() {
+interface LibraryPageProps {
+  headerSlot?: React.ReactNode;
+}
+
+function RightPanel({ headerSlot }: { headerSlot?: React.ReactNode }) {
   const panelView = useResourceLibraryStore((s) => s.panelView);
 
   switch (panelView) {
@@ -30,17 +34,17 @@ function RightPanel() {
       return <AddListPanel />;
     case "list":
     default:
-      return <ResourceListPanel />;
+      return <ResourceListPanel headerSlot={headerSlot} />;
   }
 }
 
-export function LibraryPage() {
+export function LibraryPage({ headerSlot }: LibraryPageProps = {}) {
   const layoutMode = useResourceLibraryStore((s) => s.layoutMode);
 
   return (
     <div
       className="w-full rounded-xl border border-[#E8E2D9] overflow-hidden bg-[#F5F0E8]"
-      style={{ height: "calc(100vh - 280px)", minHeight: "500px" }}
+      style={{ height: "calc(100vh - 72px)", minHeight: "500px" }}
     >
       {layoutMode === "split" && (
         <ResizablePanelGroup direction="horizontal" className="h-full">
@@ -50,7 +54,7 @@ export function LibraryPage() {
           <ResizableHandle />
           <ResizablePanel defaultSize={60} minSize={30}>
             <div className="h-full bg-[#F5F0E8] overflow-hidden">
-              <RightPanel />
+              <RightPanel headerSlot={headerSlot} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -65,7 +69,7 @@ export function LibraryPage() {
 
       {layoutMode === "list-full" && (
         <div className="h-full bg-[#F5F0E8] overflow-hidden">
-          <RightPanel />
+          <RightPanel headerSlot={headerSlot} />
         </div>
       )}
     </div>

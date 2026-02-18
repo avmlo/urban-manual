@@ -8,7 +8,11 @@ import { FilterBar } from "./FilterBar";
 import { EmptyState } from "@/ui/empty-state";
 import { Search } from "lucide-react";
 
-export function ResourceListPanel() {
+interface ResourceListPanelProps {
+  headerSlot?: React.ReactNode;
+}
+
+export function ResourceListPanel({ headerSlot }: ResourceListPanelProps = {}) {
   const layoutMode = useResourceLibraryStore((s) => s.layoutMode);
   const setLayoutMode = useResourceLibraryStore((s) => s.setLayoutMode);
   const filtered = useFilteredResources();
@@ -19,7 +23,7 @@ export function ResourceListPanel() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h2 className="text-base font-semibold text-[#1A1A1A]">Resources</h2>
+        {headerSlot || <h2 className="text-base font-semibold text-[#1A1A1A]">Resources</h2>}
         <div className="flex items-center gap-1">
           <button
             onClick={() =>

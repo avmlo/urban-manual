@@ -26,9 +26,10 @@ interface Toast {
 
 interface DestinationLibraryProps {
   toast: Toast;
+  headerSlot?: React.ReactNode;
 }
 
-export function DestinationLibrary({ toast }: DestinationLibraryProps) {
+export function DestinationLibrary({ toast, headerSlot }: DestinationLibraryProps) {
   const searchParams = useSearchParams();
 
   // Data state
@@ -359,6 +360,7 @@ export function DestinationLibrary({ toast }: DestinationLibraryProps) {
         loading={loading}
         cities={cities}
         onCreateNew={handleCreateNew}
+        headerSlot={headerSlot}
       />
     );
   }
@@ -366,7 +368,7 @@ export function DestinationLibrary({ toast }: DestinationLibraryProps) {
   return (
     <div
       className="w-full rounded-xl border border-[#E8E2D9] overflow-hidden bg-[#F5F0E8]"
-      style={{ height: "calc(100vh - 280px)", minHeight: "500px" }}
+      style={{ height: "calc(100vh - 72px)", minHeight: "500px" }}
     >
       {layoutMode === "split" && (
         <ResizablePanelGroup direction="horizontal" className="h-full">

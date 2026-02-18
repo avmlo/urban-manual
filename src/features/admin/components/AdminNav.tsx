@@ -25,8 +25,8 @@ const NAV_LINKS = [
 // CMS routes that should highlight the "CMS" tab
 const CMS_ROUTES = [
   '/admin/destinations', '/admin/cities', '/admin/countries',
-  '/admin/neighborhoods', '/admin/brands', '/admin/architects', '/admin/categories',
-  '/admin/resources',
+  '/admin/neighborhoods', '/admin/brands', '/admin/architects',
+  '/admin/categories', '/admin/resources',
 ];
 
 function getActiveValue(pathname: string) {

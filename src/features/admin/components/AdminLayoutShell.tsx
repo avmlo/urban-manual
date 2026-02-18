@@ -12,13 +12,17 @@ import { CommandPalette } from './CommandPalette';
 import { CmsCollectionsSidebar } from './CmsCollectionsSidebar';
 
 const CMS_ROUTES = [
-  '/admin/destinations',
   '/admin/cities',
   '/admin/countries',
   '/admin/neighborhoods',
   '/admin/brands',
   '/admin/architects',
   '/admin/categories',
+];
+
+// Library routes get full-width treatment (no sidebar, no max-w constraint)
+const LIBRARY_ROUTES = [
+  '/admin/destinations',
   '/admin/resources',
 ];
 
@@ -29,6 +33,7 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
 
   const isAdmin = (user?.app_metadata as Record<string, unknown> | null)?.role === 'admin';
   const isCmsPage = CMS_ROUTES.some(route => pathname?.startsWith(route));
+  const isLibraryPage = LIBRARY_ROUTES.some(route => pathname?.startsWith(route));
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -46,6 +51,37 @@ export default function AdminLayoutShell({ children }: { children: ReactNode }) 
           </p>
         </div>
       </main>
+    );
+  }
+
+  if (isLibraryPage) {
+    return (
+      <>
+        <CommandPalette />
+        <main className="w-full px-3 sm:px-4 pt-4 pb-2 min-h-screen">
+          {/* Compact header for library */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-4">
+              <h1 className="text-sm font-medium text-gray-400 dark:text-gray-500">Admin</h1>
+              <AdminNav />
+            </div>
+            <div className="flex items-center gap-3">
+              <kbd className="hidden sm:inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 font-mono">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+              <Link
+                href="/"
+                className="text-xs font-medium text-gray-500 hover:text-black dark:hover:text-white transition-colors px-3 py-1.5 -mr-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Exit
+              </Link>
+            </div>
+          </div>
+          <AdminToastProvider>
+            {children}
+          </AdminToastProvider>
+        </main>
+      </>
     );
   }
 

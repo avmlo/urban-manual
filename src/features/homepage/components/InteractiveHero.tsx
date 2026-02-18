@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Sparkles, Loader2, X, MapPin, ArrowRight, RefreshCw, Search, Bookmark, CheckCircle, Map } from 'lucide-react';
-import { capitalizeCity, capitalizeCategory } from '@/lib/utils';
+import { capitalizeCategory } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHomepageData } from './HomepageDataProvider';
 import { Destination } from '@/types/destination';
 import Image from 'next/image';
-import { getCategoryIconComponent } from '@/lib/icons/category-icons';
 import { useRouter } from 'next/navigation';
 import { useTripBuilder } from '@/contexts/TripBuilderContext';
 import AddToTripButton from '@/features/trip/components/AddToTripButton';
@@ -107,8 +106,6 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-const FEATURED_CITIES = ['Taipei', 'Tokyo', 'New York', 'London'];
-
 // AI-style rotating placeholders
 const AI_PLACEHOLDERS = [
   'Ask me anything about travel...',
@@ -206,8 +203,6 @@ export default function InteractiveHero() {
   const { user } = useAuth();
   const {
     destinations,
-    cities,
-    categories,
     isLoading,
     selectedCity,
     selectedCategory,
@@ -224,7 +219,6 @@ export default function InteractiveHero() {
   const router = useRouter();
   const { startTrip, addToTrip, activeTrip } = useTripBuilder();
   const [localSearchTerm, setLocalSearchTerm] = useState('');
-  const [showAllCities, setShowAllCities] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -409,16 +403,6 @@ export default function InteractiveHero() {
   const userName = user?.user_metadata?.name?.split(' ')[0] ||
                    user?.email?.split('@')[0];
 
-  // Featured cities that exist in our data
-  const featuredCities = FEATURED_CITIES.filter(c =>
-    cities.some(city => city.toLowerCase() === c.toLowerCase())
-  );
-  const remainingCities = cities.filter(
-    city => !FEATURED_CITIES.some(fc => fc.toLowerCase() === city.toLowerCase())
-  );
-  const displayedCities = showAllCities
-    ? [...featuredCities, ...remainingCities]
-    : featuredCities;
 
   // Handle AI search with optional filter patch
   const handleSearch = useCallback(async (e?: React.FormEvent, queryOverride?: string, filterPatch?: Partial<SearchFilters>) => {
@@ -583,23 +567,6 @@ export default function InteractiveHero() {
     handleSearch(undefined, lastQuery, patch);
   }, [handleSearch, lastQuery]);
 
-  // Handle city filter
-  const handleCityClick = useCallback((city: string) => {
-    if (city.toLowerCase() === selectedCity.toLowerCase()) {
-      setSelectedCity('');
-    } else {
-      setSelectedCity(city);
-    }
-  }, [selectedCity, setSelectedCity]);
-
-  // Handle category filter
-  const handleCategoryClick = useCallback((category: string) => {
-    if (category.toLowerCase() === selectedCategory.toLowerCase()) {
-      setSelectedCategory('');
-    } else {
-      setSelectedCategory(category);
-    }
-  }, [selectedCategory, setSelectedCategory]);
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -611,20 +578,15 @@ export default function InteractiveHero() {
 
   const destinationCount = destinations.length || '800';
   const filteredCount = filteredDestinations.length;
-  const hasFilters = selectedCity || selectedCategory || searchTerm || michelinOnly;
 
-  // Get featured destinations for the editorial hero
-  const featuredDestinations = useMemo(() => {
-    return destinations.slice(0, 3);
-  }, [destinations]);
 
   return (
-    <div className="w-full pr-6 md:pr-10">
-      {/* Editorial Two-Column Layout - Of Study Inspired */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+    <div className="w-full">
+      {/* Centered Hero Layout */}
+      <div className="flex flex-col items-center text-center">
 
-        {/* Left Column - Editorial Text */}
-        <div className="flex flex-col justify-center lg:py-12">
+        {/* Editorial Text - Centered */}
+        <div className="flex flex-col items-center max-w-2xl mx-auto">
           {/* Small Caps Label */}
           <p className="text-xs uppercase tracking-widest text-[var(--editorial-text-tertiary)] mb-6">
             Curated Travel Guide
@@ -647,8 +609,8 @@ export default function InteractiveHero() {
           </p>
 
           {/* Search Input - Minimal Editorial Style */}
-          <form onSubmit={handleSearch} className="mb-0">
-            <div className="relative max-w-md">
+          <form onSubmit={handleSearch} className="mb-0 w-full max-w-lg">
+            <div className="relative">
               {/* AI indicator - Animated thinking/loading */}
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none z-10">
                 {isSearching || isLoadingInstant ? (
@@ -890,9 +852,25 @@ export default function InteractiveHero() {
             )}
           </form>
 
-          {/* Mobile-only AI Response (on lg+ screens, this shows in right column instead) */}
+          {/* Show All Button */}
+          {!showChatResults && (
+            <button
+              onClick={() => {
+                const grid = document.getElementById('destination-grid');
+                if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="mt-6 px-6 py-3 text-sm font-medium
+                         border border-[var(--editorial-text-primary)] text-[var(--editorial-text-primary)]
+                         rounded-lg hover:bg-[var(--editorial-text-primary)] hover:text-[var(--editorial-bg)]
+                         transition-all duration-200"
+            >
+              Show All Destinations
+            </button>
+          )}
+
+          {/* AI Response */}
           {showChatResults && (
-            <div className="lg:hidden mt-6 mb-8 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="mt-6 mb-8 w-full max-w-lg text-left animate-in fade-in slide-in-from-top-2 duration-300">
               {/* Response header with close button */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2 text-sm text-[var(--editorial-text-secondary)]">
@@ -1121,482 +1099,8 @@ export default function InteractiveHero() {
             </div>
           )}
 
-        </div>
-
-        {/* Right Column - AI Response or Featured Destinations */}
-        <div className="hidden lg:flex gap-4 items-stretch">
-          {showChatResults ? (
-            <div className="flex-1 animate-in fade-in slide-in-from-top-2 duration-300 py-12">
-              {/* Response header with close button */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2 text-sm text-[var(--editorial-text-secondary)]">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>AI Response for &quot;{lastQuery}&quot;</span>
-                </div>
-                <button
-                  onClick={() => handleCloseChatResults(false)}
-                  className="p-1 hover:bg-[var(--editorial-border)] rounded-full transition-colors"
-                  aria-label="Close results"
-                >
-                  <X className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
-                </button>
-              </div>
-
-              {/* AI Response text */}
-              {chatResponse && (
-                <p className="text-sm text-[var(--editorial-text-secondary)] mb-3 leading-relaxed">
-                  {chatResponse}
-                </p>
-              )}
-
-              {/* Context chips - what the system assumed */}
-              {deterministicUI?.contextChips && deterministicUI.contextChips.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {deterministicUI.contextChips.map((chip) => (
-                    <span
-                      key={chip.key}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium
-                                 bg-[var(--editorial-border)] text-[var(--editorial-text-secondary)] rounded-full"
-                    >
-                      {chip.label}
-                      {chip.removable && chip.patch && (
-                        <button
-                          onClick={() => handleRemoveContextChip(chip.patch!)}
-                          className="ml-0.5 p-0.5 hover:bg-[var(--editorial-border)] rounded-full transition-colors"
-                          aria-label={`Remove ${chip.label} filter`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Question card - for ambiguous queries */}
-              {deterministicUI?.question && (
-                <div className="mb-4 p-3 rounded-xl bg-[var(--editorial-border-subtle)] border border-[var(--editorial-border-subtle)]">
-                  <p className="text-sm font-medium text-[var(--editorial-text-primary)] mb-2">
-                    {deterministicUI.question.prompt}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {deterministicUI.question.options.map((option, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleQuestionOptionClick(option.patch)}
-                        className="px-3 py-1.5 text-xs font-medium text-[var(--editorial-text-secondary)]
-                                   bg-[var(--editorial-bg-elevated)] rounded-full border border-gray-200 dark:border-white/10
-                                   hover:bg-gray-100 dark:hover:bg-white/20 hover:border-gray-300 dark:hover:border-white/20
-                                   transition-colors"
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Itinerary results - timeline view */}
-              {isItinerary && itinerary.length > 0 && (
-                <div className="space-y-3 mb-4">
-                  {itinerary.map((slot, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      {/* Time slot indicator */}
-                      <div className="flex-shrink-0 w-24">
-                        <span className="text-sm font-medium text-[var(--editorial-text-primary)]">
-                          {slot.label}
-                        </span>
-                      </div>
-                      {/* Destination card */}
-                      {slot.destination && (
-                        <button
-                          onClick={() => openDestination(slot.destination as Destination)}
-                          className="flex-1 flex items-center gap-3 p-2 rounded-xl bg-[var(--editorial-border-subtle)]
-                                     hover:bg-[var(--editorial-border)] transition-colors text-left group"
-                        >
-                          {slot.destination.image_thumbnail || slot.destination.image ? (
-                            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[var(--editorial-border)]">
-                              <Image
-                                src={slot.destination.image_thumbnail || slot.destination.image || ''}
-                                alt={slot.destination.name}
-                                width={40}
-                                height={40}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-[var(--editorial-border)] flex items-center justify-center flex-shrink-0">
-                              <MapPin className="w-4 h-4 text-[var(--editorial-text-tertiary)]" />
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-[var(--editorial-text-primary)] truncate">
-                              {slot.destination.name}
-                            </p>
-                            <p className="text-xs text-[var(--editorial-text-secondary)] truncate">
-                              {capitalizeCategory(slot.destination.category)}
-                            </p>
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-[var(--editorial-text-tertiary)] group-hover:text-gray-500 flex-shrink-0" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Destination results - compact cards (non-itinerary) */}
-              {!isItinerary && chatDestinations.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  {chatDestinations.slice(0, 4).map((dest) => (
-                    <div
-                      key={dest.id || dest.slug}
-                      className="relative flex items-center gap-3 p-2 rounded-xl bg-[var(--editorial-border-subtle)]
-                                 hover:bg-[var(--editorial-border)] transition-colors group"
-                    >
-                      <button
-                        onClick={() => openDestination(dest)}
-                        className="flex items-center gap-3 flex-1 min-w-0 text-left"
-                      >
-                        {dest.image_thumbnail || dest.image ? (
-                          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-[var(--editorial-border)]">
-                            <Image
-                              src={dest.image_thumbnail || dest.image || ''}
-                              alt={dest.name}
-                              width={48}
-                              height={48}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-[var(--editorial-border)] flex items-center justify-center flex-shrink-0">
-                            <MapPin className="w-5 h-5 text-[var(--editorial-text-tertiary)]" />
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-[var(--editorial-text-primary)] truncate group-hover:text-[var(--editorial-text-secondary)]">
-                            {dest.name}
-                          </p>
-                          <p className="text-xs text-[var(--editorial-text-secondary)] truncate">
-                            {dest.city} • {capitalizeCategory(dest.category)}
-                          </p>
-                          {/* "Why" chips - reasons this result was recommended */}
-                          {deterministicUI?.whyBySlug?.[dest.slug] && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {deterministicUI.whyBySlug[dest.slug].slice(0, 2).map((reason, idx) => (
-                                <span
-                                  key={idx}
-                                  className="text-xs px-1.5 py-0.5 bg-amber-50 dark:bg-amber-900/20
-                                             text-amber-700 dark:text-amber-300 rounded"
-                                >
-                                  {reason}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                      {/* Add to Trip button */}
-                      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <AddToTripButton destination={dest} variant="icon" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* See all in grid link */}
-              {(lastFilters.city || lastFilters.category) && filteredDestinations.length > 0 && (
-                <button
-                  onClick={() => handleCloseChatResults(false)}
-                  className="text-sm font-medium text-[var(--editorial-text-primary)] mb-4 flex items-center gap-1.5 hover:underline"
-                >
-                  See all {filteredDestinations.length} results in grid
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-
-              {/* Refinement chips - apply filter patches */}
-              {deterministicUI?.refinements && deterministicUI.refinements.length > 0 && !deterministicUI.question && (
-                <div className="mb-3">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Refine results</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {deterministicUI.refinements.map((refinement, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleRefinementClick(refinement.patch)}
-                        className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300
-                                   bg-white dark:bg-white/5 rounded-full border border-gray-200 dark:border-white/10
-                                   hover:bg-gray-50 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-white/20
-                                   transition-colors"
-                      >
-                        {refinement.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Follow-up suggestions */}
-              {followUpSuggestions.length > 0 && !deterministicUI?.question && (
-                <div className="flex flex-wrap gap-2">
-                  {followUpSuggestions.map((suggestion, index) => {
-                    // Extract label from string or ActionPatch object
-                    const label = typeof suggestion === 'string' ? suggestion : suggestion.label;
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => handleFollowUp(suggestion)}
-                        className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300
-                                   bg-[var(--editorial-border)] rounded-full
-                                   hover:bg-[var(--editorial-border)] transition-colors"
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                  <button
-                    onClick={() => handleCloseChatResults(true)}
-                    className="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500
-                               hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center gap-1"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Start over
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Left Card - Branding/Statement */}
-              <div
-                className="flex-1 flex flex-col justify-between p-8 bg-[var(--editorial-bg-elevated)] border border-[var(--editorial-border)]"
-                style={{ aspectRatio: '3/4' }}
-              >
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-[var(--editorial-text-tertiary)] mb-4">
-                    Est. 2024
-                  </p>
-                </div>
-                <div>
-                  <h3
-                    className="text-[1.5rem] leading-[1.2] text-[var(--editorial-text-primary)] mb-4"
-                    style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
-                  >
-                    Urban Manual
-                  </h3>
-                  <p className="text-xs text-[var(--editorial-text-secondary)] leading-[1.6]">
-                    A curated guide for those who appreciate the finer details of travel.
-                  </p>
-                </div>
-              </div>
-
-              {/* Right Card - Featured Destination with Terracotta */}
-              {featuredDestinations[0] && (
-                <button
-                  onClick={() => openDestination(featuredDestinations[0])}
-                  className="flex-1 flex flex-col bg-[var(--editorial-accent)] text-white overflow-hidden group"
-                  style={{ aspectRatio: '3/4' }}
-                >
-                  <div className="relative flex-1 overflow-hidden">
-                    {featuredDestinations[0].image && (
-                      <Image
-                        src={featuredDestinations[0].image}
-                        alt={featuredDestinations[0].name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <p className="text-xs uppercase tracking-[0.2em] text-white/70 mb-2">
-                      {featuredDestinations[0].category}
-                    </p>
-                    <h3
-                      className="text-[1.1rem] leading-[1.3] mb-2"
-                      style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif" }}
-                    >
-                      {featuredDestinations[0].name}
-                    </h3>
-                    <p className="text-xs text-white/80">
-                      {capitalizeCity(featuredDestinations[0].city)}
-                    </p>
-                  </div>
-                </button>
-              )}
-            </>
-          )}
         </div>
       </div>
-
-      {/* City/Category Filters - Below the grid */}
-      {!showChatResults && (
-        <div className="pt-12 lg:pt-16">
-          <div className="w-full">
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {/* When a city is selected, show only that city with option to show all */}
-                {selectedCity ? (
-                  <>
-                    <button
-                      onClick={() => handleCityClick(selectedCity)}
-                      className="text-xs font-medium text-[var(--editorial-text-primary)] transition-colors duration-200"
-                    >
-                      {capitalizeCity(selectedCity)}
-                    </button>
-                    <button
-                      onClick={() => setSelectedCity('')}
-                      className="text-xs font-medium text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors duration-200"
-                    >
-                      Show all cities
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setSelectedCity('')}
-                      className={`text-xs font-medium transition-colors duration-200 ${
-                        !selectedCity
-                          ? 'text-[var(--editorial-text-primary)]'
-                          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                      }`}
-                    >
-                      All Cities
-                    </button>
-                    {displayedCities.map((city) => (
-                      <button
-                        key={city}
-                        onClick={() => handleCityClick(city)}
-                        className={`text-xs font-medium transition-colors duration-200 ${
-                          selectedCity.toLowerCase() === city.toLowerCase()
-                            ? 'text-[var(--editorial-text-primary)]'
-                            : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                        }`}
-                      >
-                        {capitalizeCity(city)}
-                      </button>
-                    ))}
-                    {cities.length > displayedCities.length && !showAllCities && (
-                      <button
-                        onClick={() => setShowAllCities(true)}
-                        className="text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-                      >
-                        +{cities.length - displayedCities.length} more
-                      </button>
-                    )}
-                    {showAllCities && (
-                      <button
-                        onClick={() => setShowAllCities(false)}
-                        className="text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-                      >
-                        Show less
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Category Filters with Icons */}
-            {categories.length > 0 && (
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
-                {/* When a category is selected or Michelin filter is active, show only that filter */}
-                {selectedCategory || michelinOnly ? (
-                  <>
-                    {/* Show the selected category */}
-                    {selectedCategory && (
-                      <button
-                        onClick={() => handleCategoryClick(selectedCategory)}
-                        className="flex items-center gap-1.5 font-medium text-[var(--editorial-text-primary)] transition-colors duration-200"
-                      >
-                        {(() => {
-                          const IconComponent = getCategoryIconComponent(selectedCategory);
-                          return IconComponent ? <IconComponent className="w-4 h-4" /> : null;
-                        })()}
-                        {capitalizeCategory(selectedCategory)}
-                      </button>
-                    )}
-                    {/* Show Michelin if active */}
-                    {michelinOnly && (
-                      <button
-                        onClick={() => setMichelinOnly(!michelinOnly)}
-                        className="flex items-center gap-1.5 font-medium text-[var(--editorial-text-primary)] transition-colors duration-200"
-                      >
-                        <img
-                          src="/michelin-star.svg"
-                          alt="Michelin"
-                          className="w-4 h-4"
-                        />
-                        Michelin
-                      </button>
-                    )}
-                    {/* Show all categories button */}
-                    <button
-                      onClick={() => {
-                        setSelectedCategory('');
-                        setMichelinOnly(false);
-                      }}
-                      className="font-medium text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)] transition-colors duration-200"
-                    >
-                      Show all categories
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setSelectedCategory('');
-                        setMichelinOnly(false);
-                      }}
-                      className={`font-medium transition-colors duration-200 ${
-                        !selectedCategory && !michelinOnly
-                          ? 'text-[var(--editorial-text-primary)]'
-                          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                      }`}
-                    >
-                      All Categories
-                    </button>
-                    {/* Michelin filter with icon */}
-                    <button
-                      onClick={() => setMichelinOnly(!michelinOnly)}
-                      className={`flex items-center gap-1.5 font-medium transition-colors duration-200 ${
-                        michelinOnly
-                          ? 'text-[var(--editorial-text-primary)]'
-                          : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                      }`}
-                    >
-                      <img
-                        src="/michelin-star.svg"
-                        alt="Michelin"
-                        className="w-4 h-4"
-                      />
-                      Michelin
-                    </button>
-                    {/* Category filters with icons */}
-                    {categories.slice(0, 8).map((category) => {
-                      const IconComponent = getCategoryIconComponent(category);
-                      return (
-                        <button
-                          key={category}
-                          onClick={() => handleCategoryClick(category)}
-                          className={`flex items-center gap-1.5 font-medium transition-colors duration-200 ${
-                            selectedCategory.toLowerCase() === category.toLowerCase()
-                              ? 'text-[var(--editorial-text-primary)]'
-                              : 'text-[var(--editorial-text-tertiary)] hover:text-[var(--editorial-text-primary)]'
-                          }`}
-                        >
-                          {IconComponent && <IconComponent className="w-4 h-4" />}
-                          {capitalizeCategory(category)}
-                        </button>
-                      );
-                    })}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

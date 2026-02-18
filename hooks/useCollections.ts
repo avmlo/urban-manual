@@ -1,27 +1,13 @@
-import { useState, useEffect } from 'react';
+'use client';
+
 import { supabase } from '@/lib/supabase';
 import { Collection } from '@/types/personalization';
+import { useQueryFetching, useQueryMutation } from '@/hooks/useQueryFetching';
 
 export function useCollections(userId: string | undefined) {
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
-    loadCollections();
-  }, [userId]);
-
-  async function loadCollections() {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      setError(null);
+  const { data, isLoading, error, invalidate } = useQueryFetching<Collection[]>(
+    async () => {
+      if (!userId) return [];
 
       const { data, error: err } = await supabase
         .from('collections')
@@ -34,36 +20,30 @@ export function useCollections(userId: string | undefined) {
 
       if (err) throw err;
 
-      // Transform data to include destination_count
-      const transformedData = (data || []).map((collection: any) => ({
+      return (data || []).map((collection: any) => ({
         ...collection,
         destination_count: collection.saved_destinations?.[0]?.count || 0,
       }));
-
-      setCollections(transformedData);
-    } catch (err) {
-      console.error('Error loading collections:', err);
-      setError(err as Error);
-    } finally {
-      setLoading(false);
+    },
+    {
+      queryKey: ['collections', userId],
+      enabled: !!userId,
+      staleTime: 2 * 60 * 1000, // 2 minutes
     }
-  }
+  );
 
-  async function createCollection(collection: {
+  const createMutation = useQueryMutation<Collection | null, {
     name: string;
     description?: string;
     emoji?: string;
     color?: string;
-  }): Promise<Collection | null> {
-    if (!userId) return null;
+  }>(
+    async (collection) => {
+      if (!userId) return null;
 
-    try {
-      // Use API endpoint for better error handling and RLS compliance
       const response = await fetch('/api/collections', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: collection.name,
           description: collection.description || null,
@@ -79,21 +59,17 @@ export function useCollections(userId: string | undefined) {
       }
 
       const { collection: data } = await response.json();
-      await loadCollections();
       return data;
-    } catch (err: any) {
-      console.error('Error creating collection:', err);
-      throw err;
+    },
+    {
+      invalidateKeys: [['collections', userId]],
     }
-  }
+  );
 
-  async function updateCollection(
-    collectionId: string,
-    updates: Partial<Collection>
-  ): Promise<void> {
-    if (!userId) return;
+  const updateMutation = useQueryMutation<void, { collectionId: string; updates: Partial<Collection> }>(
+    async ({ collectionId, updates }) => {
+      if (!userId) return;
 
-    try {
       const { error: err } = await (supabase
         .from('collections')
         .update as any)({
@@ -104,17 +80,16 @@ export function useCollections(userId: string | undefined) {
         .eq('user_id', userId);
 
       if (err) throw err;
-      await loadCollections();
-    } catch (err) {
-      console.error('Error updating collection:', err);
-      throw err;
+    },
+    {
+      invalidateKeys: [['collections', userId]],
     }
-  }
+  );
 
-  async function deleteCollection(collectionId: string): Promise<void> {
-    if (!userId) return;
+  const deleteMutation = useQueryMutation<void, string>(
+    async (collectionId) => {
+      if (!userId) return;
 
-    try {
       // Remove collection from all saved destinations
       await (supabase
         .from('saved_destinations')
@@ -129,21 +104,39 @@ export function useCollections(userId: string | undefined) {
         .eq('user_id', userId);
 
       if (err) throw err;
-      await loadCollections();
-    } catch (err) {
-      console.error('Error deleting collection:', err);
-      throw err;
+    },
+    {
+      invalidateKeys: [['collections', userId]],
     }
+  );
+
+  async function createCollection(collection: {
+    name: string;
+    description?: string;
+    emoji?: string;
+    color?: string;
+  }): Promise<Collection | null> {
+    return createMutation.mutateAsync(collection);
+  }
+
+  async function updateCollection(
+    collectionId: string,
+    updates: Partial<Collection>
+  ): Promise<void> {
+    await updateMutation.mutateAsync({ collectionId, updates });
+  }
+
+  async function deleteCollection(collectionId: string): Promise<void> {
+    await deleteMutation.mutateAsync(collectionId);
   }
 
   return {
-    collections,
-    loading,
-    error,
+    collections: data ?? [],
+    loading: isLoading,
+    error: error,
     createCollection,
     updateCollection,
     deleteCollection,
-    refresh: loadCollections,
+    refresh: async () => { await invalidate(); },
   };
 }
-

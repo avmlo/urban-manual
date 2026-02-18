@@ -2,8 +2,11 @@
  * Hook for ML-powered explainable AI
  */
 
-import { useState, useCallback } from 'react';
+'use client';
+
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQueryMutation } from '@/hooks/useQueryFetching';
 
 interface FeatureImportance {
   feature: string;
@@ -40,25 +43,17 @@ interface UseExplainReturn {
 export function useMLExplain(options: UseExplainOptions): UseExplainReturn {
   const { destinationId, method = 'shap', enabled = true } = options;
   const { user } = useAuth();
-
   const [explanation, setExplanation] = useState<Explanation | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const explain = useCallback(async () => {
-    if (!enabled || !user || !destinationId) {
-      return;
-    }
+  const { mutate, isPending, error } = useQueryMutation<Explanation, void>(
+    async () => {
+      if (!enabled || !user || !destinationId) {
+        throw new Error('Missing required parameters');
+      }
 
-    setLoading(true);
-    setError(null);
-
-    try {
       const response = await fetch('/api/ml/explain', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: user.id,
           destination_id: destinationId,
@@ -66,25 +61,23 @@ export function useMLExplain(options: UseExplainOptions): UseExplainReturn {
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setExplanation(data);
-      } else {
-        setError('Failed to generate explanation');
+      if (!response.ok) {
+        throw new Error('Failed to generate explanation');
       }
-    } catch (err) {
-      console.error('Error generating explanation:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate explanation');
-    } finally {
-      setLoading(false);
+
+      return response.json();
+    },
+    {
+      onSuccess: (data) => {
+        setExplanation(data);
+      },
     }
-  }, [enabled, user, destinationId, method]);
+  );
 
   return {
     explanation,
-    loading,
-    error,
-    explain
+    loading: isPending,
+    error: error?.message ?? null,
+    explain: () => mutate(),
   };
 }
-

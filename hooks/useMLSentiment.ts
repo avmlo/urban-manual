@@ -2,7 +2,9 @@
  * Hook for ML-powered sentiment analysis
  */
 
-import { useState, useEffect, useCallback } from 'react';
+'use client';
+
+import { useQueryFetching } from '@/hooks/useQueryFetching';
 
 interface SentimentResult {
   text: string;
@@ -38,53 +40,33 @@ interface UseSentimentReturn {
 export function useMLSentiment(options: UseSentimentOptions = {}): UseSentimentReturn {
   const { destinationId, days = 30, enabled = true } = options;
 
-  const [sentiment, setSentiment] = useState<DestinationSentiment | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchSentiment = useCallback(async () => {
-    if (!enabled || !destinationId) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
+  const { data, isLoading, error, refetch } = useQueryFetching<DestinationSentiment>(
+    async () => {
       const response = await fetch(
         `/api/ml/sentiment?destination_id=${destinationId}&days=${days}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setSentiment(data);
-      } else {
-        setError('Failed to fetch sentiment');
+      if (!response.ok) {
+        throw new Error('Failed to fetch sentiment');
       }
-    } catch (err) {
-      console.error('Error fetching sentiment:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch sentiment');
-    } finally {
-      setLoading(false);
-    }
-  }, [enabled, destinationId, days]);
 
-  useEffect(() => {
-    fetchSentiment();
-  }, [fetchSentiment]);
+      return response.json();
+    },
+    {
+      queryKey: ['ml-sentiment', destinationId, days],
+      enabled: enabled && !!destinationId,
+      staleTime: 10 * 60 * 1000,
+    }
+  );
 
   return {
-    sentiment,
-    loading,
-    error,
-    refetch: fetchSentiment
+    sentiment: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+    refetch: async () => { await refetch(); },
   };
 }
-

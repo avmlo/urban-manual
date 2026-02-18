@@ -4,8 +4,10 @@
  * Falls back to existing recommendation system if ML service is unavailable.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+'use client';
+
 import { useAuth } from '@/contexts/AuthContext';
+import { useQueryFetching } from '@/hooks/useQueryFetching';
 
 interface MLRecommendation {
   destination_id: number;
@@ -24,6 +26,12 @@ interface MLRecommendationsResponse {
   model_version: string;
   generated_at: string;
   from_cache: boolean;
+}
+
+interface MLRecommendationsResult {
+  recommendations: MLRecommendation[];
+  isMLPowered: boolean;
+  isFallback: boolean;
 }
 
 interface UseMLRecommendationsOptions {
@@ -55,117 +63,71 @@ export function useMLRecommendations(
   } = options;
 
   const { user } = useAuth();
-  const [recommendations, setRecommendations] = useState<MLRecommendation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isMLPowered, setIsMLPowered] = useState(false);
-  const [isFallback, setIsFallback] = useState(false);
 
-  const fetchRecommendations = useCallback(async () => {
-    if (!enabled || !user) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
+  const { data, isLoading, error, refetch } = useQueryFetching<MLRecommendationsResult>(
+    async () => {
       // Try ML service first
       const mlResponse = await fetch(
         `/api/ml/recommend?top_n=${topN}&exclude_visited=${excludeVisited}&exclude_saved=${excludeSaved}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         }
       );
 
       if (mlResponse.ok) {
-        const data: MLRecommendationsResponse = await mlResponse.json();
-
-        if (data.recommendations && data.recommendations.length > 0) {
-          setRecommendations(data.recommendations);
-          setIsMLPowered(true);
-          setIsFallback(false);
-          setLoading(false);
-          return;
+        const mlData: MLRecommendationsResponse = await mlResponse.json();
+        if (mlData.recommendations && mlData.recommendations.length > 0) {
+          return {
+            recommendations: mlData.recommendations,
+            isMLPowered: true,
+            isFallback: false,
+          };
         }
       }
 
       // If ML service fails or returns no results, fall back to existing system
-      if (fallbackToExisting) {
+      if (fallbackToExisting && user) {
         console.log('ML service unavailable, falling back to existing recommendations');
-
         const fallbackResponse = await fetch(`/api/personalization/${user.id}`);
 
         if (fallbackResponse.ok) {
           const fallbackData = await fallbackResponse.json();
-
-          // Transform existing format to ML format for consistency
-          const transformedRecs: MLRecommendation[] = fallbackData.recommendations?.map((rec: any) => ({
+          const transformedRecs: MLRecommendation[] = (fallbackData.recommendations || []).map((rec: any) => ({
             destination_id: rec.id,
             slug: rec.slug,
             name: rec.name,
             city: rec.city,
             category: rec.category,
-            score: 0.8, // Default score for fallback
+            score: 0.8,
             reason: 'Recommended for you'
-          })) || [];
+          }));
 
-          setRecommendations(transformedRecs);
-          setIsMLPowered(false);
-          setIsFallback(true);
-        }
-      } else {
-        setError('ML service unavailable');
-      }
-
-    } catch (err) {
-      console.error('Error fetching ML recommendations:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch recommendations');
-
-      // Try fallback
-      if (fallbackToExisting && user) {
-        try {
-          const fallbackResponse = await fetch(`/api/personalization/${user.id}`);
-          if (fallbackResponse.ok) {
-            const fallbackData = await fallbackResponse.json();
-            const transformedRecs: MLRecommendation[] = fallbackData.recommendations?.map((rec: any) => ({
-              destination_id: rec.id,
-              slug: rec.slug,
-              name: rec.name,
-              city: rec.city,
-              category: rec.category,
-              score: 0.8,
-              reason: 'Recommended for you'
-            })) || [];
-
-            setRecommendations(transformedRecs);
-            setIsMLPowered(false);
-            setIsFallback(true);
-          }
-        } catch (fallbackErr) {
-          console.error('Fallback also failed:', fallbackErr);
+          return {
+            recommendations: transformedRecs,
+            isMLPowered: false,
+            isFallback: true,
+          };
         }
       }
-    } finally {
-      setLoading(false);
+
+      throw new Error('ML service unavailable');
+    },
+    {
+      queryKey: ['ml-recommendations', user?.id, topN, excludeVisited, excludeSaved],
+      enabled: enabled && !!user,
+      staleTime: 5 * 60 * 1000,
+      retryCount: 1,
     }
-  }, [enabled, user, topN, excludeVisited, excludeSaved, fallbackToExisting]);
-
-  useEffect(() => {
-    fetchRecommendations();
-  }, [fetchRecommendations]);
+  );
 
   return {
-    recommendations,
-    loading,
-    error,
-    isMLPowered,
-    isFallback,
-    refetch: fetchRecommendations
+    recommendations: data?.recommendations ?? [],
+    loading: isLoading,
+    error: error?.message ?? null,
+    isMLPowered: data?.isMLPowered ?? false,
+    isFallback: data?.isFallback ?? false,
+    refetch: async () => { await refetch(); },
   };
 }
 
@@ -193,38 +155,29 @@ interface UseTrendingOptions {
 export function useMLTrending(options: UseTrendingOptions = {}) {
   const { enabled = true, topN = 20, forecastDays = 7 } = options;
 
-  const [trending, setTrending] = useState<TrendingDestination[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useQueryFetching<TrendingDestination[]>(
+    async () => {
+      const response = await fetch(
+        `/api/ml/forecast/trending?top_n=${topN}&forecast_days=${forecastDays}`
+      );
 
-  useEffect(() => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchTrending = async () => {
-      try {
-        const response = await fetch(
-          `/api/ml/forecast/trending?top_n=${topN}&forecast_days=${forecastDays}`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setTrending(data.trending || []);
-        } else {
-          setError('Failed to fetch trending destinations');
-        }
-      } catch (err) {
-        console.error('Error fetching trending:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch trending');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch trending destinations');
       }
-    };
 
-    fetchTrending();
-  }, [enabled, topN, forecastDays]);
+      const responseData = await response.json();
+      return responseData.trending || [];
+    },
+    {
+      queryKey: ['ml-trending', topN, forecastDays],
+      enabled,
+      staleTime: 10 * 60 * 1000, // 10 minutes
+    }
+  );
 
-  return { trending, loading, error };
+  return {
+    trending: data ?? [],
+    loading: isLoading,
+    error: error?.message ?? null,
+  };
 }

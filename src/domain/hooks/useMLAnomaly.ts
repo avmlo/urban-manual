@@ -2,7 +2,9 @@
  * Hook for ML-powered anomaly detection
  */
 
-import { useState, useEffect, useCallback } from 'react';
+'use client';
+
+import { useQueryFetching } from '@/hooks/useQueryFetching';
 
 interface Anomaly {
   date: string;
@@ -48,20 +50,8 @@ export function useMLAnomaly(options: UseAnomalyOptions = {}): UseAnomalyReturn 
     enabled = true
   } = options;
 
-  const [anomalies, setAnomalies] = useState<AnomalyResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAnomalies = useCallback(async () => {
-    if (!enabled || (!destinationId && !city)) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
+  const { data, isLoading, error, refetch } = useQueryFetching<AnomalyResult>(
+    async () => {
       const params = new URLSearchParams();
       if (destinationId) params.append('destination_id', destinationId.toString());
       if (city) params.append('city', city);
@@ -71,34 +61,26 @@ export function useMLAnomaly(options: UseAnomalyOptions = {}): UseAnomalyReturn 
 
       const response = await fetch(`/api/ml/anomaly?${params.toString()}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setAnomalies(data);
-      } else {
-        setError('Failed to fetch anomalies');
+      if (!response.ok) {
+        throw new Error('Failed to fetch anomalies');
       }
-    } catch (err) {
-      console.error('Error fetching anomalies:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch anomalies');
-    } finally {
-      setLoading(false);
-    }
-  }, [enabled, destinationId, city, days, contamination, type]);
 
-  useEffect(() => {
-    fetchAnomalies();
-  }, [fetchAnomalies]);
+      return response.json();
+    },
+    {
+      queryKey: ['ml-anomaly', destinationId, city, days, contamination, type],
+      enabled: enabled && !!(destinationId || city),
+      staleTime: 10 * 60 * 1000,
+    }
+  );
 
   return {
-    anomalies,
-    loading,
-    error,
-    refetch: fetchAnomalies
+    anomalies: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+    refetch: async () => { await refetch(); },
   };
 }
-

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQueryMutation } from '@/hooks/useQueryFetching';
 
 interface UseFollowOptions {
   targetUserId: string;
@@ -22,7 +23,6 @@ interface UseFollowReturn {
 export function useFollow({ targetUserId, initialIsFollowing = false }: UseFollowOptions): UseFollowReturn {
   const { user } = useAuth();
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
-  const [isLoading, setIsLoading] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
 
   // Sync with initial value when it changes
@@ -30,41 +30,42 @@ export function useFollow({ targetUserId, initialIsFollowing = false }: UseFollo
     setIsFollowing(initialIsFollowing);
   }, [initialIsFollowing]);
 
-  const toggleFollow = useCallback(async () => {
-    if (!user?.id || !targetUserId) return;
-    if (user.id === targetUserId) return; // Can't follow yourself
-
-    // Optimistic update
-    const previousState = isFollowing;
-    setIsFollowing(!isFollowing);
-    setFollowerCount(prev => isFollowing ? prev - 1 : prev + 1);
-    setIsLoading(true);
-
-    try {
+  const { mutateAsync, isPending } = useQueryMutation<void, { action: 'follow' | 'unfollow' }>(
+    async ({ action }) => {
       const response = await fetch(`/api/users/${targetUserId}/follow`, {
-        method: isFollowing ? 'DELETE' : 'POST',
+        method: action === 'follow' ? 'POST' : 'DELETE',
       });
 
       if (!response.ok) {
-        // Revert optimistic update on error
-        setIsFollowing(previousState);
-        setFollowerCount(prev => previousState ? prev + 1 : prev - 1);
         const data = await response.json();
-        console.error('Follow action failed:', data.error);
+        throw new Error(data.error || 'Follow action failed');
       }
+    },
+  );
+
+  const toggleFollow = async () => {
+    if (!user?.id || !targetUserId) return;
+    if (user.id === targetUserId) return;
+
+    // Optimistic update
+    const previousState = isFollowing;
+    const previousCount = followerCount;
+    setIsFollowing(!isFollowing);
+    setFollowerCount(prev => isFollowing ? prev - 1 : prev + 1);
+
+    try {
+      await mutateAsync({ action: isFollowing ? 'unfollow' : 'follow' });
     } catch (error) {
       // Revert optimistic update on error
       setIsFollowing(previousState);
-      setFollowerCount(prev => previousState ? prev + 1 : prev - 1);
+      setFollowerCount(previousCount);
       console.error('Error toggling follow:', error);
-    } finally {
-      setIsLoading(false);
     }
-  }, [user?.id, targetUserId, isFollowing]);
+  };
 
   return {
     isFollowing,
-    isLoading,
+    isLoading: isPending,
     followerCount,
     toggleFollow,
     requiresAuth: !user,

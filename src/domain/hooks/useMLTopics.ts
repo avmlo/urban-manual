@@ -2,7 +2,9 @@
  * Hook for ML-powered topic modeling
  */
 
-import { useState, useEffect, useCallback } from 'react';
+'use client';
+
+import { useQueryFetching } from '@/hooks/useQueryFetching';
 
 interface Topic {
   topic_id: number;
@@ -35,20 +37,8 @@ interface UseTopicsReturn {
 export function useMLTopics(options: UseTopicsOptions = {}): UseTopicsReturn {
   const { city, destinationId, minTopicSize = 5, enabled = true } = options;
 
-  const [topics, setTopics] = useState<TopicsResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchTopics = useCallback(async () => {
-    if (!enabled || (!city && !destinationId)) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
+  const { data, isLoading, error, refetch } = useQueryFetching<TopicsResult>(
+    async () => {
       const params = new URLSearchParams();
       if (city) params.append('city', city);
       if (destinationId) params.append('destination_id', destinationId.toString());
@@ -56,34 +46,26 @@ export function useMLTopics(options: UseTopicsOptions = {}): UseTopicsReturn {
 
       const response = await fetch(`/api/ml/topics?${params.toString()}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setTopics(data);
-      } else {
-        setError('Failed to fetch topics');
+      if (!response.ok) {
+        throw new Error('Failed to fetch topics');
       }
-    } catch (err) {
-      console.error('Error fetching topics:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch topics');
-    } finally {
-      setLoading(false);
-    }
-  }, [enabled, city, destinationId, minTopicSize]);
 
-  useEffect(() => {
-    fetchTopics();
-  }, [fetchTopics]);
+      return response.json();
+    },
+    {
+      queryKey: ['ml-topics', city, destinationId, minTopicSize],
+      enabled: enabled && !!(city || destinationId),
+      staleTime: 10 * 60 * 1000, // 10 minutes
+    }
+  );
 
   return {
-    topics,
-    loading,
-    error,
-    refetch: fetchTopics
+    topics: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+    refetch: async () => { await refetch(); },
   };
 }
-

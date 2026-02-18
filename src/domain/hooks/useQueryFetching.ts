@@ -1,7 +1,7 @@
 /**
  * TanStack Query-based Data Fetching Hook
  *
- * Provides consistent data fetching patterns using TanStack Query with:
+ * Provides consistent data fetching patterns using TanStack Query v5 with:
  * - Automatic caching and deduplication
  * - Background refetching
  * - Loading states
@@ -19,10 +19,10 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
-  UseQueryOptions,
-  QueryKey,
+  type QueryKey,
+  type UseQueryOptions,
 } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Query status enum compatible with TanStack Query states
@@ -30,14 +30,14 @@ import { useCallback } from 'react';
 export type QueryStatus = 'idle' | 'loading' | 'success' | 'error' | 'refreshing';
 
 /**
- * Map TanStack Query status to our QueryStatus
+ * Map TanStack Query v5 status to our QueryStatus
  */
 export function getQueryStatus(
-  status: 'loading' | 'error' | 'success',
+  status: 'pending' | 'error' | 'success',
   isFetching: boolean,
   hasData: boolean
 ): QueryStatus {
-  if (status === 'loading' && !hasData) return 'loading';
+  if (status === 'pending' && !hasData) return 'loading';
   if (status === 'error') return 'error';
   if (isFetching && hasData) return 'refreshing';
   if (status === 'success') return 'success';
@@ -122,6 +122,12 @@ export function useQueryFetching<T>(
 
   const queryClient = useQueryClient();
 
+  // v5: onSuccess/onError removed from useQuery options - handle via useEffect
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
   const queryOptions: UseQueryOptions<T, Error> = {
     queryKey,
     queryFn: fetcher,
@@ -136,17 +142,18 @@ export function useQueryFetching<T>(
 
   const query = useQuery(queryOptions);
 
-  // Handle success/error callbacks
-  // Note: TanStack Query v5 moved these to the query options
-  // For v4, we handle them here
-  if (query.isSuccess && onSuccess && query.data !== undefined) {
-    // Defer to avoid calling during render
-    queueMicrotask(() => onSuccess(query.data as T));
-  }
+  // Handle success/error callbacks via useEffect (v5 pattern)
+  useEffect(() => {
+    if (query.isSuccess && onSuccessRef.current && query.data !== undefined) {
+      onSuccessRef.current(query.data);
+    }
+  }, [query.isSuccess, query.data]);
 
-  if (query.isError && onError && query.error) {
-    queueMicrotask(() => onError(query.error as Error));
-  }
+  useEffect(() => {
+    if (query.isError && onErrorRef.current && query.error) {
+      onErrorRef.current(query.error);
+    }
+  }, [query.isError, query.error]);
 
   const refetch = useCallback(async () => {
     await query.refetch();
@@ -173,6 +180,7 @@ export function useQueryFetching<T>(
     data: query.data,
     status,
     error: query.error ?? null,
+    // v5: isLoading = isPending && isFetching (true only on initial load)
     isLoading: query.isLoading,
     isRefreshing: query.isFetching && query.data !== undefined,
     isSuccess: query.isSuccess,
@@ -189,7 +197,7 @@ export function useQueryFetching<T>(
  *
  * @example
  * ```tsx
- * const { mutate, isLoading } = useQueryMutation(
+ * const { mutate, isPending } = useQueryMutation(
  *   async (data) => {
  *     const response = await fetch('/api/save', {
  *       method: 'POST',
@@ -222,7 +230,9 @@ interface UseQueryMutationResult<TData, TVariables> {
   mutate: (variables: TVariables) => void;
   /** Execute the mutation and return a promise */
   mutateAsync: (variables: TVariables) => Promise<TData>;
-  /** Whether mutation is in progress */
+  /** Whether mutation is in progress (v5 name) */
+  isPending: boolean;
+  /** @deprecated Use isPending instead */
   isLoading: boolean;
   /** Whether mutation was successful */
   isSuccess: boolean;
@@ -264,7 +274,9 @@ export function useQueryMutation<TData, TVariables = void>(
   return {
     mutate: mutation.mutate,
     mutateAsync: mutation.mutateAsync,
-    isLoading: mutation.isLoading,
+    isPending: mutation.isPending,
+    // Backward compatibility alias
+    isLoading: mutation.isPending,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,
     error: (mutation.error as Error | null) ?? null,

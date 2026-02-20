@@ -138,17 +138,629 @@ The design should be **Apple-inspired, monochromatic, and editorial**:
 - Activity types: visited a place, saved a place, created a collection, completed a trip
 - Tabs: "All Activity" and "Following"
 
-### Authentication
-- Sign in with Apple (required for iOS)
-- Sign in with Google
-- Email/password option
-- The app should work in browse-only mode without authentication, but saving, visiting, trips, chat, and social features require login
+### Authentication — Supabase Auth (Detailed)
 
-### Data & Backend
-- The app connects to a Supabase backend (PostgreSQL database)
-- REST API endpoints are available at urbanmanual.co/api/* for all data operations
-- Key data model: destinations have slug, name, city, country, category, description, image, latitude, longitude, rating, michelin_stars, tags, opening_hours, etc.
-- Real-time updates via Supabase subscriptions where appropriate (e.g., trip collaboration)
+The app uses **Supabase Auth** for all authentication. You must install `@supabase/supabase-js` (the official JS client works in React Native / Expo).
+
+**Environment variables the app needs:**
+```
+SUPABASE_URL=https://<project-id>.supabase.co
+SUPABASE_ANON_KEY=eyJ...  (the publishable/anon key — safe to embed in the app)
+```
+
+**Initialize the Supabase client (once, in a shared module):**
+```typescript
+import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      storage: AsyncStorage,          // Persist sessions across app launches
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,      // Disable for React Native
+    },
+  }
+);
+```
+
+**Sign in with Apple (required for App Store):**
+```typescript
+import * as AppleAuthentication from 'expo-apple-authentication';
+
+const credential = await AppleAuthentication.signInAsync({
+  requestedScopes: [
+    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+    AppleAuthentication.AppleAuthenticationScope.EMAIL,
+  ],
+});
+
+// Pass the Apple ID token to Supabase
+const { data, error } = await supabase.auth.signInWithIdToken({
+  provider: 'apple',
+  token: credential.identityToken!,
+});
+```
+
+**Sign in with Google:**
+```typescript
+import * as Google from 'expo-auth-session/providers/google';
+
+// After getting the Google ID token:
+const { data, error } = await supabase.auth.signInWithIdToken({
+  provider: 'google',
+  token: googleIdToken,
+});
+```
+
+**Email/password:**
+```typescript
+// Sign up
+await supabase.auth.signUp({
+  email,
+  password,
+  options: { data: { full_name: name } },
+});
+
+// Sign in
+await supabase.auth.signInWithPassword({ email, password });
+```
+
+**Session management — create an AuthContext provider:**
+```typescript
+// On app mount, restore session:
+const { data: { session } } = await supabase.auth.getSession();
+setUser(session?.user ?? null);
+
+// Listen for changes (login, logout, token refresh):
+supabase.auth.onAuthStateChange((_event, session) => {
+  setUser(session?.user ?? null);
+});
+
+// Sign out:
+await supabase.auth.signOut();
+```
+
+**Important:** The app should work in **browse-only mode** without authentication. Saving, marking visited, trips, chat, and social features require login. Show a sign-in prompt when an unauthenticated user taps these actions.
+
+**Getting the current user's ID (needed for all user-specific queries):**
+```typescript
+const { data: { user } } = await supabase.auth.getUser();
+const userId = user?.id; // UUID string
+```
+
+---
+
+### Data & Backend — Supabase Direct + REST API
+
+The app has **two ways** to access data:
+
+1. **Supabase client** (direct database queries with RLS) — best for CRUD on user-specific tables
+2. **REST API** at `https://www.urbanmanual.co/api/*` — best for search, AI chat, and enriched data
+
+Use the Supabase client for: browsing destinations, save/unsave, mark visited, trips CRUD, collections, user profile.
+Use the REST API for: AI chat, intelligent search, enriched destination data, nearby destinations.
+
+---
+
+### Database Schema & Supabase Queries
+
+#### Core Table: `destinations` (~900 rows)
+
+```typescript
+// Key columns for the mobile app:
+interface Destination {
+  id: number;                        // Primary key
+  slug: string;                      // URL-friendly ID (e.g., "aman-tokyo")
+  name: string;                      // "Aman Tokyo"
+  city: string;                      // "Tokyo"
+  country: string | null;            // "Japan"
+  neighborhood: string | null;       // "Otemachi"
+  category: string;                  // "Dining" | "Hotel" | "Bar" | "Cafe" | "Culture" | "Shopping" | "Bakery" | "Park" | "Other"
+  micro_description: string | null;  // 1-line card description
+  description: string | null;        // Full editorial description
+  image: string | null;              // Primary image URL
+  image_thumbnail: string | null;    // Optimized thumbnail
+  michelin_stars: number | null;     // 0-3
+  crown: boolean | null;             // Featured/premium flag
+  rating: number | null;             // Google rating (1.0-5.0)
+  price_level: number | null;        // 1-4 ($ to $$$$)
+  latitude: number | null;
+  longitude: number | null;
+  phone_number: string | null;
+  website: string | null;
+  google_maps_url: string | null;
+  instagram_handle: string | null;
+  tags: string[] | null;             // e.g., ["romantic", "rooftop", "view"]
+  opening_hours_json: object | null; // Parsed Google opening hours
+  photos_json: object[] | null;      // Array of Google Places photo refs
+  reviews_json: object[] | null;     // Google reviews
+  formatted_address: string | null;
+  user_ratings_total: number | null; // Total Google review count
+  editorial_summary: string | null;  // Google editorial summary
+  design_firm: string | null;        // Architecture/design firm name
+  architectural_style: string | null;
+  design_story: string | null;       // Rich narrative about the design
+  construction_year: number | null;
+  parent_destination_id: number | null; // If nested under another destination
+  views_count: number;
+  saves_count: number;
+  visits_count: number;
+  opentable_url: string | null;
+  resy_url: string | null;
+  booking_url: string | null;
+}
+```
+
+**Fetch destinations for the home grid (paginated):**
+```typescript
+const PAGE_SIZE = 30;
+
+const { data, error } = await supabase
+  .from('destinations')
+  .select('id, slug, name, city, country, category, image, image_thumbnail, michelin_stars, crown, rating, price_level, micro_description')
+  .is('parent_destination_id', null)   // Exclude nested destinations
+  .order('created_at', { ascending: false })
+  .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+```
+
+**Filter by category:**
+```typescript
+const { data } = await supabase
+  .from('destinations')
+  .select('id, slug, name, city, country, category, image, image_thumbnail, michelin_stars, crown, rating, price_level, micro_description')
+  .is('parent_destination_id', null)
+  .eq('category', 'Dining')   // or 'Hotel', 'Bar', 'Cafe', etc.
+  .order('rating', { ascending: false })
+  .range(0, 29);
+```
+
+**Filter by city:**
+```typescript
+const { data } = await supabase
+  .from('destinations')
+  .select('*')
+  .is('parent_destination_id', null)
+  .eq('city', 'Tokyo')
+  .order('rating', { ascending: false });
+```
+
+**Get single destination detail by slug:**
+```typescript
+const { data: destination } = await supabase
+  .from('destinations')
+  .select('*')
+  .eq('slug', 'aman-tokyo')
+  .single();
+
+// Also fetch nested destinations (e.g., restaurants inside a hotel):
+const { data: nested } = await supabase
+  .from('destinations')
+  .select('id, slug, name, category, image, rating, michelin_stars, micro_description')
+  .eq('parent_destination_id', destination.id);
+```
+
+**Get distinct cities (for city list/filter):**
+```typescript
+const { data } = await supabase
+  .from('destinations')
+  .select('city, country')
+  .is('parent_destination_id', null);
+// Deduplicate client-side to get unique cities with counts
+```
+
+---
+
+#### User Table: `saved_places`
+
+```typescript
+// Columns: id, user_id, destination_slug, notes, created_at
+```
+
+**Check if a destination is saved:**
+```typescript
+const { data } = await supabase
+  .from('saved_places')
+  .select('id')
+  .eq('user_id', userId)
+  .eq('destination_slug', slug)
+  .maybeSingle();
+const isSaved = !!data;
+```
+
+**Toggle save (optimistic UI — update UI first, revert on error):**
+```typescript
+// Save
+await supabase
+  .from('saved_places')
+  .upsert({ user_id: userId, destination_slug: slug });
+
+// Unsave
+await supabase
+  .from('saved_places')
+  .delete()
+  .eq('user_id', userId)
+  .eq('destination_slug', slug);
+```
+
+**Get all saved destinations for current user:**
+```typescript
+const { data: savedSlugs } = await supabase
+  .from('saved_places')
+  .select('destination_slug')
+  .eq('user_id', userId);
+
+// Then fetch full destination data:
+const { data: destinations } = await supabase
+  .from('destinations')
+  .select('id, slug, name, city, category, image, image_thumbnail, rating, michelin_stars')
+  .in('slug', savedSlugs.map(s => s.destination_slug));
+```
+
+---
+
+#### User Table: `visited_places`
+
+```typescript
+// Columns: id, user_id, destination_slug, rating, notes, visited_at, created_at
+```
+
+**Toggle visited:**
+```typescript
+// Mark as visited
+await supabase
+  .from('visited_places')
+  .upsert({
+    user_id: userId,
+    destination_slug: slug,
+    visited_at: new Date().toISOString(),
+  });
+
+// Unmark
+await supabase
+  .from('visited_places')
+  .delete()
+  .eq('user_id', userId)
+  .eq('destination_slug', slug);
+```
+
+---
+
+#### User Table: `user_profiles`
+
+```typescript
+// Columns: user_id, display_name, username, bio, location, website_url,
+//          avatar_url, birthday, is_public, favorite_cities, favorite_categories,
+//          travel_style, interests, follower_count, following_count, created_at, updated_at
+```
+
+**Get profile:**
+```typescript
+const { data: profile } = await supabase
+  .from('user_profiles')
+  .select('*')
+  .eq('user_id', userId)
+  .maybeSingle();
+```
+
+**Update profile:**
+```typescript
+await supabase
+  .from('user_profiles')
+  .upsert({
+    user_id: userId,
+    display_name: 'New Name',
+    bio: 'Travel lover',
+    updated_at: new Date().toISOString(),
+  });
+```
+
+---
+
+#### Trips Table: `trips`
+
+```typescript
+// Columns: id (UUID), user_id, title, description, destination (city name or JSON array),
+//          start_date, end_date, status ('planning'|'upcoming'|'ongoing'|'completed'),
+//          is_public, cover_image, notes (JSON), share_token, packing_list (JSON),
+//          created_at, updated_at
+```
+
+**List user's trips:**
+```typescript
+const { data: trips } = await supabase
+  .from('trips')
+  .select('*')
+  .eq('user_id', userId)
+  .order('start_date', { ascending: false });
+```
+
+**Create a trip:**
+```typescript
+const { data: trip } = await supabase
+  .from('trips')
+  .insert({
+    user_id: userId,
+    title: 'Tokyo Weekend',
+    destination: JSON.stringify(['Tokyo']),  // Supports multi-city as JSON array
+    start_date: '2026-03-01',
+    end_date: '2026-03-03',
+    status: 'planning',
+  })
+  .select()
+  .single();
+```
+
+#### Itinerary Items Table: `itinerary_items`
+
+```typescript
+// Columns: id (UUID), trip_id, destination_slug, day (integer), order_index (integer),
+//          time (string e.g. "09:00"), title, description, notes (JSON — see below), created_at
+```
+
+**The `notes` column stores a JSON object with rich metadata:**
+```typescript
+interface ItineraryItemNotes {
+  type?: 'place' | 'flight' | 'hotel' | 'train' | 'event' | 'activity' | 'custom';
+  duration?: number;           // minutes
+  image?: string;
+  city?: string;
+  category?: string;
+  slug?: string;               // link to destination
+  latitude?: number;
+  longitude?: number;
+  // Flight-specific:
+  from?: string; to?: string; airline?: string; flightNumber?: string;
+  departureTime?: string; arrivalTime?: string; confirmationNumber?: string;
+  // Hotel-specific:
+  isHotel?: boolean; checkInTime?: string; checkOutTime?: string;
+  breakfastIncluded?: boolean; confirmation?: string; roomType?: string;
+  // Booking:
+  bookingStatus?: 'need-to-book' | 'booked' | 'waitlist' | 'walk-in';
+  costEstimate?: number; currency?: string;
+  priority?: 'must-do' | 'want-to' | 'if-time';
+}
+```
+
+**Get itinerary for a trip:**
+```typescript
+const { data: items } = await supabase
+  .from('itinerary_items')
+  .select('*')
+  .eq('trip_id', tripId)
+  .order('day', { ascending: true })
+  .order('order_index', { ascending: true });
+```
+
+**Add item to itinerary:**
+```typescript
+await supabase
+  .from('itinerary_items')
+  .insert({
+    trip_id: tripId,
+    destination_slug: 'tsukiji-outer-market-tokyo',
+    day: 1,
+    order_index: 0,
+    time: '10:00',
+    title: 'Sushi breakfast at Tsukiji',
+    notes: JSON.stringify({ type: 'place', duration: 90, category: 'Dining' }),
+  });
+```
+
+---
+
+#### Collections Table: `collections`
+
+```typescript
+// Columns: id, user_id, name, description, emoji, color, is_public,
+//          destination_count, view_count, created_at, updated_at
+```
+
+**Create collection:**
+```typescript
+await supabase
+  .from('collections')
+  .insert({
+    user_id: userId,
+    name: 'Best Coffee in Europe',
+    description: 'My favorite cafes across the continent',
+    emoji: '☕',
+    is_public: false,
+  });
+```
+
+---
+
+#### Social Table: `user_follows`
+
+```typescript
+// Columns: id, follower_id, following_id, created_at
+```
+
+---
+
+### REST API Endpoints (for features that need server-side logic)
+
+Base URL: `https://www.urbanmanual.co`
+
+**For authenticated requests, pass the Supabase access token as a cookie or header:**
+```typescript
+const { data: { session } } = await supabase.auth.getSession();
+const token = session?.access_token;
+
+fetch('https://www.urbanmanual.co/api/trips', {
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  },
+});
+```
+
+#### AI Chat — `POST /api/ai-chat`
+
+The most important API endpoint. Sends a natural-language query and gets back a response with matching destinations.
+
+```typescript
+// Request:
+{
+  query: "best restaurants in Tokyo",
+  userId: "user-uuid",                    // optional, for personalization
+  conversationHistory: [                  // optional, for multi-turn context
+    { role: "user", content: "..." },
+    { role: "assistant", content: "..." }
+  ],
+  stream: false                           // set true for SSE streaming
+}
+
+// Response (stream=false):
+{
+  content: "Here are some incredible restaurants in Tokyo...",  // Natural language
+  destinations: [                          // Array of matching destinations (0-20)
+    {
+      id: 42,
+      name: "Sushi Saito",
+      slug: "sushi-saito-tokyo",
+      city: "Tokyo",
+      category: "Dining",
+      rating: 4.8,
+      price_level: 4,
+      michelin_stars: 3,
+      image: "https://...",
+      micro_description: "..."
+    }
+  ],
+  intent: {                               // Parsed intent from the query
+    keywords: ["restaurants"],
+    city: "Tokyo",
+    category: "Dining"
+  },
+  suggestions: [                          // Follow-up prompt suggestions
+    { text: "Show me budget-friendly options", type: "refine" },
+    { text: "What about ramen shops?", type: "related" }
+  ],
+  tripPlanning: null                      // Non-null when trip intent detected
+}
+```
+
+**For streaming (SSE):** Set `stream: true`. Events arrive as Server-Sent Events:
+- `status` — processing stage
+- `intent` — parsed intent object
+- `destinations` — matching destinations array
+- `chunk` — partial response text
+- `complete` — final combined response
+
+#### Intelligent Search — `POST /api/search`
+
+```typescript
+// Request:
+{
+  query: "quiet cafes with wifi",
+  filters: { city: "Paris", category: "Cafe" },   // optional
+  userId: "user-uuid"                               // optional
+}
+
+// Response:
+{
+  results: [ /* array of destination objects, max 10 */ ],
+  searchTier: "vector-semantic",  // or "fulltext", "keyword"
+  intent: { keywords: [...], city: "Paris", category: "Cafe" },
+  suggestions: [...]
+}
+```
+
+#### Instant Search (typeahead) — `GET /api/search/instant?q=aman`
+
+```typescript
+// Response:
+{
+  results: [
+    { type: "destination", name: "Aman Tokyo", slug: "aman-tokyo", city: "Tokyo", category: "Hotel", image: "..." },
+    { type: "saved", name: "Aman Venice", slug: "aman-venice", ... },
+    { type: "trip", name: "Tokyo Trip", tripId: "uuid", ... }
+  ],
+  meta: { query: "aman", hasMore: true }
+}
+```
+
+#### Enriched Destination — `GET /api/destinations/[slug]/enriched`
+
+Returns a single destination with all enriched data (weather, events, walking routes, photos).
+
+```typescript
+// Response: Full Destination object with parsed JSON fields:
+{
+  ...allDestinationFields,
+  photos: [...],                  // Parsed from photos_json
+  currentWeather: {...},          // Parsed from current_weather_json
+  nearbyEvents: [...],            // Parsed from nearby_events_json
+  routeFromCityCenter: {...},     // Walking route data
+  walkingTimeFromCenter: 12       // Minutes
+}
+```
+
+#### Nearby Destinations — `GET /api/destinations/nearby?lat=35.68&lng=139.77&radius=5`
+
+```typescript
+// Response:
+{
+  origin: { lat: 35.68, lng: 139.77 },
+  radiusKm: 5,
+  results: [ /* destinations sorted by distance */ ],
+  count: 15
+}
+```
+
+#### Trips CRUD — `/api/trips` and `/api/trips/[id]`
+
+These mirror the Supabase direct queries but add server-side validation. You can use either approach — Supabase direct is simpler for the mobile app.
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/trips` | List user's trips (requires auth) |
+| POST | `/api/trips` | Create trip |
+| GET | `/api/trips/[id]` | Get trip with enriched itinerary items |
+| PATCH | `/api/trips/[id]` | Update trip fields |
+| DELETE | `/api/trips/[id]` | Delete trip |
+| POST | `/api/trips/[id]/items` | Add itinerary item |
+| PATCH | `/api/trips/[id]/items` | Update itinerary item |
+| DELETE | `/api/trips/[id]/items?itemId=uuid` | Remove itinerary item |
+
+#### User Profile — `/api/account/profile`
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/account/profile` | Get authenticated user's profile |
+| PUT | `/api/account/profile` | Update profile (display_name, bio, username, location, website_url, birthday, is_public) |
+
+#### Public User — `GET /api/users/[user_id]`
+
+Returns a public user profile with stats (saved count, visited count, collections count).
+
+#### Collections — `/api/collections`
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/collections` | List user's collections |
+| POST | `/api/collections` | Create collection: `{ name, description?, emoji?, color?, is_public? }` |
+| GET | `/api/collections/discover?q=coffee&sort=popular&limit=20` | Browse public collections |
+
+---
+
+### Row Level Security (RLS)
+
+Supabase RLS is enabled. The anon key + user session automatically enforces:
+- **destinations**: Public read for everyone (no auth needed)
+- **saved_places**: Users can only read/write their own rows
+- **visited_places**: Users can only read/write their own rows
+- **trips**: Users can only read/write their own trips (public trips readable by all)
+- **itinerary_items**: Accessible if user owns the parent trip
+- **collections**: Own collections always accessible; public collections readable by all
+- **user_profiles**: Own profile writable; public profiles readable by all
+
+This means authenticated Supabase queries automatically filter to the current user's data — no manual `user_id` filtering needed for most operations (the RLS policy handles it). But you should still include `.eq('user_id', userId)` for clarity and as a safety net.
 
 ### Key Interactions & Polish
 - Haptic feedback on save, visit mark, and important actions

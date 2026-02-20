@@ -142,29 +142,69 @@ The design should be **Apple-inspired, monochromatic, and editorial**:
 
 The app uses **Supabase Auth** for all authentication. You must install `@supabase/supabase-js` (the official JS client works in React Native / Expo).
 
-**Environment variables the app needs:**
+**Environment variables the app needs (all of them):**
 ```
-SUPABASE_URL=https://<project-id>.supabase.co
-SUPABASE_ANON_KEY=eyJ...  (the publishable/anon key — safe to embed in the app)
+# Required — Supabase connection (get from Supabase Dashboard > Project Settings > API)
+EXPO_PUBLIC_SUPABASE_URL=https://<project-id>.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...  (the publishable/anon key — safe to embed in the app)
+
+# Required — Urban Manual API base URL (for AI chat, search, enriched data)
+EXPO_PUBLIC_API_BASE_URL=https://www.urbanmanual.co
+
+# Optional — Google Maps (for map screen, if using Google Maps instead of Apple Maps)
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
+
+# Optional — Apple MapKit JS (if using Apple Maps)
+# MapKit requires server-side token generation; the web app has a token endpoint
 ```
 
-**Initialize the Supabase client (once, in a shared module):**
+**Important:** The mobile app does NOT need OpenAI, Gemini, or any other AI/ML API keys. Those are server-side only — the mobile app accesses AI features by calling the REST API at `EXPO_PUBLIC_API_BASE_URL/api/ai-chat`, which already has all the keys configured on the backend (Vercel).
+
+**What each variable powers:**
+| Variable | Used for |
+|----------|----------|
+| `EXPO_PUBLIC_SUPABASE_URL` | All direct database queries (destinations, saved places, visited, trips, collections, user profiles), authentication (sign-in, sign-up, session management) |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Same as above — this is the public/anonymous key that respects Row Level Security |
+| `EXPO_PUBLIC_API_BASE_URL` | AI chat (`/api/ai-chat`), intelligent search (`/api/search`), instant search (`/api/search/instant`), enriched destination data (`/api/destinations/[slug]/enriched`), nearby destinations (`/api/destinations/nearby`) |
+| `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | Map markers, geocoding, Places photos |
+
+**Initialize the Supabase client (once, in a shared `lib/supabase.ts` module):**
 ```typescript
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      storage: AsyncStorage,          // Persist sessions across app launches
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,      // Disable for React Native
-    },
-  }
-);
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage,          // Persist sessions across app launches
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,      // Disable for React Native
+  },
+});
+```
+
+**Create an API helper for REST endpoints (in `lib/api.ts`):**
+```typescript
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL!; // https://www.urbanmanual.co
+
+export async function apiFetch(path: string, options?: RequestInit & { token?: string }) {
+  const { token, ...fetchOptions } = options || {};
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+  const res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+// Usage examples:
+// apiFetch('/api/ai-chat', { method: 'POST', body: JSON.stringify({ query: '...' }) })
+// apiFetch('/api/search/instant?q=aman')
+// apiFetch('/api/trips', { token: session.access_token })
 ```
 
 **Sign in with Apple (required for App Store):**
@@ -584,19 +624,19 @@ await supabase
 
 ### REST API Endpoints (for features that need server-side logic)
 
-Base URL: `https://www.urbanmanual.co`
+Base URL: `process.env.EXPO_PUBLIC_API_BASE_URL` (i.e., `https://www.urbanmanual.co`)
 
-**For authenticated requests, pass the Supabase access token as a cookie or header:**
+Use the `apiFetch` helper from `lib/api.ts` (defined above in the Authentication section). For endpoints that require authentication, pass the Supabase access token:
+
 ```typescript
 const { data: { session } } = await supabase.auth.getSession();
 const token = session?.access_token;
 
-fetch('https://www.urbanmanual.co/api/trips', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  },
-});
+// Authenticated request example:
+const data = await apiFetch('/api/trips', { token });
+
+// Unauthenticated request example:
+const results = await apiFetch('/api/search/instant?q=aman');
 ```
 
 #### AI Chat — `POST /api/ai-chat`

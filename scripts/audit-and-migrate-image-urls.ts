@@ -129,6 +129,27 @@ const IMAGE_COLUMNS: ImageColumnSpec[] = [
     idColumn: "id",
     labelColumn: "caption",
   },
+  // trips
+  {
+    table: "trips",
+    column: "cover_image",
+    idColumn: "id",
+    labelColumn: "id",
+  },
+  // discovery_candidates
+  {
+    table: "discovery_candidates",
+    column: "image_url",
+    idColumn: "id",
+    labelColumn: "id",
+  },
+  // profiles
+  {
+    table: "profiles",
+    column: "avatar_url",
+    idColumn: "id",
+    labelColumn: "id",
+  },
 ];
 
 const WEBFLOW_FRAMER_PATTERNS = [

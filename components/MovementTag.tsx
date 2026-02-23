@@ -3,8 +3,6 @@
  * Visual indicator for design movement
  */
 
-'use client';
-
 import type { DesignMovement } from '@/types/architecture';
 
 interface MovementTagProps {

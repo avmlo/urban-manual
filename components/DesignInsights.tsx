@@ -3,8 +3,6 @@
  * Architectural connections and context
  */
 
-'use client';
-
 import { Lightbulb, ArrowRight, Building2 } from 'lucide-react';
 import type { ArchitecturalInsight } from '@/types/architecture';
 

@@ -3,8 +3,6 @@
  * Visual representation of materials used
  */
 
-'use client';
-
 import type { Material } from '@/types/architecture';
 
 interface MaterialIndicatorsProps {

@@ -1,26 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { AdminEditModeProvider } from "@/contexts/AdminEditModeContext";
-import { TripBuilderProvider } from "@/contexts/TripBuilderContext";
+import { Providers } from "@/components/Providers";
 import { ResponsiveTripUI } from "@/features/trip/components/builder";
-import { IntelligentDrawerProvider } from "@/features/shared/components/IntelligentDrawerContext";
 import IntelligentDrawer from "@/features/shared/components/IntelligentDrawer";
-import { DrawerProvider } from "@/contexts/DrawerContext";
-import { ChristmasThemeProvider } from "@/contexts/ChristmasThemeContext";
-import { TRPCProvider } from "@/lib/trpc/provider";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Toaster } from "@/ui/sonner";
-import { TooltipProvider } from "@/ui/tooltip";
-import { ThemeProvider } from "@/components/theme-provider";
 import { SkipNavigation } from "@/components/SkipNavigation";
 import DrawerMount from "@/features/shared/components/DrawerMount";
 import { TripModalMount } from "@/components/TripModalMount";
 import { PanelLayout } from "@/components/PanelMount";
-import MyStatsig from "./my-statsig";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { WebVitalsTracker } from "@/components/WebVitalsTracker";
@@ -28,7 +18,6 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { NativeExperienceProvider } from "@/components/NativeExperienceProvider";
 import { generateOrganizationSchema, generateWebSiteSchema } from "@/lib/metadata";
-import PrimeSSRProvider from "@/components/PrimeSSRProvider";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -246,59 +235,32 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased bg-[var(--editorial-bg)] text-[var(--editorial-text-primary)]">
-        <PrimeSSRProvider>
-        <MyStatsig>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem={true}
-            storageKey="urban-manual-theme"
+        <Providers>
+          <SkipNavigation />
+          <Header />
+          <NativeExperienceProvider
+            enableSwipeBack={true}
+            disableSwipeBackPaths={['/map', '/chat', '/trip', '/admin', '/studio']}
           >
-            <ChristmasThemeProvider>
-            <SkipNavigation />
-            <TooltipProvider>
-              <TRPCProvider>
-                <AuthProvider>
-                  <DrawerProvider>
-                    <Suspense fallback={null}>
-                      <AdminEditModeProvider>
-                          <TripBuilderProvider>
-                            <IntelligentDrawerProvider>
-                              <Header />
-                              <NativeExperienceProvider
-                                enableSwipeBack={true}
-                                disableSwipeBackPaths={['/map', '/chat', '/trip', '/admin', '/studio']}
-                              >
-                                <PanelLayout>
-                                  <main id="main-content" className="min-h-screen page-transition" role="main">
-                                    {children}
-                                  </main>
-                                  <Footer />
-                                </PanelLayout>
-                              </NativeExperienceProvider>
-                              <CookieConsent />
-                              <NotificationPrompt />
-                              <DrawerMount />
-                              <ResponsiveTripUI />
-                              <IntelligentDrawer />
-                              <TripModalMount />
-                            </IntelligentDrawerProvider>
-                          </TripBuilderProvider>
-                      </AdminEditModeProvider>
-                    </Suspense>
-                  </DrawerProvider>
-                </AuthProvider>
-              </TRPCProvider>
-            </TooltipProvider>
-            <Toaster position="top-right" richColors closeButton />
-            <GoogleAnalytics />
-            <Analytics />
-            <SpeedInsights />
-            <WebVitalsTracker />
-            </ChristmasThemeProvider>
-          </ThemeProvider>
-        </MyStatsig>
-        </PrimeSSRProvider>
+            <PanelLayout>
+              <main id="main-content" className="min-h-screen page-transition" role="main">
+                {children}
+              </main>
+              <Footer />
+            </PanelLayout>
+          </NativeExperienceProvider>
+          <CookieConsent />
+          <NotificationPrompt />
+          <DrawerMount />
+          <ResponsiveTripUI />
+          <IntelligentDrawer />
+          <TripModalMount />
+          <Toaster position="top-right" richColors closeButton />
+          <GoogleAnalytics />
+          <Analytics />
+          <SpeedInsights />
+          <WebVitalsTracker />
+        </Providers>
       </body>
     </html>
   );

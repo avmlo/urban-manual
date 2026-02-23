@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase/server';
 import { withErrorHandling } from '@/lib/errors';
 import { searchRatelimit, memorySearchRatelimit, getIdentifier, createRateLimitResponse, isUpstashConfigured } from '@/lib/rate-limit';
 import { sanitizeForIlike } from '@/lib/sanitize';
@@ -14,6 +14,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   }
 
   try {
+    const supabase = await createServerClient();
     const { query } = await request.json();
 
     if (!query || query.trim().length < 2) {
@@ -35,8 +36,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     })();
 
     if (cities) {
-      const uniqueCities = Array.from(new Set(cities.map((c: any) => c.city)));
-      suggestions.push(...uniqueCities.map((c: string) => `📍 ${c}`));
+      const uniqueCities = Array.from(new Set(cities.map((c: { city: string }) => c.city)));
+      suggestions.push(...uniqueCities.map((c) => `📍 ${c}`));
     }
 
     // 2. Search destinations
@@ -50,7 +51,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     })();
 
     if (destinations) {
-      destinations.forEach((dest: any) => {
+      destinations.forEach((dest: { name: string; city: string }) => {
         suggestions.push(`🏛️ ${dest.name} - ${dest.city}`);
       });
     }
@@ -69,7 +70,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     const uniqueSuggestions = Array.from(new Set(suggestions)).slice(0, 8);
 
     return NextResponse.json({ suggestions: uniqueSuggestions });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Autocomplete error:', error);
     return NextResponse.json({ suggestions: [] }, { status: 500 });
   }

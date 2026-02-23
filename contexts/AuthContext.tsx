@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -36,15 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) throw error;
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, name?: string) => {
+  const signUp = useCallback(async (email: string, password: string, name?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -55,13 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (error) throw error;
-  };
+  }, []);
 
-  const signInWithApple = async () => {
+  const signInWithApple = useCallback(async () => {
     // Use the current origin for the callback URL
     // Must be absolute URL - Supabase will use this as-is
     const callbackUrl = `${window.location.origin}/auth/callback`;
-    
+
     // Don't clear auth state - this can interfere with PKCE code verifier storage
     // The code verifier needs to persist in localStorage for the callback
     const { error } = await supabase.auth.signInWithOAuth({
@@ -71,15 +71,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     });
     if (error) throw error;
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, signIn, signUp, signInWithApple, signOut }),
+    [user, loading, signIn, signUp, signInWithApple, signOut]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithApple, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

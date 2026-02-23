@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode, useRef } from 'react';
 
 /**
  * Drawer types that can be opened
@@ -157,25 +157,43 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
   const canGoBack = parentDrawer !== null || historyStack.length > 0;
 
+  const value = useMemo(
+    () => ({
+      activeDrawer,
+      parentDrawer,
+      openDrawer,
+      toggleDrawer,
+      closeDrawer,
+      goBack,
+      isDrawerOpen,
+      canGoBack,
+      getDrawerData,
+      setDrawerData,
+      clearDrawerData,
+      historyStack,
+      animationState,
+      setAnimationState,
+    }),
+    [
+      activeDrawer,
+      parentDrawer,
+      openDrawer,
+      toggleDrawer,
+      closeDrawer,
+      goBack,
+      isDrawerOpen,
+      canGoBack,
+      getDrawerData,
+      setDrawerData,
+      clearDrawerData,
+      historyStack,
+      animationState,
+      setAnimationState,
+    ]
+  );
+
   return (
-    <DrawerContext.Provider
-      value={{
-        activeDrawer,
-        parentDrawer,
-        openDrawer,
-        toggleDrawer,
-        closeDrawer,
-        goBack,
-        isDrawerOpen,
-        canGoBack,
-        getDrawerData,
-        setDrawerData,
-        clearDrawerData,
-        historyStack,
-        animationState,
-        setAnimationState,
-      }}
-    >
+    <DrawerContext.Provider value={value}>
       {children}
     </DrawerContext.Provider>
   );

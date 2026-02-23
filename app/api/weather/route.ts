@@ -16,11 +16,18 @@ export const GET = withStandardApi(
   { rateLimit: 'api', auth: 'none', routeName: '/api/weather' },
   async (request: NextRequest) => {
     const searchParams = request.nextUrl.searchParams;
-    const lat = parseFloat(searchParams.get('lat') || '0');
-    const lng = parseFloat(searchParams.get('lng') || '0');
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
 
-    if (!lat || !lng) {
+    if (latParam === null || lngParam === null) {
       throw createValidationError('Latitude and longitude are required');
+    }
+
+    const lat = parseFloat(latParam);
+    const lng = parseFloat(lngParam);
+
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      throw createValidationError('Invalid latitude or longitude values');
     }
 
     const weather = await fetchWeather(lat, lng);

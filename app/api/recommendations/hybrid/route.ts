@@ -26,7 +26,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     }
 
     const supabase = createServiceRoleClient();
-    const results: Array<{
+
+    interface HybridRec {
       destination_id: number;
       slug: string;
       name: string;
@@ -35,10 +36,12 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       score: number;
       reason: string;
       source: 'collaborative' | 'content' | 'ai' | 'popularity';
-    }> = [];
+    }
+
+    const results: HybridRec[] = [];
 
     // 1. Try to get collaborative filtering recommendations from ML service
-    let collaborativeRecs: any[] = [];
+    let collaborativeRecs: HybridRec[] = [];
     try {
       const mlResponse = await fetch(`${ML_SERVICE_URL}/api/recommendations/collaborative`, {
         method: 'POST',
@@ -53,7 +56,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
       if (mlResponse.ok) {
         const mlData = await mlResponse.json();
-        collaborativeRecs = (mlData.recommendations || []).map((rec: any) => ({
+        collaborativeRecs = (mlData.recommendations || []).map((rec: { destination_id: number; slug: string; name: string; city: string; category: string; score: number; reason?: string }) => ({
           destination_id: rec.destination_id,
           slug: rec.slug,
           name: rec.name,
@@ -75,10 +78,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       .eq('user_id', user_id)
       .limit(10);
 
-    const savedSlugs = (savedPlaces || []).map((sp: any) => sp.destination_slug);
+    const savedSlugs = (savedPlaces || []).map((sp: { destination_slug: string }) => sp.destination_slug);
 
     // Get destinations similar to saved ones
-    let contentRecs: any[] = [];
+    let contentRecs: HybridRec[] = [];
     if (savedSlugs.length > 0) {
       const { data: savedDests } = await supabase
         .from('destinations')
@@ -88,8 +91,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
       if (savedDests && savedDests.length > 0) {
         // Find destinations with similar tags/categories
-        const categories = [...new Set(savedDests.map((d: any) => d.category))];
-        const tags = savedDests.flatMap((d: any) => d.tags || []).filter(Boolean);
+        const categories = [...new Set(savedDests.map((d: { category: string }) => d.category))];
+        const tags = savedDests.flatMap((d: { tags?: string[] }) => d.tags || []).filter(Boolean);
 
         const { data: similarDests } = await supabase
           .from('destinations')
@@ -98,7 +101,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           .not('slug', 'in', `(${savedSlugs.map((s: string) => `"${s}"`).join(',')})`)
           .limit(Math.floor(limit * 0.3)); // 30% from content
 
-        contentRecs = (similarDests || []).map((dest: any) => ({
+        contentRecs = (similarDests || []).map((dest: { id: number; slug: string; name: string; city: string; category: string }) => ({
           destination_id: dest.id,
           slug: dest.slug,
           name: dest.name,
@@ -119,7 +122,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       .order('visits_count', { ascending: false })
       .limit(Math.floor(limit * 0.1));
 
-    const popularRecs = (popularDests || []).map((dest: any) => ({
+    const popularRecs = (popularDests || []).map((dest: { id: number; slug: string; name: string; city: string; category: string; saves_count: number; visits_count: number }) => ({
       destination_id: dest.id,
       slug: dest.slug,
       name: dest.name,
@@ -137,7 +140,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
 
     // Aggregate scores for duplicates
-    const aggregated = uniqueRecs.reduce((acc: any, rec) => {
+    const aggregated = uniqueRecs.reduce<Record<number, HybridRec>>((acc, rec) => {
       const key = rec.destination_id;
       if (!acc[key]) {
         acc[key] = { ...rec, score: 0 };
@@ -148,7 +151,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
     // Sort by score and limit
     const finalRecs = Object.values(aggregated)
-      .sort((a: any, b: any) => b.score - a.score)
+      .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 
     return NextResponse.json({
@@ -161,10 +164,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
         popularity: popularRecs.length,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in hybrid recommendations:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -192,9 +195,9 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
         body: JSON.stringify({ user_id, limit }),
       })
     );
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

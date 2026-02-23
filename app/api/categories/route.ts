@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase/server';
 import { withErrorHandling, handleSupabaseError } from '@/lib/errors';
 
 /**
@@ -9,6 +9,7 @@ import { withErrorHandling, handleSupabaseError } from '@/lib/errors';
  * Useful for debugging category filter issues
  */
 export const GET = withErrorHandling(async () => {
+  const supabase = await createServerClient();
   const { data: destinations, error } = await supabase
     .from('destinations')
     .select('category');
@@ -20,7 +21,7 @@ export const GET = withErrorHandling(async () => {
   // Get unique categories and count
   const categoryMap = new Map<string, number>();
 
-  destinations?.forEach((dest: any) => {
+  destinations?.forEach((dest: { category: string | null }) => {
     if (dest.category) {
       const cat = dest.category.trim();
       categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);

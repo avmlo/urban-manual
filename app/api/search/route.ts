@@ -46,7 +46,12 @@ function parseQueryFallback(query: string): {
   city?: string;
   category?: string;
   brand?: string;
-  filters?: any;
+  filters?: {
+    openNow?: boolean;
+    priceLevel?: number;
+    rating?: number;
+    michelinStar?: number;
+  };
 } {
   const lowerQuery = query.toLowerCase();
   const words = query.split(/\s+/);
@@ -128,7 +133,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
         reset
       );
     }
-    let conversationContext: any = null;
+    let conversationContext: { city?: string | null; category?: string | null; brand?: string | null; mood?: string | null } | null = null;
 
     // Get conversation context if available
     try {
@@ -181,6 +186,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     // Generate embedding for vector search
     const queryEmbedding = await generateEmbedding(sanitizedQuery);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase returns dynamic row shapes across multiple search strategies
     let results: any[] = [];
     let searchTier = 'basic';
 
@@ -202,17 +208,17 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
         if (!vectorError && vectorResults && vectorResults.length > 0) {
           // Enrich vector results with latitude/longitude/image_thumbnail (not returned by RPC)
-          const slugs = vectorResults.map((r: any) => r.slug);
+          const slugs = vectorResults.map((r: { slug: string }) => r.slug);
           const { data: fullData } = await supabase
             .from('destinations')
             .select('slug, latitude, longitude, image_thumbnail')
             .in('slug', slugs);
 
           const coordsMap = new Map(
-            (fullData || []).map((d: any) => [d.slug, { latitude: d.latitude, longitude: d.longitude, image_thumbnail: d.image_thumbnail }])
+            (fullData || []).map((d: { slug: string; latitude: number; longitude: number; image_thumbnail: string }) => [d.slug, { latitude: d.latitude, longitude: d.longitude, image_thumbnail: d.image_thumbnail }])
           );
 
-          results = vectorResults.map((r: any) => ({
+          results = vectorResults.map((r: { slug: string }) => ({
             ...r,
             ...coordsMap.get(r.slug)
           }));
@@ -227,9 +233,9 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
             console.error('[Search API] Vector search error:', vectorError);
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         // Handle gracefully if vector search isn't ready
-        if (error.message?.includes('match_destinations') || error.message?.includes('embedding')) {
+        if (error instanceof Error && (error.message?.includes('match_destinations') || error.message?.includes('embedding'))) {
           console.log('[Search API] Vector search not available, using fallback');
         } else {
           console.error('[Search API] Vector search exception:', error);
@@ -302,7 +308,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
         if (!aiFieldError && aiFieldResults && aiFieldResults.length > 0) {
           // Fetch full destination data for AI field matches
-          const slugs = aiFieldResults.map((r: any) => r.slug);
+          const slugs = aiFieldResults.map((r: { slug: string }) => r.slug);
           const { data: fullData } = await supabase
             .from('destinations')
             .select('slug, name, city, category, micro_description, description, content, image, image_thumbnail, michelin_stars, crown, rating, price_level, brand, latitude, longitude')
@@ -312,7 +318,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           if (fullData) {
             // Preserve similarity order from AI field search
             const orderedResults = slugs
-              .map((slug: string) => fullData.find((d: any) => d.slug === slug))
+              .map((slug: string) => fullData.find((d: { slug: string }) => d.slug === slug))
               .filter(Boolean);
             
             results = orderedResults;
@@ -327,9 +333,9 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
             console.error('[Search API] AI field search error:', aiFieldError);
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         // Handle gracefully if RPC doesn't exist
-        if (error.message?.includes('search_by_ai_fields') || error.code === '42883') {
+        if (error instanceof Error && (error.message?.includes('search_by_ai_fields'))) {
           console.log('[Search API] AI field search not available, using fallback');
         } else {
           console.error('[Search API] AI field search exception:', error);
@@ -471,9 +477,9 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
         return { ...dest, _score: score };
       })
-      .sort((a: any, b: any) => b._score - a._score)
+      .sort((a, b) => (b._score as number) - (a._score as number))
       .slice(0, PAGE_SIZE)
-      .map(({ _score, similarity, rank, ...rest }: any) => rest);
+      .map(({ _score, similarity, rank, ...rest }) => rest);
 
     // Generate suggestions
     const suggestions: string[] = [];
@@ -522,12 +528,12 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       suggestions: suggestions.length > 0 ? suggestions : undefined,
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Search API] Error:', error);
     return createSuccessResponse({
       results: [],
       searchTier: 'basic',
-      error: error.message || 'Search failed',
+      error: error instanceof Error ? error.message : 'Search failed',
     });
   }
 });

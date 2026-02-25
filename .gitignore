@@ -37,6 +37,7 @@ CLEANUP_TEMPORARY_FILES.sh
 !vercel.json
 !capacitor.config.ts
 !public/manifest.json
+!design-language.json
 
 # PWA generated files (next-pwa)
 public/sw.js

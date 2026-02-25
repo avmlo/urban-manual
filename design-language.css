@@ -1,0 +1,200 @@
+/**
+ * Urban Manual — Exported Design Language
+ * Portable CSS custom properties for use in any context.
+ *
+ * Usage:
+ *   @import "design-language.css";
+ *   body { background: var(--um-color-bg-primary); }
+ */
+
+/* ============================================
+   COLOR TOKENS
+   ============================================ */
+
+:root {
+  /* --- Backgrounds --- */
+  --um-color-bg-primary: #FFFFFF;
+  --um-color-bg-secondary: #F9FAFB;
+  --um-color-bg-editorial: #F5F2ED;
+  --um-color-bg-elevated: #FDFCFA;
+  --um-color-bg-card: #FFFFFF;
+
+  /* --- Text --- */
+  --um-color-text-primary: #000000;
+  --um-color-text-editorial-primary: #2C2825;
+  --um-color-text-secondary: #4B5563;
+  --um-color-text-editorial-secondary: #6B6560;
+  --um-color-text-tertiary: #9CA3AF;
+  --um-color-text-editorial-tertiary: #9A948C;
+  --um-color-text-muted: #6B7280;
+
+  /* --- Accent (Terracotta) --- */
+  --um-color-accent: #A65D4C;
+  --um-color-accent-hover: #8F503F;
+  --um-color-accent-muted: #C17B5F;
+
+  /* --- Borders --- */
+  --um-color-border: #E5E7EB;
+  --um-color-border-editorial: #E5E0D8;
+  --um-color-border-subtle: #EBE7E1;
+  --um-color-border-alpha: rgba(0, 0, 0, 0.08);
+
+  /* --- Status (invariant across themes) --- */
+  --um-color-success: #10B981;
+  --um-color-warning: #F59E0B;
+  --um-color-error: #EF4444;
+  --um-color-info: #3B82F6;
+
+  /* --- Scrollbar --- */
+  --um-color-scrollbar-thumb: #D4D4D4;
+  --um-color-scrollbar-thumb-hover: #A3A3A3;
+  --um-color-scrollbar-editorial-thumb: #DDD7CF;
+  --um-color-scrollbar-editorial-thumb-hover: #C9C1B6;
+}
+
+.dark {
+  /* --- Backgrounds --- */
+  --um-color-bg-primary: #0F1117;
+  --um-color-bg-secondary: #1A1C1F;
+  --um-color-bg-editorial: #211F1C;
+  --um-color-bg-elevated: #2A2723;
+  --um-color-bg-card: #1A1C1F;
+
+  /* --- Text --- */
+  --um-color-text-primary: #FFFFFF;
+  --um-color-text-editorial-primary: #F2EDE6;
+  --um-color-text-secondary: #9CA3AF;
+  --um-color-text-editorial-secondary: #A09891;
+  --um-color-text-tertiary: #6B7280;
+  --um-color-text-editorial-tertiary: #6D6660;
+  --um-color-text-muted: #9CA3AF;
+
+  /* --- Accent (Terracotta) --- */
+  --um-color-accent: #C4907A;
+  --um-color-accent-hover: #D4A088;
+  --um-color-accent-muted: #A87A66;
+
+  /* --- Borders --- */
+  --um-color-border: #1F2937;
+  --um-color-border-editorial: #3D3832;
+  --um-color-border-subtle: #4A443D;
+  --um-color-border-alpha: rgba(255, 255, 255, 0.08);
+
+  /* --- Scrollbar --- */
+  --um-color-scrollbar-thumb: #525252;
+  --um-color-scrollbar-thumb-hover: #737373;
+  --um-color-scrollbar-editorial-thumb: #484744;
+  --um-color-scrollbar-editorial-thumb-hover: #5A5955;
+}
+
+/* ============================================
+   TYPOGRAPHY TOKENS
+   ============================================ */
+
+:root {
+  /* Font families */
+  --um-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --um-font-serif: 'Playfair Display', Georgia, serif;
+  --um-font-editorial-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --um-font-display: 'Instrument Serif', 'Playfair Display', Georgia, serif;
+  --um-font-mono: 'JetBrains Mono', Menlo, monospace;
+
+  /* Font sizes */
+  --um-text-xs: 0.75rem;    /* 12px */
+  --um-text-sm: 0.875rem;   /* 14px */
+  --um-text-base: 1rem;     /* 16px */
+  --um-text-lg: 1.125rem;   /* 18px */
+  --um-text-xl: 1.25rem;    /* 20px */
+  --um-text-2xl: 1.5rem;    /* 24px */
+  --um-text-3xl: 1.875rem;  /* 30px */
+  --um-text-4xl: 2.25rem;   /* 36px */
+
+  /* Font weights */
+  --um-font-normal: 400;
+  --um-font-medium: 500;
+  --um-font-semibold: 600;
+  --um-font-bold: 700;
+}
+
+/* ============================================
+   SPACING TOKENS
+   ============================================ */
+
+:root {
+  --um-space-xs: 8px;
+  --um-space-sm: 12px;
+  --um-space-md: 16px;
+  --um-space-lg: 24px;
+  --um-space-xl: 32px;
+  --um-space-xxl: 48px;
+}
+
+/* ============================================
+   BORDER RADIUS TOKENS
+   ============================================ */
+
+:root {
+  --um-radius-sm: 8px;
+  --um-radius-md: 12px;
+  --um-radius-lg: 16px;
+  --um-radius-xl: 24px;
+  --um-radius-2xl: 32px;
+  --um-radius-full: 9999px;
+}
+
+/* ============================================
+   LAYOUT TOKENS
+   ============================================ */
+
+:root {
+  --um-content-max: 1280px;
+  --um-content-padding: 48px;
+  --um-page-padding-mobile: 24px;
+  --um-page-padding-desktop: 40px;
+  --um-heading-block-mt: 48px;
+  --um-heading-block-mb: 32px;
+}
+
+/* ============================================
+   MOTION TOKENS
+   ============================================ */
+
+:root {
+  --um-motion-fast: 140ms;
+  --um-motion-medium: 200ms;
+  --um-motion-slow: 320ms;
+  --um-ease-soft: cubic-bezier(0.22, 0.11, 0.1, 1);
+  --um-ease-card: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================
+   BREAKPOINTS (reference only — not usable as vars)
+   ============================================ */
+
+/*
+  --um-bp-sm:  640px;
+  --um-bp-md:  768px;
+  --um-bp-lg:  1024px;
+  --um-bp-xl:  1280px;
+  --um-bp-2xl: 1536px;
+*/
+
+/* ============================================
+   IMAGE SYSTEM
+   ============================================ */
+
+:root {
+  --um-image-filter-rest: brightness(0.98) contrast(0.96) saturate(0.96);
+  --um-image-filter-hover: brightness(1.00) contrast(1.00) saturate(1.00);
+}
+
+/* ============================================
+   ICON SIZES (reference)
+   ============================================ */
+
+/*
+  sm: 12px  (h-3 w-3)
+  md: 16px  (h-4 w-4)  — default
+  lg: 20px  (h-5 w-5)
+  Library: lucide-react
+*/

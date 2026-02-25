@@ -1,0 +1,325 @@
+{
+  "name": "Urban Manual",
+  "version": "1.0.0",
+  "description": "Design language for Urban Manual — a curated travel guide with Japanese-meets-Scandinavian editorial minimalism",
+  "principles": [
+    "Minimalist & editorial: clean layouts, generous whitespace, story-led content",
+    "Monochromatic with accents: black & white primary, gray secondary, terracotta accent",
+    "Typography-first: clear hierarchy, readable sizes, line clamping",
+    "No dashboard cards: no floating boxes with heavy radii, shadows, or faux glass"
+  ],
+  "colors": {
+    "light": {
+      "background": {
+        "primary": "#FFFFFF",
+        "secondary": "#F9FAFB",
+        "editorial": "#F5F2ED",
+        "elevated": "#FDFCFA"
+      },
+      "text": {
+        "primary": "#000000",
+        "editorialPrimary": "#2C2825",
+        "secondary": "#4B5563",
+        "editorialSecondary": "#6B6560",
+        "tertiary": "#9CA3AF",
+        "editorialTertiary": "#9A948C",
+        "muted": "#6B7280",
+        "subtle": "#9CA3AF"
+      },
+      "accent": {
+        "terracotta": "#A65D4C",
+        "terracottaHover": "#8F503F",
+        "terracottaMuted": "#C17B5F"
+      },
+      "border": {
+        "default": "#E5E7EB",
+        "editorial": "#E5E0D8",
+        "subtle": "#EBE7E1",
+        "subtleAlpha": "rgba(0, 0, 0, 0.08)"
+      },
+      "status": {
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "error": "#EF4444",
+        "info": "#3B82F6"
+      },
+      "scrollbar": {
+        "thumb": "#D4D4D4",
+        "thumbHover": "#A3A3A3",
+        "editorialThumb": "#DDD7CF",
+        "editorialThumbHover": "#C9C1B6"
+      }
+    },
+    "dark": {
+      "background": {
+        "primary": "#0F1117",
+        "secondary": "#1A1C1F",
+        "editorial": "#211F1C",
+        "elevated": "#2A2723"
+      },
+      "text": {
+        "primary": "#FFFFFF",
+        "editorialPrimary": "#F2EDE6",
+        "secondary": "#9CA3AF",
+        "editorialSecondary": "#A09891",
+        "tertiary": "#6B7280",
+        "editorialTertiary": "#6D6660",
+        "muted": "#9CA3AF",
+        "subtle": "#6B7280"
+      },
+      "accent": {
+        "terracotta": "#C4907A",
+        "terracottaHover": "#D4A088",
+        "terracottaMuted": "#A87A66"
+      },
+      "border": {
+        "default": "#1F2937",
+        "editorial": "#3D3832",
+        "subtle": "#4A443D",
+        "subtleAlpha": "rgba(255, 255, 255, 0.08)"
+      },
+      "status": {
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "error": "#EF4444",
+        "info": "#3B82F6"
+      },
+      "scrollbar": {
+        "thumb": "#525252",
+        "thumbHover": "#737373",
+        "editorialThumb": "#484744",
+        "editorialThumbHover": "#5A5955"
+      }
+    },
+    "forbidden": ["purple", "#9370DB", "violet"]
+  },
+  "typography": {
+    "fontFamilies": {
+      "sans": ["Inter", "system-ui", "-apple-system", "sans-serif"],
+      "serif": ["Playfair Display", "Georgia", "serif"],
+      "editorialSerif": ["Source Serif 4", "Georgia", "Times New Roman", "serif"],
+      "display": ["Instrument Serif", "Playfair Display", "Georgia", "serif"],
+      "mono": ["JetBrains Mono", "Menlo", "monospace"]
+    },
+    "fontSizes": {
+      "xs": { "value": "0.75rem", "px": 12 },
+      "sm": { "value": "0.875rem", "px": 14 },
+      "base": { "value": "1rem", "px": 16 },
+      "lg": { "value": "1.125rem", "px": 18 },
+      "xl": { "value": "1.25rem", "px": 20 },
+      "2xl": { "value": "1.5rem", "px": 24 },
+      "3xl": { "value": "1.875rem", "px": 30 },
+      "4xl": { "value": "2.25rem", "px": 36 }
+    },
+    "fontWeights": {
+      "normal": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "styles": {
+      "editorialHeadline": {
+        "fontFamily": "editorialSerif",
+        "fontWeight": 500,
+        "letterSpacing": "-0.02em",
+        "lineHeight": 1.15
+      },
+      "editorialTitle": {
+        "fontFamily": "editorialSerif",
+        "fontWeight": 400,
+        "letterSpacing": "-0.01em",
+        "lineHeight": 1.25
+      },
+      "editorialBody": {
+        "fontFamily": "sans",
+        "lineHeight": 1.6,
+        "letterSpacing": "0.01em"
+      },
+      "editorialLabel": {
+        "fontSize": "10px",
+        "fontWeight": 500,
+        "letterSpacing": "0.15em",
+        "textTransform": "uppercase"
+      },
+      "editorialMeta": {
+        "fontSize": "13px",
+        "letterSpacing": "0.01em"
+      }
+    }
+  },
+  "spacing": {
+    "scale": {
+      "xs": { "value": "0.25rem", "px": 4, "cssVar": "--space-xs" },
+      "sm": { "value": "0.5rem", "px": 8, "cssVar": "--space-sm" },
+      "md": { "value": "1rem", "px": 16, "cssVar": "--space-md" },
+      "lg": { "value": "1.5rem", "px": 24, "cssVar": "--space-lg" },
+      "xl": { "value": "2rem", "px": 32, "cssVar": "--space-xl" },
+      "2xl": { "value": "3rem", "px": 48, "cssVar": "--space-2xl" }
+    },
+    "componentTokens": {
+      "xs": { "value": "8px", "cssVar": "--um-space-xs" },
+      "sm": { "value": "12px", "cssVar": "--um-space-sm" },
+      "md": { "value": "16px", "cssVar": "--um-space-md" },
+      "lg": { "value": "24px", "cssVar": "--um-space-lg" },
+      "xl": { "value": "32px", "cssVar": "--um-space-xl" },
+      "xxl": { "value": "48px", "cssVar": "--um-space-xxl" }
+    }
+  },
+  "borderRadius": {
+    "sm": { "value": "8px", "cssVar": "--um-radius-sm", "usage": "pills, tags" },
+    "md": { "value": "12px", "cssVar": "--um-radius-md", "usage": "inputs, small cards" },
+    "lg": { "value": "16px", "cssVar": "--um-radius-lg", "usage": "cards" },
+    "xl": { "value": "24px", "cssVar": "--um-radius-xl", "usage": "large cards, modals" },
+    "2xl": { "value": "32px", "cssVar": "--um-radius-2xl", "usage": "hero elements" },
+    "full": { "value": "9999px", "cssVar": "--um-radius-full", "usage": "buttons, avatars, badges" }
+  },
+  "layout": {
+    "contentMax": { "value": "1280px", "cssVar": "--um-content-max" },
+    "contentPadding": { "value": "48px", "cssVar": "--um-content-padding" },
+    "pagePadding": {
+      "mobile": "24px",
+      "desktop": "40px"
+    },
+    "headingBlock": {
+      "marginTop": "48px",
+      "marginBottom": "32px"
+    }
+  },
+  "breakpoints": {
+    "sm": "640px",
+    "md": "768px",
+    "lg": "1024px",
+    "xl": "1280px",
+    "2xl": "1536px"
+  },
+  "motion": {
+    "durations": {
+      "fast": { "value": "140ms", "cssVar": "--motion-fast" },
+      "medium": { "value": "200ms", "cssVar": "--motion-medium" },
+      "slow": { "value": "320ms", "cssVar": "--motion-slow" }
+    },
+    "easing": {
+      "soft": { "value": "cubic-bezier(0.22, 0.11, 0.1, 1)", "cssVar": "--ease-soft" },
+      "card": "cubic-bezier(0.16, 1, 0.3, 1)"
+    },
+    "animations": {
+      "fadeIn": {
+        "duration": "0.5s",
+        "easing": "ease-out",
+        "from": { "opacity": 0, "translateY": "8px" },
+        "to": { "opacity": 1, "translateY": "0" }
+      },
+      "slideUp": {
+        "duration": "0.5s",
+        "easing": "ease-out",
+        "from": { "opacity": 0, "translateY": "20px" },
+        "to": { "opacity": 1, "translateY": "0" }
+      },
+      "slideInRight": {
+        "duration": "0.4s",
+        "easing": "ease-out",
+        "from": { "opacity": 0, "translateX": "-12px" },
+        "to": { "opacity": 1, "translateX": "0" }
+      },
+      "scaleIn": {
+        "duration": "0.3s",
+        "easing": "ease-out",
+        "from": { "opacity": 0, "scale": 0.95 },
+        "to": { "opacity": 1, "scale": 1 }
+      },
+      "pulseSubtle": {
+        "duration": "2s",
+        "easing": "ease-in-out",
+        "infinite": true,
+        "keyframes": { "0%,100%": { "opacity": 1 }, "50%": { "opacity": 0.7 } }
+      }
+    },
+    "stagger": {
+      "baseDelay": "0.1s",
+      "steps": 5
+    }
+  },
+  "imageSystem": {
+    "defaultFilter": "brightness(0.98) contrast(0.96) saturate(0.96)",
+    "hoverFilter": "brightness(1.00) contrast(1.00) saturate(1.00)",
+    "transition": "filter var(--motion-medium) var(--ease-soft)"
+  },
+  "icons": {
+    "library": "lucide-react",
+    "sizes": {
+      "sm": { "className": "h-3 w-3", "px": 12 },
+      "md": { "className": "h-4 w-4", "px": 16 },
+      "lg": { "className": "h-5 w-5", "px": 20 }
+    }
+  },
+  "components": {
+    "card": {
+      "wrapper": "group relative transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform",
+      "media": "relative aspect-video overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-100 dark:border-gray-800/50 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:border-gray-200 dark:group-hover:border-gray-700",
+      "title": "font-medium text-sm leading-snug line-clamp-2 text-gray-900 dark:text-white transition-colors duration-300 ease-out mt-2 group-hover:text-gray-700 dark:group-hover:text-gray-200",
+      "meta": "flex items-center gap-1.5 mt-1 text-xs text-gray-500 dark:text-gray-400 transition-opacity duration-300 group-hover:opacity-80"
+    },
+    "buttons": {
+      "primary": {
+        "className": "px-6 py-3 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-full hover:opacity-80 transition-opacity",
+        "description": "Main action button, solid black/white"
+      },
+      "secondary": {
+        "className": "px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors",
+        "description": "Outlined secondary action"
+      },
+      "pill": {
+        "className": "px-3 py-1.5 border border-gray-200 dark:border-gray-800 rounded-2xl text-xs hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors",
+        "description": "Small pill-style action"
+      },
+      "icon": {
+        "className": "p-2.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full hover:opacity-80 transition-opacity shadow-lg",
+        "description": "Circular icon button with backdrop blur"
+      },
+      "editorialPrimary": {
+        "className": "btn-editorial-primary",
+        "description": "Transparent with border, fills on hover"
+      },
+      "editorialGhost": {
+        "className": "btn-editorial-ghost",
+        "description": "Light border, minimal style"
+      },
+      "editorialAccent": {
+        "className": "btn-editorial-accent",
+        "description": "Terracotta accent, fills on hover"
+      }
+    },
+    "badges": {
+      "success": "px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-full text-xs font-medium",
+      "warning": "px-3 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 rounded-full text-xs font-medium",
+      "error": "px-3 py-1 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-full text-xs font-medium",
+      "info": "px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-full text-xs font-medium",
+      "neutral": "px-3 py-1 border border-gray-200 dark:border-gray-800 rounded-2xl text-gray-600 dark:text-gray-400 text-xs"
+    },
+    "input": {
+      "className": "w-full px-4 py-2 border border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white",
+      "description": "Standard text input"
+    },
+    "modal": {
+      "overlay": "fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4",
+      "container": "bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+    },
+    "skeleton": {
+      "base": "animate-pulse bg-gray-200 dark:bg-gray-800 rounded",
+      "card": "aspect-square rounded-2xl bg-gray-100 dark:bg-gray-800"
+    },
+    "spinner": "animate-spin rounded-full border-b-2 border-gray-900 dark:border-white"
+  },
+  "grids": {
+    "homepage": "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 md:gap-6",
+    "twoColumn": "grid grid-cols-1 md:grid-cols-2 gap-6",
+    "threeColumn": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+  },
+  "darkMode": {
+    "strategy": "class",
+    "selector": ".dark",
+    "provider": "next-themes",
+    "storageKey": "urban-manual-theme",
+    "systemDetection": true
+  }
+}

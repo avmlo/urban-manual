@@ -96,7 +96,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)" />
         <meta name="google-adsense-account" content="ca-pub-3052286230434362" />
-        {/* Revert iOS-specific app meta to default web behavior */}
+        {/* Smart App Banner - shows "Open in App" banner on iOS Safari */}
+        <meta name="apple-itunes-app" content="app-id=6759623668, app-argument=https://www.urbanmanual.co" />
 
         {/* Preconnect hints for faster resource loading */}
         {process.env.NEXT_PUBLIC_SUPABASE_URL && (

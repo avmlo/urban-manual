@@ -181,6 +181,16 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Apple App Site Association - required headers for Universal Links
+        source: '/.well-known/apple-app-site-association',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/json',
+          },
+        ],
+      },
+      {
         // Cache destinations.json for 5 minutes with stale-while-revalidate
         source: '/destinations.json',
         headers: [

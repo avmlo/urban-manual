@@ -6,7 +6,7 @@ import { User, Map, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { useDrawer } from "@/contexts/DrawerContext";
-import { ChatDrawer } from "@/features/chat/components/ChatDrawer";
+import { useIntelligentDrawer } from "@/features/shared/components/IntelligentDrawerContext";
 import { LoginDrawer } from "@/features/account/components/LoginDrawer";
 import { LoginModal } from "@/components/LoginModal";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -24,6 +24,7 @@ export function Header() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { openDrawer, isDrawerOpen, closeDrawer } = useDrawer();
+  const { open: openIntelligentDrawer } = useIntelligentDrawer();
   const { isChristmasMode } = useChristmasTheme();
   const [buildVersion, setBuildVersion] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -160,7 +161,7 @@ export function Header() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => openDrawer('account')}
+              onClick={() => openIntelligentDrawer('account')}
               className="pl-1.5 pr-4"
               aria-label="Open account drawer"
             >
@@ -262,21 +263,6 @@ export function Header() {
           </div>
         </nav>
       </div>
-      {/* Chat Drawer - Only render when open */}
-      {isDrawerOpen('chat') && (
-        <ChatDrawer
-          isOpen={true}
-          onClose={closeDrawer}
-        />
-      )}
-
-      {/* Login Drawer - Only render when open */}
-      {isDrawerOpen('login') && (
-        <LoginDrawer
-          isOpen={true}
-          onClose={closeDrawer}
-        />
-      )}
 
       {/* Login Modal - Centered on-page modal for auth prompts */}
       {isDrawerOpen('login-modal') && (

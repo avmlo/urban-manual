@@ -10,6 +10,7 @@
 
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { createServiceClient } from "../utils/supabase.js";
+import { sanitizeForIlike } from "../utils/sanitize.js";
 
 export const collectionTools: Tool[] = [
   {
@@ -546,10 +547,12 @@ export async function handleCollectionTool(
         );
 
       if (city) {
-        destQuery = destQuery.ilike("city", `%${city}%`);
+        const safeCity = sanitizeForIlike(city as string);
+        destQuery = destQuery.ilike("city", `%${safeCity}%`);
       }
       if (category) {
-        destQuery = destQuery.ilike("category", `%${category}%`);
+        const safeCategory = sanitizeForIlike(category as string);
+        destQuery = destQuery.ilike("category", `%${safeCategory}%`);
       }
 
       const { data: destinations } = await destQuery;
@@ -605,7 +608,8 @@ export async function handleCollectionTool(
         );
 
       if (city) {
-        destQuery = destQuery.ilike("city", `%${city}%`);
+        const safeCity = sanitizeForIlike(city as string);
+        destQuery = destQuery.ilike("city", `%${safeCity}%`);
       }
 
       const { data: destinations } = await destQuery;

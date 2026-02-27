@@ -3,11 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useDrawerStore } from '@/lib/stores/drawer-store';
 
-import { AccountDrawer } from '@/features/account/components/AccountDrawer';
 // DestinationDrawer removed - now using IntelligentDrawer from app/layout.tsx
 import { SavedPlacesDrawer } from '@/features/lists/components/SavedPlacesDrawer';
 import { VisitedPlacesDrawer } from '@/features/lists/components/VisitedPlacesDrawer';
-import { TripsDrawer } from '@/features/trip/components/TripsDrawer';
 import AddHotelDrawer from '@/features/trip/components/AddHotelDrawer';
 import AddFlightDrawer from '@/features/trip/components/AddFlightDrawer';
 import AISuggestionsDrawer from '@/features/trip/components/AISuggestionsDrawer';
@@ -45,10 +43,8 @@ export default function DrawerMount() {
   return (
     <>
       {/* Legacy drawers that use their own drawer context */}
-      <AccountDrawer />
       <SavedPlacesDrawer />
       <VisitedPlacesDrawer />
-      <TripsDrawer />
 
       {/* New drawers that use the global drawer store */}
       {/* Only render as overlay if not in inline mode on desktop */}

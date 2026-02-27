@@ -6,6 +6,7 @@ import { HomepageContent } from '@/features/homepage/components/HomepageContent'
 import { AISearchChatWrapper } from '@/features/homepage/components/AISearchChatWrapper';
 import InteractiveHero from '@/features/homepage/components/InteractiveHero';
 import NavigationBar from '@/features/homepage/components/NavigationBar';
+import FigmaInspiredSpotlight from '@/features/homepage/components/FigmaInspiredSpotlight';
 
 /**
  * Homepage - Progressive Loading Architecture with Client Fallback
@@ -84,7 +85,9 @@ export default async function HomePage() {
           </section>
 
           {/* Content Section - Full width */}
-          <div className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8">
+          <div className="w-full px-4 sm:px-6 md:px-10 mt-6 sm:mt-8 space-y-6 sm:space-y-8">
+            <FigmaInspiredSpotlight />
+
             {/* Navigation bar */}
             <NavigationBar />
 

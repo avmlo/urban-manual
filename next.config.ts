@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withPayload } from "@payloadcms/next/withPayload";
 import { withSentryConfig } from "@sentry/nextjs";
 import withPWAInit from "@ducanh2912/next-pwa";
 
@@ -285,7 +286,7 @@ const withPWA = withPWAInit({
   },
 });
 
-// Wrap the Next.js config with PWA and Sentry
+// Wrap the Next.js config with PWA, Payload, and Sentry
 const pwaConfig = withPWA(nextConfig);
 
 const sentryConfig = withSentryConfig(pwaConfig, {
@@ -298,4 +299,4 @@ const sentryConfig = withSentryConfig(pwaConfig, {
   project: "sentry-red-park",
 });
 
-export default sentryConfig;
+export default withPayload(sentryConfig);

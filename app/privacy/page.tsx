@@ -1,23 +1,19 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { ChevronUp } from 'lucide-react';
-import { openCookieSettings } from '@/components/CookieConsent';
 
 const sections = [
   { id: 'introduction', title: 'Introduction' },
-  { id: 'information-we-collect', title: 'Information We Collect' },
-  { id: 'how-we-use', title: 'How We Use Your Information' },
-  { id: 'how-we-share', title: 'How We Share Information' },
-  { id: 'cookies-tracking', title: 'Cookies & Tracking' },
-  { id: 'location-data', title: 'Location Data' },
-  { id: 'data-retention', title: 'Data Retention' },
-  { id: 'data-export-deletion', title: 'Data Export & Deletion Requests' },
-  { id: 'your-rights', title: 'Your Rights & Choices' },
-  { id: 'security', title: 'Security' },
-  { id: 'children', title: 'Children' },
-  { id: 'contact', title: 'Contact Us' },
+  { id: 'data-we-collect', title: 'Data We Collect' },
+  { id: 'how-we-use', title: 'How We Use Data' },
+  { id: 'third-party-services', title: 'Third-Party Services' },
+  { id: 'data-storage-security', title: 'Data Storage & Security' },
+  { id: 'data-sharing', title: 'Data Sharing' },
+  { id: 'user-rights', title: 'User Rights' },
+  { id: 'children', title: "Children's Privacy" },
+  { id: 'policy-updates', title: 'Policy Updates' },
+  { id: 'contact', title: 'Contact Information' },
 ];
 
 export default function PrivacyPage() {
@@ -123,277 +119,96 @@ export default function PrivacyPage() {
                   <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Introduction</h2>
                   <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
                     <p>
-                      The Urban Manual (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) helps you discover, save, and organize destinations.
-                      This Privacy Policy describes the personal information we process when you visit www.urbanmanual.co, use our
-                      web and mobile applications, or interact with our communications.
+                      Urban Manual (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is a curated travel guide app that helps you discover, save, and plan trips to destinations worldwide.
+                      This Privacy Policy describes the personal information we collect when you use the Urban Manual iOS app, visit www.urbanmanual.co,
+                      or interact with our services.
                     </p>
                   </div>
                 </section>
 
-                {/* Information We Collect */}
+                {/* Data We Collect */}
                 <section
-                  id="information-we-collect"
-                  ref={(el) => { sectionRefs.current['information-we-collect'] = el; }}
+                  id="data-we-collect"
+                  ref={(el) => { sectionRefs.current['data-we-collect'] = el; }}
                   className="scroll-mt-24"
                 >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Information We Collect</h2>
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Data We Collect</h2>
                   <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
-                    <p>
-                      We collect information you provide directly to us, including:
-                    </p>
-                    <ul className="space-y-2 ml-4">
-                      <li className="list-disc">Account details such as name, email address, password, and profile preferences.</li>
-                      <li className="list-disc">Content you create inside the product (saved destinations, collections, lists, trips, notes, and activity history).</li>
-                      <li className="list-disc">Communications you send to our team (support inquiries, feedback, or survey responses).</li>
+                    <ul className="space-y-3 ml-4">
+                      <li className="list-disc">
+                        <strong className="font-medium text-black dark:text-white">User ID / Email</strong> — collected via Supabase authentication when you create an account. Account creation is optional.
+                      </li>
+                      <li className="list-disc">
+                        <strong className="font-medium text-black dark:text-white">Location Data</strong> — used for nearby recommendations, geofencing, and directions.
+                      </li>
+                      <li className="list-disc">
+                        <strong className="font-medium text-black dark:text-white">Health & Fitness Data</strong> — HealthKit data (steps, energy) is used on-device only for trip health insights. This data is never sent to our servers.
+                      </li>
+                      <li className="list-disc">
+                        <strong className="font-medium text-black dark:text-white">Photos</strong> — photo attachments that you add to trips are synced with your trip data.
+                      </li>
+                      <li className="list-disc">
+                        <strong className="font-medium text-black dark:text-white">Search / Usage Data</strong> — search queries, visited places, saved places, and reviews.
+                      </li>
                     </ul>
-                    <p>
-                      We automatically collect certain technical information such as device type, browser, IP address, referring URL,
-                      and usage patterns (pages viewed, actions taken, timestamps). When you enable location-based features like
-                      &ldquo;Near Me&rdquo;, we temporarily collect your coarse device location to show relevant places.
-                    </p>
                   </div>
                 </section>
 
-                {/* How We Use Your Information */}
+                {/* How We Use Data */}
                 <section
                   id="how-we-use"
                   ref={(el) => { sectionRefs.current['how-we-use'] = el; }}
                   className="scroll-mt-24"
                 >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">How We Use Your Information</h2>
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">How We Use Data</h2>
                   <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
-                    <p>We use personal information to:</p>
+                    <p>We use the information we collect to:</p>
                     <ul className="space-y-2 ml-4">
-                      <li className="list-disc">Authenticate you, maintain your account, and sync your saved content across devices.</li>
-                      <li className="list-disc">Power core product flows such as discovery, saved places, itineraries, trips, and personalized recommendations.</li>
-                      <li className="list-disc">Send product updates, transactional messages, and respond to your requests.</li>
-                      <li className="list-disc">Monitor performance, detect abuse, and maintain the reliability and safety of our systems.</li>
-                      <li className="list-disc">Analyze aggregated usage trends to plan new features and improve the experience.</li>
+                      <li className="list-disc">Provide personalized travel recommendations.</li>
+                      <li className="list-disc">Power trip planning and itinerary generation.</li>
+                      <li className="list-disc">Deliver morning briefings and smart insights.</li>
+                      <li className="list-disc">Enable AI-powered chat assistance.</li>
+                      <li className="list-disc">Sync trips and saved places across your devices.</li>
                     </ul>
                   </div>
                 </section>
 
-                {/* How We Share Information */}
+                {/* Third-Party Services */}
                 <section
-                  id="how-we-share"
-                  ref={(el) => { sectionRefs.current['how-we-share'] = el; }}
+                  id="third-party-services"
+                  ref={(el) => { sectionRefs.current['third-party-services'] = el; }}
                   className="scroll-mt-24"
                 >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">How We Share Information</h2>
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Third-Party Services</h2>
                   <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
-                    <p>
-                      We do not sell your personal information. We share it only with:
-                    </p>
-                    <ul className="space-y-2 ml-4">
+                    <p>We rely on the following third-party services to operate the app:</p>
+                    <ul className="space-y-3 ml-4">
                       <li className="list-disc">
-                        Trusted service providers who support our infrastructure (Supabase for authentication/database, hosting providers,
-                        transactional email vendors, and analytics tools). These partners process data solely on our behalf under strict agreements.
+                        <strong className="font-medium text-black dark:text-white">Supabase</strong> — authentication and cloud data storage.
                       </li>
                       <li className="list-disc">
-                        Other parties when required by law, to respond to legal process, to protect our rights, or to prevent fraud or abuse.
+                        <strong className="font-medium text-black dark:text-white">Google Places API</strong> — place search and details.
                       </li>
                       <li className="list-disc">
-                        Successors in the event of a merger, acquisition, or asset sale. We will notify you of any change in control that affects your data.
-                      </li>
-                    </ul>
-                    <p>
-                      We may share aggregated or anonymized insights that no longer identify you.
-                    </p>
-                  </div>
-                </section>
-
-                {/* Cookies & Tracking */}
-                <section
-                  id="cookies-tracking"
-                  ref={(el) => { sectionRefs.current['cookies-tracking'] = el; }}
-                  className="scroll-mt-24"
-                >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Cookies & Tracking</h2>
-                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
-                    <p>
-                      We use first-party cookies and local storage to keep you signed in, remember preferences, and understand how the product performs.
-                      You can control cookies through your browser settings, though disabling them may limit core functionality.
-                    </p>
-                    
-                    <div>
-                      <strong className="font-medium text-black dark:text-white">Google Analytics:</strong> We use Google Analytics (Measurement ID: G-ZLGK6QXD88) to collect information about how visitors use our website. This includes:
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
-                        <li>Page views and navigation patterns</li>
-                        <li>Time spent on pages</li>
-                        <li>User interactions (clicks, scrolls, etc.)</li>
-                        <li>Device and browser information</li>
-                        <li>General geographic location (country/city level)</li>
-                      </ul>
-                      <p className="mt-2">
-                        This data is collected anonymously and aggregated to help us understand website usage trends and improve user experience. 
-                        Google Analytics uses cookies and may collect information according to Google&apos;s Privacy Policy. 
-                        You can manage your cookie preferences at any time by clicking <button onClick={openCookieSettings} className="underline hover:text-black dark:hover:text-white transition-colors">Cookie Settings</button> in the footer, 
-                        or by installing the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="underline hover:text-black dark:hover:text-white transition-colors">Google Analytics Opt-out Browser Add-on</a>.
-                      </p>
-                    </div>
-
-                    <div className="mt-4">
-                      <strong className="font-medium text-black dark:text-white">Google Signals Data Collection:</strong> We have enabled Google Signals, which allows Google Analytics to collect additional data about your traffic. When Google Signals is active, Google Analytics may:
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
-                        <li>Associate your visitation information with Google&apos;s information from accounts of signed-in users who have consented to ads personalization</li>
-                        <li>Collect data including end-user location, search history, YouTube history, and data from sites that partner with Google</li>
-                        <li>Provide additional insights about users and enable audience sharing capabilities</li>
-                      </ul>
-                      <p className="mt-2">
-                        This data collection is used to provide enhanced analytics features and is subject to Google&apos;s Advertising Features Policy. 
-                        You can control this data collection through your Google account settings or by disabling analytics cookies in our Cookie Settings.
-                      </p>
-                    </div>
-
-                    <div className="mt-4">
-                      <strong className="font-medium text-black dark:text-white">User-ID and User-Provided Data Collection:</strong> We may use Google Analytics User-ID and user-provided data features to:
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
-                        <li>Connect user behavior across different sessions and devices</li>
-                        <li>Provide more accurate user counts and a holistic view of user interactions</li>
-                        <li>Improve conversion measurement and audience sharing capabilities</li>
-                        <li>Supplement analytics data with consented, hashed customer data in a privacy-safe way</li>
-                      </ul>
-                      <p className="mt-2">
-                        We do not send personally identifiable information as User-ID. Any user-provided data is hashed and processed in accordance with Google Analytics policies. 
-                        This feature requires appropriate privacy disclosures, which are provided in this Privacy Policy.
-                      </p>
-                    </div>
-
-                    <div className="mt-4">
-                      <strong className="font-medium text-black dark:text-white">Granular Location and Device Data Collection:</strong> We collect granular location and device metadata to:
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
-                        <li>Collect city-level location information (in addition to country/region data collected by default)</li>
-                        <li>Collect detailed device information to provide location and device-based capabilities</li>
-                        <li>Support regional privacy policies and region-based Analytics settings</li>
-                      </ul>
-                      <p className="mt-2">
-                        Region and country-level metadata is collected by default for all traffic. City-level and device details are collected when you consent to analytics cookies.
-                      </p>
-                    </div>
-
-                    <div className="mt-4">
-                      <strong className="font-medium text-black dark:text-white">Ads Personalization:</strong> When ads personalization is enabled, we may:
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
-                        <li>Export Google Analytics audiences and key events to linked advertising accounts</li>
-                        <li>Use data collected through Google Signals, User ID, and ads integrations for personalized advertising experiences</li>
-                        <li>Share data with Google for ads personalization purposes in connection with enabled features</li>
-                      </ul>
-                      <p className="mt-2">
-                        Ads personalization is optional and can be controlled through your cookie preferences. 
-                        Disabling ads personalization means that shared audience lists are marked as inactive and no new users will be shared via audience lists.
-                      </p>
-                    </div>
-
-                    <div className="mt-4">
-                      <strong className="font-medium text-black dark:text-white">Consent Signals:</strong> We use Google Analytics consent signals to respect your privacy preferences:
-                      <ul className="list-disc ml-6 mt-2 space-y-1">
-                        <li><strong>Behavioral Analytics Consent (analytics_storage):</strong> Controls whether cookie data can be collected for behavioral analytics purposes, including audience measurement and behavioral modeling.</li>
-                        <li><strong>Ads Cookie Consent (ad_storage):</strong> Controls whether cookie data can be collected for advertising purposes, including ads measurement, demographics & interest insights, and audience remarketing.</li>
-                        <li><strong>Ads Measurement Consent (ad_user_data):</strong> Controls whether user data can be collected for advertising and ads measurement purposes, including conversion export, ads measurement, and audience remarketing.</li>
-                        <li><strong>Ads Personalization Consent (ad_personalization):</strong> Controls whether the user can be included in audiences exported to linked ads accounts for audience remarketing.</li>
-                      </ul>
-                      <p className="mt-2">
-                        All consent signals default to &ldquo;denied&rdquo; until you explicitly grant consent through our Cookie Settings. 
-                        You can manage these preferences at any time by clicking <button onClick={openCookieSettings} className="underline hover:text-black dark:hover:text-white transition-colors">Cookie Settings</button> in the footer.
-                      </p>
-                    </div>
-
-                    <p>
-                      <strong className="font-medium text-black dark:text-white">Google Places Autocomplete:</strong> When you use our trip planning feature to search for and add locations,
-                      we use Google Places Autocomplete to provide location suggestions. We track anonymized analytics about which places
-                      are selected through this feature (including place ID, place name, place types) to improve our service and understand
-                      user preferences. This data is sent to Google Analytics and helps us enhance the trip planning experience.
-                      No personally identifiable information is included in this tracking.
-                    </p>
-                  </div>
-                </section>
-
-                {/* Location Data */}
-                <section
-                  id="location-data"
-                  ref={(el) => { sectionRefs.current['location-data'] = el; }}
-                  className="scroll-mt-24"
-                >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Location Data</h2>
-                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
-                    <p>
-                      If you allow location permissions, we use your approximate device location to show nearby destinations and tailor suggestions.
-                      Location data stays on our servers long enough to return relevant results and is not stored with your profile unless you save a place.
-                      You can disable sharing by turning off location access in your device or browser settings at any time.
-                    </p>
-                  </div>
-                </section>
-
-                {/* Data Retention */}
-                <section
-                  id="data-retention"
-                  ref={(el) => { sectionRefs.current['data-retention'] = el; }}
-                  className="scroll-mt-24"
-                >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Data Retention</h2>
-                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
-                    <p>
-                      We retain account data while your profile remains active so that your saved places, trips, and history stay available across devices.
-                      If you delete specific content, it is removed from active systems immediately and from encrypted backups within 30 days.
-                    </p>
-                    <p>
-                      If you request full account deletion, we purge your saved data and Supabase authentication record as soon as the queued job finishes.
-                      Logs referencing your email are minimized to the extent needed for security and audit obligations.
-                    </p>
-                  </div>
-                </section>
-
-                {/* Data Export & Deletion Requests */}
-                <section
-                  id="data-export-deletion"
-                  ref={(el) => { sectionRefs.current['data-export-deletion'] = el; }}
-                  className="scroll-mt-24"
-                >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Data Export & Deletion Requests</h2>
-                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
-                    <p>
-                      You can manage your data from <strong className="font-medium text-black dark:text-white">Account → Settings</strong>. Every request is logged in Supabase, processed by our background worker,
-                      and confirmed via email.
-                    </p>
-                    <ul className="space-y-2 ml-4">
-                      <li className="list-disc">
-                        <strong className="font-medium text-black dark:text-white">Export:</strong> We compile your profile, saved/visited places, collections, trips, and interactions, then email a secure download link—typically within 24 hours.
-                      </li>
-                      <li className="list-disc">
-                        <strong className="font-medium text-black dark:text-white">Deletion:</strong> We permanently remove your account, purge saved content, and delete the associated Supabase auth record. This action cannot be undone.
-                      </li>
-                      <li className="list-disc">
-                        <strong className="font-medium text-black dark:text-white">Support:</strong> If you do not receive confirmation within 72 hours, contact <a className="underline hover:text-black dark:hover:text-white transition-colors" href="mailto:privacy@urbanmanual.co">privacy@urbanmanual.co</a> with your account email.
+                        <strong className="font-medium text-black dark:text-white">Apple Services</strong> — MapKit for maps, WeatherKit for weather data, and HealthKit for on-device health insights only.
                       </li>
                     </ul>
                   </div>
                 </section>
 
-                {/* Your Rights & Choices */}
+                {/* Data Storage & Security */}
                 <section
-                  id="your-rights"
-                  ref={(el) => { sectionRefs.current['your-rights'] = el; }}
+                  id="data-storage-security"
+                  ref={(el) => { sectionRefs.current['data-storage-security'] = el; }}
                   className="scroll-mt-24"
                 >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Your Rights & Choices</h2>
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Data Storage & Security</h2>
                   <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
                     <ul className="space-y-2 ml-4">
-                      <li className="list-disc">Access, correct, or update your profile information directly within your account.</li>
-                      <li className="list-disc">Request a copy of your data or deletion of your account as described above.</li>
-                      <li className="list-disc">Opt out of marketing emails by using the unsubscribe link or adjusting notification settings.</li>
-                      <li className="list-disc">Disable cookies or location services at the device level.</li>
+                      <li className="list-disc">Account and trip data is stored securely on Supabase servers.</li>
+                      <li className="list-disc">HealthKit data stays on your device and is never sent to our servers.</li>
+                      <li className="list-disc">Offline data is cached locally on your device for use without an internet connection.</li>
                     </ul>
-                  </div>
-                </section>
-
-                {/* Security */}
-                <section
-                  id="security"
-                  ref={(el) => { sectionRefs.current['security'] = el; }}
-                  className="scroll-mt-24"
-                >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Security</h2>
-                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
                     <p>
                       We secure your information using HTTPS encryption, encrypted storage provided by Supabase, role-based access controls, and continuous monitoring.
                       While no online service can guarantee absolute security, we regularly review safeguards and limit data access to team members who need it.
@@ -401,31 +216,80 @@ export default function PrivacyPage() {
                   </div>
                 </section>
 
-                {/* Children */}
+                {/* Data Sharing */}
+                <section
+                  id="data-sharing"
+                  ref={(el) => { sectionRefs.current['data-sharing'] = el; }}
+                  className="scroll-mt-24"
+                >
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Data Sharing</h2>
+                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
+                    <ul className="space-y-2 ml-4">
+                      <li className="list-disc">We do not sell your personal data.</li>
+                      <li className="list-disc">We do not use any third-party tracking or advertising SDKs.</li>
+                      <li className="list-disc">Data is shared only with the service providers necessary to operate the app (Supabase, Google Places).</li>
+                    </ul>
+                  </div>
+                </section>
+
+                {/* User Rights */}
+                <section
+                  id="user-rights"
+                  ref={(el) => { sectionRefs.current['user-rights'] = el; }}
+                  className="scroll-mt-24"
+                >
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">User Rights</h2>
+                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
+                    <ul className="space-y-2 ml-4">
+                      <li className="list-disc">You can use the app without creating an account.</li>
+                      <li className="list-disc">You can request deletion of your data at any time.</li>
+                      <li className="list-disc">You can revoke HealthKit and Location permissions at any time through your device settings.</li>
+                    </ul>
+                  </div>
+                </section>
+
+                {/* Children's Privacy */}
                 <section
                   id="children"
                   ref={(el) => { sectionRefs.current['children'] = el; }}
                   className="scroll-mt-24"
                 >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Children</h2>
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Children&apos;s Privacy</h2>
                   <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
                     <p>
-                      The Urban Manual is not directed to children under 16, and we do not knowingly collect personal information from them.
-                      If you believe we have done so, please contact us so we can delete the information.
+                      Urban Manual is not directed at children under 13, and we do not knowingly collect personal information from them.
+                      If you believe we have inadvertently collected information from a child under 13, please contact us so we can promptly delete it.
                     </p>
                   </div>
                 </section>
 
-                {/* Contact Us */}
+                {/* Policy Updates */}
+                <section
+                  id="policy-updates"
+                  ref={(el) => { sectionRefs.current['policy-updates'] = el; }}
+                  className="scroll-mt-24"
+                >
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Policy Updates</h2>
+                  <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
+                    <p>
+                      We may update this Privacy Policy from time to time. When we make changes, we will update the &ldquo;Last updated&rdquo; date at the bottom
+                      of this page and notify you through the app or via email if the changes are significant. We encourage you to review this policy periodically.
+                    </p>
+                  </div>
+                </section>
+
+                {/* Contact Information */}
                 <section
                   id="contact"
                   ref={(el) => { sectionRefs.current['contact'] = el; }}
                   className="scroll-mt-24"
                 >
-                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Contact Us</h2>
+                  <h2 className="text-xl font-normal mb-6 text-black dark:text-white tracking-tight">Contact Information</h2>
                   <div className="space-y-5 text-sm text-gray-700 dark:text-gray-400 leading-relaxed">
                     <p>
-                      Questions or concerns about this Privacy Policy can be sent to <a className="underline hover:text-black dark:hover:text-white transition-colors" href="mailto:privacy@urbanmanual.co">privacy@urbanmanual.co</a>.
+                      If you have questions or concerns about this Privacy Policy, please contact us at{' '}
+                      <a className="underline hover:text-black dark:hover:text-white transition-colors" href="mailto:privacy@urbanmanual.co">privacy@urbanmanual.co</a>{' '}
+                      or visit <a className="underline hover:text-black dark:hover:text-white transition-colors" href="https://www.urbanmanual.co">www.urbanmanual.co</a>.
                     </p>
                   </div>
                 </section>

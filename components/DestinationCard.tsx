@@ -37,6 +37,7 @@ export const DestinationCard = memo(function DestinationCard({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const cardRef = useRef<HTMLButtonElement>(null);
 
   // Intersection Observer for progressive loading
@@ -72,10 +73,19 @@ export const DestinationCard = memo(function DestinationCard({
     onClick?.();
   };
 
+  const handleInteraction = () => {
+    if (!hasInteracted) {
+      console.log('DestinationCard interaction detected for:', destination.name);
+      setHasInteracted(true);
+    }
+  };
+
   return (
     <button
       ref={cardRef}
       onClick={handleClick}
+      onMouseEnter={handleInteraction}
+      onFocus={handleInteraction}
       type="button"
       className={`
         group relative w-full flex flex-col transition-all duration-300 ease-out
@@ -140,8 +150,8 @@ export const DestinationCard = memo(function DestinationCard({
           `}
         />
 
-        {/* Quick Actions - Top Right on Hover */}
-        {showQuickActions && destination.slug && (
+        {/* Quick Actions - Top Right on Hover - Lazy loaded on interaction */}
+        {showQuickActions && destination.slug && hasInteracted && (
           <div
             className={`
               absolute top-2 right-2 z-20

@@ -12,6 +12,7 @@ import { QuickActions } from './QuickActions';
 interface DestinationCardProps {
   destination: Destination;
   onClick?: () => void;
+  onSelect?: (destination: Destination, index?: number) => void;
   index?: number;
   isVisited?: boolean;
   showBadges?: boolean;
@@ -70,6 +71,7 @@ export const DestinationCard = memo(function DestinationCard({
     e.stopPropagation();
     // Simply call onClick - Drawer component handles scroll locking without layout shift
     onClick?.();
+    onSelect?.(destination, index);
   };
 
   return (

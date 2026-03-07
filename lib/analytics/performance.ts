@@ -95,7 +95,11 @@ export function trackWebVitals(): void {
   onFCP(handleMetric);
 
   // Interaction to Next Paint (replaces deprecated FID)
-  onINP(handleMetric);
+  try {
+    onINP(handleMetric);
+  } catch (err) {
+    console.error('[Web Vitals] INP registration failed', err);
+  }
 
   // Largest Contentful Paint
   onLCP(handleMetric);

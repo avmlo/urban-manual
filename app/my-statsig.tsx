@@ -20,9 +20,15 @@ export default function MyStatsig({ children }: MyStatsigProps) {
     // custom: { plan: 'premium' }
   };
 
+  const sdkKey = process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY;
+
+  if (!sdkKey) {
+    return <>{children}</>;
+  }
+
   return (
     <StatsigProvider
-      sdkKey={process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY!}
+      sdkKey={sdkKey}
       user={user}
       options={{ logLevel: LogLevel.Debug }}
     >

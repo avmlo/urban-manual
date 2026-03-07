@@ -9,30 +9,81 @@ interface DestinationBadgesProps {
   showTiming?: boolean;
 }
 
+interface TrendingCache {
+  promise: Promise<TrendingResponse> | null;
+  data: TrendingResponse | null;
+  timestamp: number;
+}
+
+interface TrendingResponse {
+  trending: TrendingDestination[];
+}
+
+// Module-level cache to deduplicate simultaneous requests
+// Expires after 60 seconds
+const trendingCache: TrendingCache = {
+  promise: null,
+  data: null,
+  timestamp: 0,
+};
+
+const CACHE_DURATION = 60 * 1000;
+
 export function DestinationBadges({ destinationId, compact = false, showTiming = true }: DestinationBadgesProps) {
   const [trendingData, setTrendingData] = useState<TrendingDestination | null>(null);
   const [peakTimes, setPeakTimes] = useState<PeakTimeRecommendation | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     async function fetchData() {
       try {
-        // Fetch trending status
-        const trendingRes = await fetch(
-          `/api/ml/forecast/trending?top_n=100&forecast_days=7`,
-          { signal: AbortSignal.timeout(3000) }
-        );
+        // Fetch trending status with deduplication
+        let trendingDataResponse: TrendingResponse | null = null;
+        const now = Date.now();
 
-        if (trendingRes.ok) {
-          const data = await trendingRes.json();
-          const found = data.trending?.find((t: TrendingDestination) => t.destination_id === destinationId);
+        // Use cached data if fresh
+        if (trendingCache.data && (now - trendingCache.timestamp < CACHE_DURATION)) {
+          trendingDataResponse = trendingCache.data;
+        } else if (trendingCache.promise) {
+          // Use existing promise if pending
+          trendingDataResponse = await trendingCache.promise;
+        } else {
+          // Create new request
+          // Note: AbortSignal.timeout creates a signal that aborts after the timeout.
+          // Since we share the promise, if the first request times out, all waiters fail.
+          // This is acceptable behavior.
+          trendingCache.promise = fetch(
+            `/api/ml/forecast/trending?top_n=100&forecast_days=7`,
+            { signal: AbortSignal.timeout(5000) } // Increased to 5s to be safer for shared request
+          )
+            .then(async (res) => {
+              if (!res.ok) throw new Error('Failed to fetch trending data');
+              const data = await res.json();
+              trendingCache.data = data;
+              trendingCache.timestamp = Date.now();
+              return data;
+            })
+            .finally(() => {
+              // Clear promise reference so next call uses cached data or fetches new
+              trendingCache.promise = null;
+            });
+
+          trendingDataResponse = await trendingCache.promise;
+        }
+
+        if (mounted && trendingDataResponse?.trending) {
+          const found = trendingDataResponse.trending.find((t: TrendingDestination) => t.destination_id === destinationId);
           if (found) {
             setTrendingData(found);
           }
         }
 
         // Fetch peak times if showing timing
-        if (showTiming) {
+        // Peak times are per-destination, so we don't cache globally here
+        // (Could be optimized further, but showTiming is false for cards)
+        if (showTiming && mounted) {
           const peakRes = await fetch(
             `/api/ml/forecast/peak-times?destination_id=${destinationId}&forecast_days=7`,
             { signal: AbortSignal.timeout(3000) }
@@ -56,30 +107,38 @@ export function DestinationBadges({ destinationId, compact = false, showTiming =
               const low = formatDate(lowDate);
               const peak = formatDate(peakDate);
 
-              setPeakTimes({
-                best_times: [{
-                  day: low.day,
-                  timeRange: low.dateStr,
-                }],
-                worst_times: [{
-                  day: peak.day,
-                  timeRange: peak.dateStr,
-                }],
-              });
+              if (mounted) {
+                setPeakTimes({
+                  best_times: [{
+                    day: low.day,
+                    timeRange: low.dateStr,
+                  }],
+                  worst_times: [{
+                    day: peak.day,
+                    timeRange: peak.dateStr,
+                  }],
+                });
+              }
             }
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Silently fail - badges are optional enhancements
         if (process.env.NODE_ENV === 'development') {
           console.debug('ML forecasting unavailable for destination', destinationId);
         }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchData();
+
+    return () => {
+      mounted = false;
+    };
   }, [destinationId, showTiming]);
 
   if (loading) return null;

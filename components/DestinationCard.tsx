@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, memo } from 'react';
 import Image from 'next/image';
 import { MapPin, Check } from 'lucide-react';
 import { Destination } from '@/types/destination';
 import { capitalizeCity } from '@/lib/utils';
-import { DestinationCardSkeleton } from '@/ui/DestinationCardSkeleton';
 import { DestinationBadges } from './DestinationBadges';
 import { QuickActions } from './QuickActions';
 
@@ -23,6 +22,9 @@ interface DestinationCardProps {
 /**
  * Enhanced Destination Card with hover interactions and progressive loading
  * Memoized to prevent unnecessary re-renders
+ *
+ * Optimized: Removed manual IntersectionObserver in favor of Next.js Image native lazy loading.
+ * This improves LCP by allowing the browser to discover images earlier.
  */
 export const DestinationCard = memo(function DestinationCard({
   destination,
@@ -35,35 +37,7 @@ export const DestinationCard = memo(function DestinationCard({
   onAddToTrip,
 }: DestinationCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const cardRef = useRef<HTMLButtonElement>(null);
-
-  // Intersection Observer for progressive loading
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px', // Start loading 50px before entering viewport
-        threshold: 0.1,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -74,7 +48,6 @@ export const DestinationCard = memo(function DestinationCard({
 
   return (
     <button
-      ref={cardRef}
       onClick={handleClick}
       type="button"
       className={`
@@ -97,12 +70,12 @@ export const DestinationCard = memo(function DestinationCard({
           `}
         >
         {/* Skeleton while loading */}
-        {!isLoaded && isInView && (
+        {!isLoaded && (
           <div className="absolute inset-0 animate-pulse bg-[var(--editorial-border)]" />
         )}
 
         {/* Actual Image - Use thumbnail for cards, fallback to full image */}
-        {isInView && (destination.image_thumbnail || destination.image) && !imageError ? (
+        {(destination.image_thumbnail || destination.image) && !imageError ? (
           <Image
             src={destination.image_thumbnail || destination.image!}
             alt={`${destination.name} in ${capitalizeCity(destination.city)}${destination.category ? ` - ${destination.category}` : ''}`}
@@ -244,47 +217,3 @@ export const DestinationCard = memo(function DestinationCard({
     </button>
   );
 });
-
-/**
- * Lazy-loaded version that shows skeleton until in viewport
- */
-export function LazyDestinationCard(props: DestinationCardProps) {
-  const [shouldRender, setShouldRender] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setShouldRender(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '100px', // Start loading 100px before entering viewport
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <div ref={cardRef}>
-      {shouldRender ? (
-        <DestinationCard {...props} />
-      ) : (
-        <DestinationCardSkeleton />
-      )}
-    </div>
-  );
-}
-

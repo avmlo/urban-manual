@@ -61,7 +61,7 @@ import { SearchFiltersComponent } from '@/src/features/search/SearchFilters';
 import { DistanceBadge } from '@/components/DistanceBadge';
 import { type ExtractedIntent } from '@/app/api/intent/schema';
 import { type RefinementTag } from '@/components/RefinementChips';
-import { capitalizeCity, capitalizeCategory } from '@/lib/utils';
+import { capitalizeCity, capitalizeCategory, stringHash } from '@/lib/utils';
 import { isOpenNow } from '@/lib/utils/opening-hours';
 import { DestinationCard } from '@/components/DestinationCard';
 import HomeMapSplitView from '@/components/HomeMapSplitView';
@@ -521,6 +521,14 @@ export default function HomePageClient({
       }
     },
     [user?.id]
+  );
+
+  const handleDestinationSelect = useCallback(
+    (destination: Destination, index?: number) => {
+      openIntelligentDestination(destination);
+      trackDestinationEngagement(destination, "grid", index);
+    },
+    [openIntelligentDestination, trackDestinationEngagement]
   );
 
   useEffect(() => {
@@ -2321,7 +2329,8 @@ export default function HomePageClient({
     score += categoryBonus;
 
     // Random discovery factor (increased for more serendipity)
-    score += Math.random() * 30;
+    // Use stringHash for deterministic randomness to prevent hydration mismatches
+    score += (stringHash(dest.slug) % 100) * 0.3; // Scale to 0-30
 
     return score;
   };
@@ -3294,14 +3303,7 @@ export default function HomePageClient({
                             <DestinationCard
                               key={destination.slug}
                               destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
+                              onSelect={handleDestinationSelect}
                               index={globalIndex}
                               isVisited={isVisited}
                               showBadges={true}

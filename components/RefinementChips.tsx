@@ -60,23 +60,16 @@ export function RefinementChips({
 
         return (
           <button
+            type="button"
             key={`${tag.type}-${tag.value}-${index}`}
             onClick={() => onChipClick(tag)}
             className={`${baseClasses} ${colorClasses}`}
-            aria-label={`Filter by ${tag.label}`}
+            aria-label={isActive ? `Remove filter ${tag.label}` : `Filter by ${tag.label}`}
+            aria-pressed={isActive}
           >
             <span>{tag.label}</span>
             {onChipRemove && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChipRemove(tag);
-                }}
-                className="ml-0.5 hover:opacity-70 transition-opacity"
-                aria-label={`Remove ${tag.label}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
+              <X className="h-3 w-3 ml-0.5 hover:opacity-70 transition-opacity" />
             )}
           </button>
         );

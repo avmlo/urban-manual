@@ -556,6 +556,35 @@ export default function HomePageClient({
   });
   // Calculate items per page based on 4 full rows × current grid columns
   const itemsPerPage = useItemsPerPage(4); // Always 4 full rows
+  const startIndex = (currentPage - 1) * itemsPerPage;
+
+  const handleDestinationSelect = useCallback(
+    (destination: Destination, index?: number) => {
+      openIntelligentDestination(destination);
+      trackDestinationEngagement(destination, "grid", index);
+    },
+    [openIntelligentDestination, trackDestinationEngagement]
+  );
+
+  const renderDestinationItem = useCallback(
+    (destination: Destination, index: number) => {
+      const isVisited = !!(user && visitedSlugs.has(destination.slug));
+      const globalIndex = startIndex + index;
+
+      return (
+        <DestinationCard
+          key={destination.slug}
+          destination={destination}
+          onSelect={handleDestinationSelect}
+          index={globalIndex}
+          isVisited={isVisited}
+          showBadges={true}
+        />
+      );
+    },
+    [user, visitedSlugs, startIndex, handleDestinationSelect]
+  );
+
   // Advanced filters state
   const [advancedFilters, setAdvancedFilters] = useState<{
     searchQuery?: string;
@@ -3201,8 +3230,8 @@ export default function HomePageClient({
                     ) : null}
                     {viewMode !== "map" && (
                     (() => {
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const endIndex = startIndex + itemsPerPage;
+                      // startIndex is now hoisted
+                      const endIndex = startIndex + itemsPerPage;
                       const paginatedDestinations = displayDestinations.slice(startIndex, endIndex);
 
                     const handleTouchStart = (
@@ -3284,30 +3313,7 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                            renderItem={renderDestinationItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">

@@ -12,6 +12,7 @@ import { QuickActions } from './QuickActions';
 interface DestinationCardProps {
   destination: Destination;
   onClick?: () => void;
+  onSelect?: (destination: Destination, index?: number) => void;
   index?: number;
   isVisited?: boolean;
   showBadges?: boolean;
@@ -27,6 +28,7 @@ interface DestinationCardProps {
 export const DestinationCard = memo(function DestinationCard({
   destination,
   onClick,
+  onSelect,
   index = 0,
   isVisited = false,
   showBadges = true,
@@ -68,6 +70,11 @@ export const DestinationCard = memo(function DestinationCard({
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (onSelect) {
+      onSelect(destination, index);
+    }
+
     // Simply call onClick - Drawer component handles scroll locking without layout shift
     onClick?.();
   };
@@ -78,6 +85,7 @@ export const DestinationCard = memo(function DestinationCard({
       onClick={handleClick}
       type="button"
       className={`
+        destination-card
         group relative w-full flex flex-col transition-all duration-300 ease-out
         cursor-pointer text-left focus-ring
         hover:scale-[1.01]
@@ -287,4 +295,3 @@ export function LazyDestinationCard(props: DestinationCardProps) {
     </div>
   );
 }
-

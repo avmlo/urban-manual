@@ -431,6 +431,23 @@ export default function HomepageClient({
     [user?.id]
   );
 
+  // Handle destination click from grid (Memoized to prevent re-renders)
+  const handleDestinationClick = useCallback((destination: Destination, index?: number) => {
+    openIntelligentDrawer(destination);
+    openDrawer("destination");
+
+    // Calculate global index if index is provided (relative to page)
+    const globalIndex = typeof index === 'number'
+      ? (currentPage - 1) * itemsPerPage + index
+      : undefined;
+
+    trackDestinationEngagement(
+      destination,
+      "grid",
+      globalIndex
+    );
+  }, [openIntelligentDrawer, openDrawer, trackDestinationEngagement, currentPage, itemsPerPage]);
+
   // Perform AI search
   const performAISearch = useCallback(
     async (query: string) => {
@@ -1234,15 +1251,7 @@ export default function HomepageClient({
                         destination={destination}
                         index={index}
                         isVisited={visitedSlugs.has(destination.slug)}
-                        onClick={() => {
-                          openIntelligentDrawer(destination);
-                          openDrawer("destination");
-                          trackDestinationEngagement(
-                            destination,
-                            "grid",
-                            (currentPage - 1) * itemsPerPage + index
-                          );
-                        }}
+                        onSelect={handleDestinationClick}
                       />
                     ))}
                 </div>

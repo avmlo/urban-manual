@@ -8,6 +8,10 @@ import {
   createRateLimitResponse,
   isUpstashConfigured,
 } from '@/lib/rate-limit';
+import {
+  validateImageFile,
+  getSafeExtension,
+} from '@/lib/security/image-validation';
 import { withErrorHandling } from '@/lib/errors';
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
@@ -45,21 +49,25 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
 
-  // Validate file type
-  if (!file.type.startsWith('image/')) {
-    return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
-  }
-
   // Validate file size (max 5MB for trip covers)
   if (file.size > 5 * 1024 * 1024) {
     return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
   }
 
-  // Generate unique filename
-  const fileExt = file.name.split('.').pop();
+  // Validate image using magic bytes (prevents MIME type spoofing)
+  const validation = await validateImageFile(file);
+  if (!validation.valid) {
+    return NextResponse.json(
+      { error: validation.error || 'Invalid image file' },
+      { status: 400 }
+    );
+  }
+
+  // Generate unique filename using safe extension
+  const safeExt = getSafeExtension(validation.detectedMime!);
   const fileName = tripId
-    ? `trip-${tripId}-${Date.now()}.${fileExt}`
-    : `trip-${user.id}-${Date.now()}.${fileExt}`;
+    ? `trip-${tripId}-${Date.now()}.${safeExt}`
+    : `trip-${user.id}-${Date.now()}.${safeExt}`;
   const filePath = `trip-covers/${fileName}`;
 
   // Upload to Supabase Storage
@@ -67,7 +75,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
-  const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+  const { error: uploadError } = await supabaseAdmin.storage
     .from('trip-covers')
     .upload(filePath, file, {
       cacheControl: '3600',

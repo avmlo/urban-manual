@@ -2320,8 +2320,21 @@ export default function HomePageClient({
     const categoryBonus = (index % 7) * 5; // Rotate through categories (increased from 2)
     score += categoryBonus;
 
+    // Deterministic random factor based on slug
+    // Fixes hydration mismatches and unstable sorting on re-renders
+    const getPseudoRandom = (seed: string) => {
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash;
+      }
+      const float = (Math.abs(hash) % 1000) / 1000;
+      return float;
+    };
+
     // Random discovery factor (increased for more serendipity)
-    score += Math.random() * 30;
+    score += getPseudoRandom(dest.slug) * 30;
 
     return score;
   };
@@ -2376,6 +2389,34 @@ export default function HomePageClient({
   const displayedCities = showAllCities
     ? [...featuredCities, ...remainingCities]
     : featuredCities;
+
+  const handleDestinationSelect = useCallback((destination: Destination, index?: number) => {
+    openIntelligentDestination(destination);
+    trackDestinationEngagement(
+      destination,
+      "grid",
+      index
+    );
+  }, [openIntelligentDestination, trackDestinationEngagement]);
+
+  // Memoized render item function for UniversalGrid
+  // Prevents unnecessary re-renders when other state changes (like search input)
+  const renderDestinationItem = useCallback((destination: Destination, index: number) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const globalIndex = startIndex + index;
+    const isVisited = !!(user && visitedSlugs.has(destination.slug));
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onSelect={handleDestinationSelect}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [currentPage, itemsPerPage, user, visitedSlugs, handleDestinationSelect]);
 
   return (
     <ErrorBoundary>
@@ -3284,30 +3325,7 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                            renderItem={renderDestinationItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">

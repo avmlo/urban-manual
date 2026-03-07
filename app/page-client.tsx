@@ -2373,9 +2373,51 @@ export default function HomePageClient({
     () => cities.filter(city => !FEATURED_CITIES.includes(city)),
     [cities]
   );
-  const displayedCities = showAllCities
-    ? [...featuredCities, ...remainingCities]
-    : featuredCities;
+  const displayedCities = useMemo(
+    () => showAllCities
+      ? [...featuredCities, ...remainingCities]
+      : featuredCities,
+    [showAllCities, featuredCities, remainingCities]
+  );
+
+  // Pagination Logic - Memoized for Performance
+  const startIndex = (currentPage - 1) * itemsPerPage;
+
+  const displayDestinations = useMemo(() =>
+    advancedFilters.nearMe && nearbyDestinations.length > 0
+      ? nearbyDestinations
+      : filteredDestinations
+  , [advancedFilters.nearMe, nearbyDestinations, filteredDestinations]);
+
+  const paginatedDestinations = useMemo(() => {
+    const endIndex = startIndex + itemsPerPage;
+    return displayDestinations.slice(startIndex, endIndex);
+  }, [displayDestinations, startIndex, itemsPerPage]);
+
+  const renderGridItem = useCallback((destination: Destination, index: number) => {
+    const isVisited = !!(
+      user && visitedSlugs.has(destination.slug)
+    );
+    const globalIndex = startIndex + index;
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onClick={() => {
+          openIntelligentDestination(destination);
+          trackDestinationEngagement(
+            destination,
+            "grid",
+            globalIndex
+          );
+        }}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [user, visitedSlugs, startIndex, openIntelligentDestination, trackDestinationEngagement]);
 
   return (
     <ErrorBoundary>
@@ -3137,11 +3179,6 @@ export default function HomePageClient({
 
             {/* Destination Grid - Original design */}
             {(() => {
-              // Determine which destinations to show
-              const displayDestinations =
-                advancedFilters.nearMe && nearbyDestinations.length > 0
-                  ? nearbyDestinations
-                  : filteredDestinations;
               const totalPages = Math.ceil(
                 displayDestinations.length / itemsPerPage
               );
@@ -3201,9 +3238,6 @@ export default function HomePageClient({
                     ) : null}
                     {viewMode !== "map" && (
                     (() => {
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const endIndex = startIndex + itemsPerPage;
-                      const paginatedDestinations = displayDestinations.slice(startIndex, endIndex);
 
                     const handleTouchStart = (
                       event: React.TouchEvent<HTMLDivElement>
@@ -3284,30 +3318,7 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                            renderItem={renderGridItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">

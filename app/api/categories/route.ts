@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { withErrorHandling, handleSupabaseError } from '@/lib/errors';
+import { enforceRateLimit, apiRatelimit, memoryApiRatelimit } from '@/lib/rate-limit';
 
 /**
  * GET /api/categories
@@ -8,7 +9,16 @@ import { withErrorHandling, handleSupabaseError } from '@/lib/errors';
  * Returns all unique categories from the destinations table
  * Useful for debugging category filter issues
  */
-export const GET = withErrorHandling(async () => {
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  // Rate limit check to prevent abuse
+  const rateLimitResponse = await enforceRateLimit({
+    request,
+    message: 'Too many requests',
+    limiter: apiRatelimit,
+    memoryLimiter: memoryApiRatelimit,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
+
   const { data: destinations, error } = await supabase
     .from('destinations')
     .select('category');
@@ -20,7 +30,7 @@ export const GET = withErrorHandling(async () => {
   // Get unique categories and count
   const categoryMap = new Map<string, number>();
 
-  destinations?.forEach((dest: any) => {
+  destinations?.forEach((dest: { category: string | null }) => {
     if (dest.category) {
       const cat = dest.category.trim();
       categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
@@ -41,5 +51,5 @@ export const GET = withErrorHandling(async () => {
   return response;
 });
 
-// Enable ISR - revalidate every 5 minutes
-export const revalidate = 300;
+// Force dynamic because we use request headers for rate limiting
+export const dynamic = 'force-dynamic';

@@ -294,6 +294,7 @@ export function MediaLibrary() {
             size="icon"
             onClick={() => setError(null)}
             className="ml-auto h-8 w-8 text-red-400 hover:text-red-600"
+            aria-label="Dismiss error"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -322,6 +323,7 @@ export function MediaLibrary() {
             size="icon"
             onClick={() => setViewMode('grid')}
             className={viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-800' : ''}
+            aria-label="Grid view"
           >
             <Grid className="w-4 h-4" />
           </Button>
@@ -330,6 +332,7 @@ export function MediaLibrary() {
             size="icon"
             onClick={() => setViewMode('list')}
             className={viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-800' : ''}
+            aria-label="List view"
           >
             <List className="w-4 h-4" />
           </Button>
@@ -489,6 +492,7 @@ export function MediaLibrary() {
                   size="icon"
                   onClick={() => copyUrl(item.url)}
                   className="h-8 w-8"
+                  aria-label="Copy URL"
                 >
                   {copiedUrl === item.url ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </Button>
@@ -497,6 +501,7 @@ export function MediaLibrary() {
                   size="icon"
                   onClick={() => setSelectedMedia(item)}
                   className="h-8 w-8"
+                  aria-label="View details"
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
@@ -514,6 +519,7 @@ export function MediaLibrary() {
             size="icon"
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
+            aria-label="Previous page"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -525,6 +531,7 @@ export function MediaLibrary() {
             size="icon"
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
+            aria-label="Next page"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>

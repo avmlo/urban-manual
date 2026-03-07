@@ -66,7 +66,7 @@ export default function DayHeader({
       {/* Date Badge */}
       {date && (
         <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-stone-100 dark:bg-gray-900 flex flex-col items-center justify-center">
-          <span className="text-[9px] font-medium text-stone-400 dark:text-gray-500 tracking-wider uppercase">
+          <span className="text-xs scale-75 font-medium text-stone-400 dark:text-gray-500 tracking-wider uppercase">
             {month}
           </span>
           <span className="text-base font-semibold text-stone-900 dark:text-white leading-none">
@@ -173,7 +173,7 @@ export function CompactDayHeader({
     >
       {date ? (
         <>
-          <span className="text-[9px] font-medium tracking-wider opacity-70">
+          <span className="text-xs scale-75 font-medium tracking-wider opacity-70">
             {dayOfWeek}
           </span>
           <span className="text-base font-bold leading-none mt-0.5">

@@ -183,7 +183,7 @@ const TripItemRow = memo(function TripItemRow({
               {item.timeSlot || '--:--'}
             </button>
           )}
-          <div className="text-[9px] text-gray-400 mt-0.5">
+          <div className="text-xs text-gray-400 mt-0.5">
             {formatDuration(item.duration)}
           </div>
         </div>

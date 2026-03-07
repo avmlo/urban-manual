@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { withErrorHandling } from '@/lib/errors';
 import { sanitizeForIlike } from '@/lib/sanitize';
+import { searchRatelimit, memorySearchRatelimit, getIdentifier, createRateLimitResponse, isUpstashConfigured } from '@/lib/rate-limit';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,6 +21,15 @@ if (!supabaseKey) {
 }
 
 export const GET = withErrorHandling(async (request: NextRequest) => {
+  // SECURITY: Apply rate limiting to this public endpoint that uses Service Role key
+  const identifier = getIdentifier(request);
+  const limiter = isUpstashConfigured() ? searchRatelimit : memorySearchRatelimit;
+  const { success, limit, remaining, reset } = await limiter.limit(identifier);
+
+  if (!success) {
+    return createRateLimitResponse('Rate limit exceeded. Please try again later.', limit, remaining, reset);
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
@@ -61,18 +71,32 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
       );
     }
 
+    // Type definition for destination
+    type Destination = {
+      id: number;
+      name: string;
+      slug: string;
+      city: string | null;
+      country: string | null;
+      category: string | null;
+      image: string | null;
+      michelin_stars: number | null;
+    };
+
+    const validDestinations = (destinations || []) as Destination[];
+
     // Group results by type for better UI
     const suggestions = {
-      destinations: destinations || [],
+      destinations: validDestinations,
       cities: Array.from(new Set(
-        (destinations || [])
-          .filter((d: any) => d.city?.toLowerCase().includes(query.toLowerCase()))
-          .map((d: any) => ({ city: d.city, country: d.country }))
-      )).slice(0, 5),
+        validDestinations
+          .filter((d) => d.city?.toLowerCase().includes(query.toLowerCase()))
+          .map((d) => JSON.stringify({ city: d.city, country: d.country }))
+      )).slice(0, 5).map(s => JSON.parse(s)),
       categories: Array.from(new Set(
-        (destinations || [])
-          .filter((d: any) => d.category?.toLowerCase().includes(query.toLowerCase()))
-          .map((d: any) => d.category)
+        validDestinations
+          .filter((d) => d.category?.toLowerCase().includes(query.toLowerCase()))
+          .map((d) => d.category)
       )).slice(0, 5),
     };
 

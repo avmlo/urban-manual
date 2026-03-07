@@ -1,0 +1,3 @@
+## 2025-05-18 - Mitigating Context Provider Re-renders
+**Learning:** Even if a Context Provider triggers re-renders by creating a new context object every time (an anti-pattern), you can stop the re-render cascade by ensuring leaf components are memoized (`React.memo`) and receive referentially stable props. In this case, `DestinationCard` was receiving a new `onClick` arrow function every render, defeating its memoization. Passing a stable `onSelect` callback restored the optimization without needing to refactor the entire Context Provider.
+**Action:** When seeing widespread re-renders, check if leaf components are receiving unstable props (like inline functions) that break `React.memo`, especially when they are rendered in long lists.

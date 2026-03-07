@@ -1,25 +1,66 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { embedText } from '@/lib/llm';
-import { withErrorHandling } from '@/lib/errors';
+import { withErrorHandling, createUnauthorizedError } from '@/lib/errors';
+import { enforceRateLimit, adminRatelimit, memoryAdminRatelimit } from '@/lib/rate-limit';
 
-function buildEmbeddingText(d: any): string {
+function buildEmbeddingText(d: Record<string, unknown>): string {
   const parts: string[] = [];
-  if (d.name) parts.push(d.name);
-  if (d.city) parts.push(`City: ${d.city}`);
-  if (d.category) parts.push(`Category: ${d.category}`);
+  if (typeof d.name === 'string') parts.push(d.name);
+  if (typeof d.city === 'string') parts.push(`City: ${d.city}`);
+  if (typeof d.category === 'string') parts.push(`Category: ${d.category}`);
   const tags: string[] = [];
-  (d.style_tags || []).forEach((t: string) => tags.push(t));
-  (d.ambience_tags || []).forEach((t: string) => tags.push(t));
-  (d.experience_tags || []).forEach((t: string) => tags.push(t));
-  (d.tags || []).forEach((t: string) => tags.push(t));
+  if (Array.isArray(d.style_tags)) d.style_tags.forEach((t: unknown) => typeof t === 'string' && tags.push(t));
+  if (Array.isArray(d.ambience_tags)) d.ambience_tags.forEach((t: unknown) => typeof t === 'string' && tags.push(t));
+  if (Array.isArray(d.experience_tags)) d.experience_tags.forEach((t: unknown) => typeof t === 'string' && tags.push(t));
+  if (Array.isArray(d.tags)) d.tags.forEach((t: unknown) => typeof t === 'string' && tags.push(t));
   if (tags.length) parts.push(`Tags: ${tags.join(', ')}`);
-  if (d.description) parts.push(d.description);
-  if (d.content) parts.push(d.content);
+  if (typeof d.description === 'string') parts.push(d.description);
+  if (typeof d.content === 'string') parts.push(d.content);
   return parts.join('\n');
 }
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
+  // 1. Authentication Check
+  const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  const vercelCronSecret = request.headers.get('x-vercel-cron');
+
+  let isAdmin = false;
+
+  // Check for Cron Secret or Vercel Cron header
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    isAdmin = true;
+  } else if (vercelCronSecret === '1') {
+    isAdmin = true;
+  }
+
+  // If not Cron, check for Admin User Session
+  if (!isAdmin) {
+    const authClient = await createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    const role = (user?.app_metadata as Record<string, unknown> | null)?.role;
+    if (role === 'admin') {
+      isAdmin = true;
+    }
+  }
+
+  if (!isAdmin) {
+    throw createUnauthorizedError('Unauthorized');
+  }
+
+  // 2. Rate Limiting (Defense in Depth)
+  // Shared bucket for admin tasks or use IP to prevent abuse even by authorized users
+  const rateLimitRes = await enforceRateLimit({
+    request,
+    userId: 'admin-tasks',
+    message: 'Too many refresh requests',
+    limiter: adminRatelimit,
+    memoryLimiter: memoryAdminRatelimit,
+  });
+  if (rateLimitRes) return rateLimitRes;
+
   const supabase = createServiceRoleClient();
   if (!supabase) {
     throw new Error('Service role not configured');
@@ -64,7 +105,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     }
     const { error: upErr } = await supabase
       .from('destinations')
-      .update({ vector_embedding: vec as unknown as any })
+      .update({ vector_embedding: vec as unknown as any }) // vec is number[] which supabase-js handles
       .eq('id', d.id);
     if (upErr) {
       failed.push({ slug: d.slug, reason: upErr.message });
@@ -87,5 +128,3 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     total: count ?? null,
   });
 });
-
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { X, SlidersHorizontal, Clock } from 'lucide-react';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
@@ -40,6 +40,13 @@ export function SearchFiltersComponent({
   availableCategories,
 }: SearchFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Generate unique IDs for accessibility
+  const cityId = useId();
+  const categoryId = useId();
+  const minPriceId = useId();
+  const maxPriceId = useId();
+  const ratingId = useId();
 
   function updateFilter(key: keyof SearchFilters, value: any) {
     onFiltersChange({ ...filters, [key]: value });
@@ -118,6 +125,7 @@ export function SearchFiltersComponent({
                     <button
                       onClick={() => clearFilter(key as keyof SearchFilters)}
                       className="ml-1 hover:text-red-500"
+                      aria-label={`Remove filter: ${displayValue}`}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -130,8 +138,9 @@ export function SearchFiltersComponent({
           <div className="space-y-4 max-h-80 overflow-y-auto">
             {/* City Filter */}
             <div>
-              <label className="block text-sm font-medium mb-2">City</label>
+              <label htmlFor={cityId} className="block text-sm font-medium mb-2">City</label>
               <select
+                id={cityId}
                 value={filters.city || ''}
                 onChange={(e) => updateFilter('city', e.target.value || undefined)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white focus:outline-none"
@@ -145,8 +154,9 @@ export function SearchFiltersComponent({
 
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium mb-2">Category</label>
+              <label htmlFor={categoryId} className="block text-sm font-medium mb-2">Category</label>
               <select
+                id={categoryId}
                 value={filters.category || ''}
                 onChange={(e) => updateFilter('category', e.target.value || undefined)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white focus:outline-none"
@@ -186,9 +196,11 @@ export function SearchFiltersComponent({
 
             {/* Price Range */}
             <div>
-              <label className="block text-sm font-medium mb-2">Price Level</label>
+              <span className="block text-sm font-medium mb-2">Price Level</span>
               <div className="flex gap-2">
                 <select
+                  aria-label="Minimum price"
+                  id={minPriceId}
                   value={filters.minPrice || ''}
                   onChange={(e) => updateFilter('minPrice', e.target.value ? parseInt(e.target.value) : undefined)}
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white focus:outline-none"
@@ -199,6 +211,8 @@ export function SearchFiltersComponent({
                   ))}
                 </select>
                 <select
+                  aria-label="Maximum price"
+                  id={maxPriceId}
                   value={filters.maxPrice || ''}
                   onChange={(e) => updateFilter('maxPrice', e.target.value ? parseInt(e.target.value) : undefined)}
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white focus:outline-none"
@@ -213,8 +227,9 @@ export function SearchFiltersComponent({
 
             {/* Rating Filter */}
             <div>
-              <label className="block text-sm font-medium mb-2">Minimum Rating</label>
+              <label htmlFor={ratingId} className="block text-sm font-medium mb-2">Minimum Rating</label>
               <select
+                id={ratingId}
                 value={filters.minRating || ''}
                 onChange={(e) => updateFilter('minRating', e.target.value ? parseFloat(e.target.value) : undefined)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white focus:outline-none"

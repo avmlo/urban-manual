@@ -572,6 +572,20 @@ export default function HomepageClient({
     toggleEditMode();
   }, [canUseEditMode, isAdmin, toggleEditMode]);
 
+  // Stable click handler for destination cards
+  const handleDestinationClick = useCallback(
+    (destination: MinimalDestination | Destination, index?: number) => {
+      openIntelligentDrawer(destination as Destination);
+      openDrawer("destination");
+      trackDestinationEngagement(
+        destination as Destination,
+        "grid",
+        index !== undefined ? (currentPage - 1) * itemsPerPage + index : 0
+      );
+    },
+    [openIntelligentDrawer, openDrawer, trackDestinationEngagement, currentPage, itemsPerPage]
+  );
+
   // Effects
 
   // Initialize tracking on mount
@@ -1234,15 +1248,7 @@ export default function HomepageClient({
                         destination={destination}
                         index={index}
                         isVisited={visitedSlugs.has(destination.slug)}
-                        onClick={() => {
-                          openIntelligentDrawer(destination);
-                          openDrawer("destination");
-                          trackDestinationEngagement(
-                            destination,
-                            "grid",
-                            (currentPage - 1) * itemsPerPage + index
-                          );
-                        }}
+                        onSelect={handleDestinationClick}
                       />
                     ))}
                 </div>

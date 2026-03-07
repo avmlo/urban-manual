@@ -1,8 +1,9 @@
-## 2024-05-23 - Public Service Role Endpoints MUST Have Rate Limiting
+## 2025-05-20 - Missing Rate Limiting on Agentic Endpoints
 
-**Vulnerability:** The `/api/intelligence/suggest-next` endpoint uses `createServiceRoleClient` (bypassing RLS) but lacked any rate limiting or authentication checks. This allowed unauthenticated users to trigger unlimited database queries with admin privileges.
-**Learning:** Endpoints that bypass RLS (even for benign features like "suggest next") are effectively open pipes to your database resources. They must be treated as critical security boundaries.
+**Vulnerability:** Expensive AI endpoints (specifically trip planning tools) were unprotected by rate limits, allowing potential Denial of Service (DoS) and significant cost spikes due to LLM usage.
+
+**Learning:** New features, especially those involving "Agentic" workflows or complex AI interactions, are often added without the standard infrastructure protections (like rate limiting) that are applied to older, simpler endpoints. The complexity of the feature can distract from basic security hygiene.
+
 **Prevention:**
-1.  **Identify:** Scan for `createServiceRoleClient` usage in `app/api/`.
-2.  **Verify:** Check if the endpoint handles `request.auth` or similar.
-3.  **Protect:** If public, MANDATORY `enforceRateLimit` (IP-based). If private, MANDATORY auth check + user-based rate limit.
+1.  Establish a pattern where *all* new routes under `/api/intelligence/` or `/api/ai/` must include a rate limit check at the very top.
+2.  Consider a middleware or higher-order function (like `withRateLimit`) to enforce this declaratively rather than relying on manual insertion in every route handler.

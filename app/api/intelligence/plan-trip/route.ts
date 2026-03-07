@@ -16,6 +16,13 @@ import { withErrorHandling, createValidationError, createUnauthorizedError } fro
 import { tasteProfileEvolutionService } from '@/services/intelligence/taste-profile-evolution';
 import type { Trip, ItineraryItem, InsertItineraryItem } from '@/types/trip';
 import { SchemaType, type FunctionDeclaration, type FunctionCallingMode, type Content, type Part } from '@google/generative-ai';
+import {
+  conversationRatelimit,
+  memoryConversationRatelimit,
+  getIdentifier,
+  isUpstashConfigured,
+  createRateLimitResponse,
+} from '@/lib/rate-limit';
 
 // ============================================================================
 // Types
@@ -795,6 +802,20 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
 
   if (authError || !user) {
     throw createUnauthorizedError('Authentication required');
+  }
+
+  // Rate Limiting
+  const identifier = getIdentifier(request, user.id);
+  const ratelimit = isUpstashConfigured() ? conversationRatelimit : memoryConversationRatelimit;
+  const { success, limit, remaining, reset } = await ratelimit.limit(identifier);
+
+  if (!success) {
+    return createRateLimitResponse(
+      'Too many trip planning requests. Please wait a moment.',
+      limit,
+      remaining,
+      reset
+    );
   }
 
   const body: PlanTripRequest = await request.json();

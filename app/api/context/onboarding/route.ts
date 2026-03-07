@@ -2,9 +2,32 @@ import { NextRequest } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { URBAN_MANUAL_EDITOR_SYSTEM_PROMPT } from '@/lib/ai/systemPrompts';
 import { withOptionalAuth, createSuccessResponse, OptionalAuthContext } from '@/lib/errors';
+import {
+  conversationRatelimit,
+  memoryConversationRatelimit,
+  enforceRateLimit,
+} from '@/lib/rate-limit';
+
+interface Intent {
+  city?: string;
+  category?: string;
+  modifiers: string[];
+  keywords: string[];
+}
+
+interface Context extends Intent {
+  meal?: string;
+  cuisine?: string;
+  mood?: string;
+  price_level?: string;
+  timezone: string;
+  language: string;
+  archetype_seed: string;
+  ip_hint?: string;
+}
 
 // Lightweight intent parsing (no dependency on client helpers)
-async function parseIntentSafe(query: string): Promise<any> {
+async function parseIntentSafe(query: string): Promise<Intent> {
   const lower = (query || '').toLowerCase();
   const cityMatch = lower.match(/in ([a-z\-\s]+)/i);
   const categoryMatch = lower.match(/(restaurant|hotel|cafe|bar|gallery|museum|park)/i);
@@ -30,7 +53,7 @@ function getClientHints(req: NextRequest) {
   return { ip, language, timezone };
 }
 
-async function generateGreeting(context: any): Promise<string> {
+async function generateGreeting(context: Context): Promise<string> {
   try {
     const { generateJSON } = await import('@/lib/llm');
     const json = await generateJSON(
@@ -46,7 +69,7 @@ Return only JSON: { "text": "..." }`
   }
 }
 
-function defaultGreeting(context: any): string {
+function defaultGreeting(context: Context): string {
   const city = context.city ? `${context.city[0].toUpperCase()}${context.city.slice(1)}` : null;
   if (city) return `Got it. Welcome — let’s tune this for ${city}. What’s the vibe — lunch or dinner?`;
   return `Noted. I’ll tailor picks to your taste. Where are you exploring today?`;
@@ -60,10 +83,25 @@ function buildMicroSurveyOptions() {
 }
 
 export const POST = withOptionalAuth(async (req: NextRequest, { user }: OptionalAuthContext) => {
+  const userId = user?.id;
+
+  // Rate limiting
+  // This endpoint uses LLM generation so we use the stricter conversation limit
+  const rateLimitResponse = await enforceRateLimit({
+    request: req,
+    userId: userId,
+    message: 'Too many onboarding requests',
+    limiter: conversationRatelimit,
+    memoryLimiter: memoryConversationRatelimit,
+  });
+
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const { firstMessage } = await req.json();
   const hints = getClientHints(req);
 
-  const userId = user?.id;
 
   const intent = firstMessage ? await parseIntentSafe(firstMessage) : { modifiers: [], keywords: [] };
 
@@ -73,7 +111,7 @@ export const POST = withOptionalAuth(async (req: NextRequest, { user }: Optional
     vibe_seed: ['cozy', 'modern', 'romantic', 'buzzy'][Math.floor(Math.random() * 4)],
   };
 
-  const sessionContext = {
+  const sessionContext: Context = {
     city: intent.city,
     category: intent.category,
     meal: undefined,
@@ -84,6 +122,8 @@ export const POST = withOptionalAuth(async (req: NextRequest, { user }: Optional
     language: hints.language,
     archetype_seed: archetypeSeed.vibe_seed,
     ip_hint: hints.ip || undefined,
+    modifiers: intent.modifiers,
+    keywords: intent.keywords,
   };
 
   // Best-effort store to Supabase conversation_sessions
@@ -96,11 +136,11 @@ export const POST = withOptionalAuth(async (req: NextRequest, { user }: Optional
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
     }
-  } catch (e) {
+  } catch {
     // table may not exist yet; ignore
   }
 
-  const greeting = await generateGreeting({ ...sessionContext, intent });
+  const greeting = await generateGreeting({ ...sessionContext, ...intent });
   const survey = buildMicroSurveyOptions();
 
   return createSuccessResponse({
@@ -110,5 +150,3 @@ export const POST = withOptionalAuth(async (req: NextRequest, { user }: Optional
     survey,
   });
 });
-
-

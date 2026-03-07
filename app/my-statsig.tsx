@@ -20,6 +20,11 @@ export default function MyStatsig({ children }: MyStatsigProps) {
     // custom: { plan: 'premium' }
   };
 
+  if (!process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY) {
+      console.warn("Statsig client key not found, bypassing StatsigProvider");
+      return <>{children}</>;
+  }
+
   return (
     <StatsigProvider
       sdkKey={process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY!}

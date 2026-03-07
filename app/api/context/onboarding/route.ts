@@ -2,6 +2,11 @@ import { NextRequest } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { URBAN_MANUAL_EDITOR_SYSTEM_PROMPT } from '@/lib/ai/systemPrompts';
 import { withOptionalAuth, createSuccessResponse, OptionalAuthContext } from '@/lib/errors';
+import {
+  enforceRateLimit,
+  conversationRatelimit,
+  memoryConversationRatelimit,
+} from '@/lib/rate-limit';
 
 // Lightweight intent parsing (no dependency on client helpers)
 async function parseIntentSafe(query: string): Promise<any> {
@@ -60,6 +65,16 @@ function buildMicroSurveyOptions() {
 }
 
 export const POST = withOptionalAuth(async (req: NextRequest, { user }: OptionalAuthContext) => {
+  const rateLimitResponse = await enforceRateLimit({
+    request: req,
+    userId: user?.id,
+    message: 'Too many requests. Please wait a moment.',
+    limiter: conversationRatelimit,
+    memoryLimiter: memoryConversationRatelimit,
+  });
+
+  if (rateLimitResponse) return rateLimitResponse;
+
   const { firstMessage } = await req.json();
   const hints = getClientHints(req);
 

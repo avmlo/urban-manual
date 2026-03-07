@@ -2364,6 +2364,119 @@ export default function HomePageClient({
     setFilteredDestinations(filtered);
   }, [destinations, filterDestinationsWithData]);
 
+  // OPTIMIZATION: Memoize grid calculations to prevent re-renders on unrelated state changes (e.g. chat input)
+  const displayDestinations = useMemo(() => {
+    return advancedFilters.nearMe && nearbyDestinations.length > 0
+      ? nearbyDestinations
+      : filteredDestinations;
+  }, [advancedFilters.nearMe, nearbyDestinations, filteredDestinations]);
+
+  const totalPages = useMemo(() => Math.ceil(displayDestinations.length / itemsPerPage), [displayDestinations.length, itemsPerPage]);
+
+  const paginatedDestinations = useMemo(() => {
+    if (viewMode === 'map') return [];
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return displayDestinations.slice(startIndex, endIndex);
+  }, [viewMode, currentPage, itemsPerPage, displayDestinations]);
+
+  const renderDestinationItem = useCallback((destination: Destination, index: number) => {
+    const isVisited = !!(user && visitedSlugs.has(destination.slug));
+    // Calculate global index for tracking
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const globalIndex = startIndex + index;
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onClick={() => {
+          openIntelligentDestination(destination);
+          trackDestinationEngagement(
+            destination,
+            "grid",
+            globalIndex
+          );
+        }}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [user, visitedSlugs, currentPage, itemsPerPage, openIntelligentDestination, trackDestinationEngagement]);
+
+  // Swipe handlers for grid pagination
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (totalPages <= 1) return;
+    const touch = event.touches[0];
+    gridSwipeState.current.startX = touch.clientX;
+    gridSwipeState.current.startY = touch.clientY;
+    gridSwipeState.current.isActive = true;
+    gridSwipeState.current.isHorizontal = false;
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    const state = gridSwipeState.current;
+    if (!state.isActive) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - state.startX;
+    const deltaY = touch.clientY - state.startY;
+
+    if (!state.isHorizontal) {
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
+
+      if (absDeltaX > 10 && absDeltaX > absDeltaY) {
+        state.isHorizontal = true;
+      } else if (absDeltaY > 10 && absDeltaY > absDeltaX) {
+        state.isActive = false;
+      }
+    }
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const state = gridSwipeState.current;
+    if (!state.isActive) return;
+
+    state.isActive = false;
+    if (!state.isHorizontal || totalPages <= 1) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - state.startX;
+    const threshold = 50;
+
+    if (Math.abs(deltaX) < threshold) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      setCurrentPage(prev => Math.min(totalPages, prev + 1));
+    } else {
+      setCurrentPage(prev => Math.max(1, prev - 1));
+    }
+  };
+
+  const findDestinationPosition = (slug: string) =>
+    displayDestinations.findIndex(
+      destination => destination.slug === slug
+    );
+
+  const openDestinationFromMap = (
+    destination: Destination,
+    source: "map_marker" | "map_list"
+  ) => {
+    setSelectedDestination(destination);
+    // Don't open drawer in map view - details show in sidebar
+    const position = findDestinationPosition(destination.slug);
+    trackDestinationEngagement(
+      destination,
+      source,
+      position >= 0 ? position : undefined
+    );
+  };
+
   // Display featured cities (Taipei, Tokyo, New York, London) if they exist in the cities list
   const featuredCities = useMemo(
     () => FEATURED_CITIES.filter(city => cities.includes(city)),
@@ -3135,19 +3248,9 @@ export default function HomePageClient({
 
             {/* Filter Panel - Now handled in NavigationRow, expanded panel pushes grid down */}
 
-            {/* Destination Grid - Original design */}
+            {/* Destination Grid - OPTIMIZED */}
             {(() => {
-              // Determine which destinations to show
-              const displayDestinations =
-                advancedFilters.nearMe && nearbyDestinations.length > 0
-                  ? nearbyDestinations
-                  : filteredDestinations;
-              const totalPages = Math.ceil(
-                displayDestinations.length / itemsPerPage
-              );
-
-              // Always render the grid structure, even if empty (for instant page load)
-              // Show empty state if no destinations
+              // Show empty state if no destinations and not in Near Me mode
               if (displayDestinations.length === 0 && !advancedFilters.nearMe) {
                 return (
                   <div className="text-center py-12 px-4">
@@ -3162,152 +3265,44 @@ export default function HomePageClient({
                 return null; // Message shown above
               }
 
-              const findDestinationPosition = (slug: string) =>
-                displayDestinations.findIndex(
-                  destination => destination.slug === slug
-                );
-
-              const openDestinationFromMap = (
-                destination: Destination,
-                source: "map_marker" | "map_list"
-              ) => {
-                setSelectedDestination(destination);
-                // Don't open drawer in map view - details show in sidebar
-                const position = findDestinationPosition(destination.slug);
-                trackDestinationEngagement(
-                  destination,
-                  source,
-                  position >= 0 ? position : undefined
-                );
-              };
-
               return (
-                  <>
-                    {viewMode === "map" ? (
-                      <div className="relative w-full h-[calc(100vh-20rem)] min-h-[500px] rounded-lg border border-gray-200 dark:border-gray-800" style={{ overflow: 'visible' }}>
-                        <HomeMapSplitView
-                          destinations={displayDestinations}
-                          selectedDestination={selectedDestination}
-                          onMarkerSelect={destination =>
-                            openDestinationFromMap(destination, "map_marker")
-                          }
-                          onListItemSelect={destination =>
-                            openDestinationFromMap(destination, "map_list")
-                          }
-                          onCloseDetail={() => setSelectedDestination(null)}
-                          isLoading={isDestinationsLoading}
-                        />
-                      </div>
-                    ) : null}
-                    {viewMode !== "map" && (
-                    (() => {
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const endIndex = startIndex + itemsPerPage;
-                      const paginatedDestinations = displayDestinations.slice(startIndex, endIndex);
-
-                    const handleTouchStart = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      if (totalPages <= 1) return;
-                      const touch = event.touches[0];
-                      gridSwipeState.current.startX = touch.clientX;
-                      gridSwipeState.current.startY = touch.clientY;
-                      gridSwipeState.current.isActive = true;
-                      gridSwipeState.current.isHorizontal = false;
-                    };
-
-                    const handleTouchMove = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      const state = gridSwipeState.current;
-                      if (!state.isActive) return;
-                      const touch = event.touches[0];
-                      const deltaX = touch.clientX - state.startX;
-                      const deltaY = touch.clientY - state.startY;
-
-                      if (!state.isHorizontal) {
-                        const absDeltaX = Math.abs(deltaX);
-                        const absDeltaY = Math.abs(deltaY);
-
-                        if (absDeltaX > 10 && absDeltaX > absDeltaY) {
-                          state.isHorizontal = true;
-                        } else if (absDeltaY > 10 && absDeltaY > absDeltaX) {
-                          state.isActive = false;
+                <>
+                  {viewMode === "map" ? (
+                    <div className="relative w-full h-[calc(100vh-20rem)] min-h-[500px] rounded-lg border border-gray-200 dark:border-gray-800" style={{ overflow: 'visible' }}>
+                      <HomeMapSplitView
+                        destinations={displayDestinations}
+                        selectedDestination={selectedDestination}
+                        onMarkerSelect={destination =>
+                          openDestinationFromMap(destination, "map_marker")
                         }
-                      }
-                    };
-
-                    const handleTouchEnd = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      const state = gridSwipeState.current;
-                      if (!state.isActive) return;
-
-                      state.isActive = false;
-                      if (!state.isHorizontal || totalPages <= 1) {
-                        return;
-                      }
-
-                      const touch = event.changedTouches[0];
-                      const deltaX = touch.clientX - state.startX;
-                      const threshold = 50;
-
-                      if (Math.abs(deltaX) < threshold) {
-                        return;
-                      }
-
-                      if (deltaX < 0) {
-                        setCurrentPage(prev =>
-                          Math.min(totalPages, prev + 1)
-                        );
-                      } else {
-                        setCurrentPage(prev => Math.max(1, prev - 1));
-                      }
-                    };
-
-                    return (
-                      <div
-                        className="relative w-full touch-pan-y"
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
-                      >
-                        {isDestinationsLoading && displayDestinations.length === 0 ? (
-                          <div className="flex items-center justify-center py-24">
-                            <div className="text-center">
-                              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900 dark:border-gray-700 dark:border-t-gray-100 mx-auto mb-4"></div>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {currentLoadingText || "Loading destinations..."}
-                              </p>
-                            </div>
+                        onListItemSelect={destination =>
+                          openDestinationFromMap(destination, "map_list")
+                        }
+                        onCloseDetail={() => setSelectedDestination(null)}
+                        isLoading={isDestinationsLoading}
+                      />
+                    </div>
+                  ) : null}
+                  {viewMode !== "map" && (
+                    <div
+                      className="relative w-full touch-pan-y"
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                    >
+                      {isDestinationsLoading && displayDestinations.length === 0 ? (
+                        <div className="flex items-center justify-center py-24">
+                          <div className="text-center">
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900 dark:border-gray-700 dark:border-t-gray-100 mx-auto mb-4"></div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {currentLoadingText || "Loading destinations..."}
+                            </p>
                           </div>
-                        ) : (
-                          <UniversalGrid
-                            items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                        </div>
+                      ) : (
+                        <UniversalGrid
+                          items={paginatedDestinations}
+                          renderItem={renderDestinationItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">
@@ -3321,105 +3316,98 @@ export default function HomePageClient({
                             ) : undefined
                           }
                         />
-                        )}
-                      </div>
-                    );
-                  })()
-                )}
+                      )}
+                    </div>
+                  )}
 
                   {/* Pagination - Only show in grid view */}
-                  {viewMode === "grid" &&
-                    (() => {
-                      if (totalPages <= 1) return null;
+                  {viewMode === "grid" && totalPages > 1 && (
+                    <div className="mt-12 w-full flex flex-wrap items-center justify-center gap-2 mx-auto">
+                      <button
+                        onClick={() =>
+                          setCurrentPage(prev => Math.max(1, prev - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label="Previous page"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
 
-                      return (
-                        <div className="mt-12 w-full flex flex-wrap items-center justify-center gap-2 mx-auto">
-                          <button
-                            onClick={() =>
-                              setCurrentPage(prev => Math.max(1, prev - 1))
+                      <div className="flex items-center gap-2">
+                        {Array.from(
+                          { length: Math.min(5, totalPages) },
+                          (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
                             }
-                            disabled={currentPage === 1}
-                            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            aria-label="Previous page"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 19l-7-7 7-7"
-                              />
-                            </svg>
-                          </button>
 
-                          <div className="flex items-center gap-2">
-                            {Array.from(
-                              { length: Math.min(5, totalPages) },
-                              (_, i) => {
-                                let pageNum;
-                                if (totalPages <= 5) {
-                                  pageNum = i + 1;
-                                } else if (currentPage <= 3) {
-                                  pageNum = i + 1;
-                                } else if (currentPage >= totalPages - 2) {
-                                  pageNum = totalPages - 4 + i;
-                                } else {
-                                  pageNum = currentPage - 2 + i;
-                                }
+                            const isActive = currentPage === pageNum;
 
-                                const isActive = currentPage === pageNum;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all duration-200 ${
+                                  isActive
+                                    ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium"
+                                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+                                }`}
+                                aria-label={`Page ${pageNum}`}
+                                aria-current={isActive ? "page" : undefined}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
 
-                                return (
-                                  <button
-                                    key={pageNum}
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all duration-200 ${
-                                      isActive
-                                        ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium"
-                                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-                                    }`}
-                                    aria-label={`Page ${pageNum}`}
-                                    aria-current={isActive ? "page" : undefined}
-                                  >
-                                    {pageNum}
-                                  </button>
-                                );
-                              }
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() =>
-                              setCurrentPage(prev =>
-                                Math.min(totalPages, prev + 1)
-                              )
-                            }
-                            disabled={currentPage === totalPages}
-                            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            aria-label="Next page"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      );
-                    })()}
+                      <button
+                        onClick={() =>
+                          setCurrentPage(prev =>
+                            Math.min(totalPages, prev + 1)
+                          )
+                        }
+                        disabled={currentPage === totalPages}
+                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label="Next page"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
 
                   {/* Ad below pagination */}
                   {displayDestinations.length > 0 && (

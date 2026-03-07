@@ -176,6 +176,7 @@ const TripItemRow = memo(function TripItemRow({
             </form>
           ) : (
             <button
+              type="button"
               onClick={() => setIsEditingTime(true)}
               className="text-xs font-medium text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               aria-label={`Time: ${item.timeSlot || 'Set time'}`}
@@ -190,6 +191,7 @@ const TripItemRow = memo(function TripItemRow({
 
         {/* Thumbnail */}
         <button
+          type="button"
           onClick={handleOpenDestination}
           className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
           aria-label={`View ${item.destination.name}`}
@@ -282,8 +284,9 @@ const TripItemRow = memo(function TripItemRow({
         </div>
 
         {/* Action buttons */}
-        <div className="relative flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="relative flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           <button
+            type="button"
             onClick={() => setIsEditingNotes(true)}
             className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
             title="Add note"
@@ -294,6 +297,7 @@ const TripItemRow = memo(function TripItemRow({
 
           {totalDays > 1 && (
             <button
+              type="button"
               onClick={() => setShowMoveMenu(!showMoveMenu)}
               className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
               title="Move to another day"
@@ -305,6 +309,7 @@ const TripItemRow = memo(function TripItemRow({
           )}
 
           <button
+            type="button"
             onClick={onRemove}
             className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group/remove"
             title="Remove from trip"

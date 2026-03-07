@@ -22,6 +22,7 @@ import { VisitedModal } from '@/components/VisitedModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { NestedDestinations } from '@/components/NestedDestinations';
 import { ForecastInfo } from '@/components/ForecastInfo';
+import { WeatherWidget } from '@/components/WeatherWidget';
 import { SentimentDisplay } from '@/components/SentimentDisplay';
 import { TopicsDisplay } from '@/components/TopicsDisplay';
 import { AnomalyAlert } from '@/components/AnomalyAlert';
@@ -646,6 +647,7 @@ export default function DestinationPageClient({ initialDestination, parentDestin
               {destination.id && (
                 <div className="space-y-4 mb-8">
                   <AnomalyAlert destinationId={destination.id} type="traffic" />
+                  <WeatherWidget latitude={destination.latitude} longitude={destination.longitude} />
                   <ForecastInfo destinationId={destination.id} />
                   <SentimentDisplay destinationId={destination.id} days={30} />
                   <TopicsDisplay destinationId={destination.id} minTopicSize={3} />

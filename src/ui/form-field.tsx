@@ -152,6 +152,7 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     },
     ref
   ) => {
+    const generatedId = React.useId();
     const [internalValue, setInternalValue] = React.useState(
       (value as string) || ''
     );
@@ -210,9 +211,9 @@ export const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     const isValid = touched && !hasError && isDirty && errors.length === 0;
     const displayError = externalError || (touched ? errors[0] : undefined);
 
-    const inputId = props.id || props.name;
-    const errorId = inputId ? `${inputId}-error` : undefined;
-    const helperId = inputId ? `${inputId}-helper` : undefined;
+    const inputId = props.id || generatedId;
+    const errorId = `${inputId}-error`;
+    const helperId = `${inputId}-helper`;
 
     return (
       <div className={cn('space-y-1.5', className)}>

@@ -29,15 +29,18 @@ export interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputEleme
 
 export const AuthInput = React.forwardRef<HTMLInputElement, AuthInputProps>(
   ({ className, label, hint, id, ...props }, ref) => {
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
+
     return (
       <div>
         {label && (
-          <label htmlFor={id} className={AUTH_LABEL_CLASSES}>
+          <label htmlFor={inputId} className={AUTH_LABEL_CLASSES}>
             {label}
           </label>
         )}
         <input
-          id={id}
+          id={inputId}
           className={cn(AUTH_INPUT_CLASSES, className)}
           ref={ref}
           {...props}
@@ -58,6 +61,8 @@ export interface AuthPasswordInputProps extends Omit<AuthInputProps, 'type'> {
 
 export const AuthPasswordInput = React.forwardRef<HTMLInputElement, AuthPasswordInputProps>(
   ({ className, label, hint, id, showPassword, onTogglePassword, ...props }, ref) => {
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
     const [internalShowPassword, setInternalShowPassword] = React.useState(false);
     const isControlled = showPassword !== undefined && onTogglePassword !== undefined;
     const passwordVisible = isControlled ? showPassword : internalShowPassword;
@@ -73,13 +78,13 @@ export const AuthPasswordInput = React.forwardRef<HTMLInputElement, AuthPassword
     return (
       <div>
         {label && (
-          <label htmlFor={id} className={AUTH_LABEL_CLASSES}>
+          <label htmlFor={inputId} className={AUTH_LABEL_CLASSES}>
             {label}
           </label>
         )}
         <div className="relative">
           <input
-            id={id}
+            id={inputId}
             type={passwordVisible ? 'text' : 'password'}
             className={cn(AUTH_INPUT_CLASSES, 'pr-14', className)}
             ref={ref}

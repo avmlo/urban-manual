@@ -37,7 +37,7 @@ export const DestinationCard = memo(function DestinationCard({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const cardRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Intersection Observer for progressive loading
   useEffect(() => {
@@ -65,18 +65,27 @@ export const DestinationCard = memo(function DestinationCard({
     };
   }, []);
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     // Simply call onClick - Drawer component handles scroll locking without layout shift
     onClick?.();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
-    <button
+    <div
       ref={cardRef}
+      role="button"
+      tabIndex={0}
       onClick={handleClick}
-      type="button"
+      onKeyDown={handleKeyDown}
       className={`
         group relative w-full flex flex-col transition-all duration-300 ease-out
         cursor-pointer text-left focus-ring
@@ -145,8 +154,8 @@ export const DestinationCard = memo(function DestinationCard({
           <div
             className={`
               absolute top-2 right-2 z-20
-              opacity-0 group-hover:opacity-100
-              translate-y-1 group-hover:translate-y-0
+              opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+              translate-y-1 group-hover:translate-y-0 group-focus-within:translate-y-0
               transition-all duration-200
             `}
           >
@@ -241,7 +250,7 @@ export const DestinationCard = memo(function DestinationCard({
           pointer-events-none
         `}
       />
-    </button>
+    </div>
   );
 });
 

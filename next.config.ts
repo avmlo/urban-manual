@@ -7,9 +7,9 @@ const cspDirectives = [
   // Script sources - unsafe-inline required for inline scripts in layout.tsx
   // (Google Analytics, chunk error handler, JSON-LD schemas)
   // TODO: Migrate to nonce-based CSP for better security
-  "script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://cdn.amcharts.com https://*.supabase.co https://*.supabase.in https://pagead2.googlesyndication.com https://www.googletagmanager.com https://fundingchoicesmessages.google.com https://ep2.adtrafficquality.google https://vercel.live https://cdn.apple-mapkit.com",
+  "script-src 'self' https://maps.googleapis.com https://cdn.amcharts.com https://*.supabase.co https://*.supabase.in https://pagead2.googlesyndication.com https://www.googletagmanager.com https://fundingchoicesmessages.google.com https://ep2.adtrafficquality.google https://vercel.live https://cdn.apple-mapkit.com",
   // More granular control for script elements
-  "script-src-elem 'self' 'unsafe-inline' https://maps.googleapis.com https://cdn.amcharts.com https://*.supabase.co https://*.supabase.in https://pagead2.googlesyndication.com https://www.googletagmanager.com https://fundingchoicesmessages.google.com https://ep2.adtrafficquality.google https://vercel.live https://cdn.apple-mapkit.com",
+  "script-src-elem 'self' https://maps.googleapis.com https://cdn.amcharts.com https://*.supabase.co https://*.supabase.in https://pagead2.googlesyndication.com https://www.googletagmanager.com https://fundingchoicesmessages.google.com https://ep2.adtrafficquality.google https://vercel.live https://cdn.apple-mapkit.com",
   // Style sources - unsafe-inline kept for Tailwind CSS compatibility
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Restrict image sources to specific trusted domains instead of wildcard

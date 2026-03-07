@@ -44,6 +44,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     }
 
     // Generate unique filename using safe extension from detected MIME type
+    // Use non-null assertion for detectedMime as validateImageFile ensures it exists when valid is true
     const safeExt = getSafeExtension(validation.detectedMime!);
     const fileName = slug
       ? `${slug}-${Date.now()}.${safeExt}`

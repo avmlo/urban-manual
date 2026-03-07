@@ -12,6 +12,7 @@ import TripSelectorContent from './TripSelectorContent';
 import AddToTripContent from './AddToTripContent';
 import AccountContent from './AccountContent';
 import AuthContent from './AuthContent';
+import ChatContent from './ChatContent';
 import { DrawerMode, DrawerContext } from './types';
 
 /**
@@ -190,11 +191,7 @@ const IntelligentDrawer = memo(function IntelligentDrawer() {
         return <AddToTripContent />;
 
       case 'chat':
-        return (
-          <div className="p-5 text-center text-gray-500">
-            Chat mode coming soon
-          </div>
-        );
+        return <ChatContent />;
 
       case 'account':
         return <AccountContent />;

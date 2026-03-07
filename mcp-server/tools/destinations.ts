@@ -537,10 +537,11 @@ export async function handleDestinationTool(
         return { content: [{ type: "text", text: "Error: city is required" }] };
       }
 
+      const safeCity = sanitizeForIlike(city as string);
       let query = supabase
         .from("destinations")
         .select("slug, name, city, category, micro_description, rating, image, michelin_stars")
-        .ilike("city", `%${city}%`)
+        .ilike("city", `%${safeCity}%`)
         .limit(Number(limit));
 
       if (category) {
@@ -592,7 +593,8 @@ export async function handleDestinationTool(
       let query = supabase.from("destinations").select("category");
 
       if (city) {
-        query = query.ilike("city", `%${city}%`);
+        const safeCity = sanitizeForIlike(city as string);
+        query = query.ilike("city", `%${safeCity}%`);
       }
 
       const { data, error } = await query;
@@ -636,7 +638,8 @@ export async function handleDestinationTool(
       let query = supabase.from("destinations").select("city, country");
 
       if (country) {
-        query = query.ilike("country", `%${country}%`);
+        const safeCountry = sanitizeForIlike(country as string);
+        query = query.ilike("country", `%${safeCountry}%`);
       }
 
       const { data, error } = await query;

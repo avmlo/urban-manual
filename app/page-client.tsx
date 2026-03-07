@@ -579,6 +579,21 @@ export default function HomePageClient({
     []
   );
 
+  // Memoize displayed destinations and pagination logic
+  const displayDestinations = useMemo(() =>
+    advancedFilters.nearMe && nearbyDestinations.length > 0
+      ? nearbyDestinations
+      : filteredDestinations
+  , [advancedFilters.nearMe, nearbyDestinations, filteredDestinations]);
+
+  const totalPages = useMemo(() => Math.ceil(displayDestinations.length / itemsPerPage), [displayDestinations.length, itemsPerPage]);
+
+  const paginatedDestinations = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return displayDestinations.slice(startIndex, endIndex);
+  }, [displayDestinations, currentPage, itemsPerPage]);
+
   // Arrow key navigation for pagination
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -593,11 +608,6 @@ export default function HomePageClient({
       }
 
       // Only handle if pagination is visible
-      const displayDestinations =
-        advancedFilters.nearMe && nearbyDestinations.length > 0
-          ? nearbyDestinations
-          : filteredDestinations;
-      const totalPages = Math.ceil(displayDestinations.length / itemsPerPage);
       
       if (totalPages <= 1 || viewMode !== 'grid') {
         return;
@@ -614,7 +624,7 @@ export default function HomePageClient({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewMode, advancedFilters.nearMe, nearbyDestinations, filteredDestinations, itemsPerPage]);
+  }, [viewMode, totalPages]); // Removed unnecessary dependencies as totalPages encapsulates them
 
   // Featured cities to always show in filter
   const FEATURED_CITIES = ["taipei", "tokyo", "new-york", "london"];
@@ -2377,6 +2387,85 @@ export default function HomePageClient({
     ? [...featuredCities, ...remainingCities]
     : featuredCities;
 
+  // Stable Render Item Callback
+  const renderItem = useCallback((destination: Destination, index: number) => {
+    const isVisited = !!(user && visitedSlugs.has(destination.slug));
+    // Calculate global index relative to full list, not just current page
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const globalIndex = startIndex + index;
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onClick={() => {
+          openIntelligentDestination(destination);
+          trackDestinationEngagement(
+            destination,
+            "grid",
+            globalIndex
+          );
+        }}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [user, visitedSlugs, currentPage, itemsPerPage, openIntelligentDestination, trackDestinationEngagement]);
+
+  // Touch Handlers for Grid Swipe
+  const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (totalPages <= 1) return;
+    const touch = event.touches[0];
+    gridSwipeState.current.startX = touch.clientX;
+    gridSwipeState.current.startY = touch.clientY;
+    gridSwipeState.current.isActive = true;
+    gridSwipeState.current.isHorizontal = false;
+  }, [totalPages]);
+
+  const handleTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const state = gridSwipeState.current;
+    if (!state.isActive) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - state.startX;
+    const deltaY = touch.clientY - state.startY;
+
+    if (!state.isHorizontal) {
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
+
+      if (absDeltaX > 10 && absDeltaX > absDeltaY) {
+        state.isHorizontal = true;
+      } else if (absDeltaY > 10 && absDeltaY > absDeltaX) {
+        state.isActive = false;
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const state = gridSwipeState.current;
+    if (!state.isActive) return;
+
+    state.isActive = false;
+    if (!state.isHorizontal || totalPages <= 1) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - state.startX;
+    const threshold = 50;
+
+    if (Math.abs(deltaX) < threshold) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      setCurrentPage(prev => Math.min(totalPages, prev + 1));
+    } else {
+      setCurrentPage(prev => Math.max(1, prev - 1));
+    }
+  }, [totalPages]);
+
   return (
     <ErrorBoundary>
       {/* Structured Data for SEO */}
@@ -3137,15 +3226,6 @@ export default function HomePageClient({
 
             {/* Destination Grid - Original design */}
             {(() => {
-              // Determine which destinations to show
-              const displayDestinations =
-                advancedFilters.nearMe && nearbyDestinations.length > 0
-                  ? nearbyDestinations
-                  : filteredDestinations;
-              const totalPages = Math.ceil(
-                displayDestinations.length / itemsPerPage
-              );
-
               // Always render the grid structure, even if empty (for instant page load)
               // Show empty state if no destinations
               if (displayDestinations.length === 0 && !advancedFilters.nearMe) {
@@ -3200,73 +3280,7 @@ export default function HomePageClient({
                       </div>
                     ) : null}
                     {viewMode !== "map" && (
-                    (() => {
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const endIndex = startIndex + itemsPerPage;
-                      const paginatedDestinations = displayDestinations.slice(startIndex, endIndex);
-
-                    const handleTouchStart = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      if (totalPages <= 1) return;
-                      const touch = event.touches[0];
-                      gridSwipeState.current.startX = touch.clientX;
-                      gridSwipeState.current.startY = touch.clientY;
-                      gridSwipeState.current.isActive = true;
-                      gridSwipeState.current.isHorizontal = false;
-                    };
-
-                    const handleTouchMove = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      const state = gridSwipeState.current;
-                      if (!state.isActive) return;
-                      const touch = event.touches[0];
-                      const deltaX = touch.clientX - state.startX;
-                      const deltaY = touch.clientY - state.startY;
-
-                      if (!state.isHorizontal) {
-                        const absDeltaX = Math.abs(deltaX);
-                        const absDeltaY = Math.abs(deltaY);
-
-                        if (absDeltaX > 10 && absDeltaX > absDeltaY) {
-                          state.isHorizontal = true;
-                        } else if (absDeltaY > 10 && absDeltaY > absDeltaX) {
-                          state.isActive = false;
-                        }
-                      }
-                    };
-
-                    const handleTouchEnd = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      const state = gridSwipeState.current;
-                      if (!state.isActive) return;
-
-                      state.isActive = false;
-                      if (!state.isHorizontal || totalPages <= 1) {
-                        return;
-                      }
-
-                      const touch = event.changedTouches[0];
-                      const deltaX = touch.clientX - state.startX;
-                      const threshold = 50;
-
-                      if (Math.abs(deltaX) < threshold) {
-                        return;
-                      }
-
-                      if (deltaX < 0) {
-                        setCurrentPage(prev =>
-                          Math.min(totalPages, prev + 1)
-                        );
-                      } else {
-                        setCurrentPage(prev => Math.max(1, prev - 1));
-                      }
-                    };
-
-                    return (
-                      <div
+                    <div
                         className="relative w-full touch-pan-y"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
@@ -3284,30 +3298,7 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                            renderItem={renderItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">
@@ -3323,9 +3314,7 @@ export default function HomePageClient({
                         />
                         )}
                       </div>
-                    );
-                  })()
-                )}
+                    )}
 
                   {/* Pagination - Only show in grid view */}
                   {viewMode === "grid" &&

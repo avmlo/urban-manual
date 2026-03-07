@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getTrendingBadge, formatBestTimeText, type PeakTimeRecommendation, type TrendingDestination } from '@/lib/ml/forecasting';
+import { getTrendingBadge, formatBestTimeText, type PeakTimeRecommendation } from '@/lib/ml/forecasting';
+import { useTrendingDestinations } from '@/hooks/ml/useTrendingDestinations';
 
 interface DestinationBadgesProps {
   destinationId: number;
@@ -10,29 +11,18 @@ interface DestinationBadgesProps {
 }
 
 export function DestinationBadges({ destinationId, compact = false, showTiming = true }: DestinationBadgesProps) {
-  const [trendingData, setTrendingData] = useState<TrendingDestination | null>(null);
+  // Use cached trending data - this prevents N+1 requests in lists
+  const { data: trendingList, isLoading: trendingLoading } = useTrendingDestinations();
+
   const [peakTimes, setPeakTimes] = useState<PeakTimeRecommendation | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [peakLoading, setPeakLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch trending status
-        const trendingRes = await fetch(
-          `/api/ml/forecast/trending?top_n=100&forecast_days=7`,
-          { signal: AbortSignal.timeout(3000) }
-        );
-
-        if (trendingRes.ok) {
-          const data = await trendingRes.json();
-          const found = data.trending?.find((t: TrendingDestination) => t.destination_id === destinationId);
-          if (found) {
-            setTrendingData(found);
-          }
-        }
-
-        // Fetch peak times if showing timing
-        if (showTiming) {
+    async function fetchPeakTimes() {
+      // Fetch peak times only if showing timing
+      if (showTiming) {
+        setPeakLoading(true);
+        try {
           const peakRes = await fetch(
             `/api/ml/forecast/peak-times?destination_id=${destinationId}&forecast_days=7`,
             { signal: AbortSignal.timeout(3000) }
@@ -68,23 +58,28 @@ export function DestinationBadges({ destinationId, compact = false, showTiming =
               });
             }
           }
+        } catch (error) {
+          // Silently fail - badges are optional enhancements
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('ML forecasting unavailable for destination', destinationId);
+          }
+        } finally {
+          setPeakLoading(false);
         }
-      } catch (error) {
-        // Silently fail - badges are optional enhancements
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('ML forecasting unavailable for destination', destinationId);
-        }
-      } finally {
-        setLoading(false);
       }
     }
 
-    fetchData();
+    fetchPeakTimes();
   }, [destinationId, showTiming]);
 
-  if (loading) return null;
+  // Loading state: Wait for both if timing is requested, otherwise just trending
+  // This prevents UI jumping
+  const isLoading = trendingLoading || (showTiming && peakLoading);
+  if (isLoading) return null;
 
+  const trendingData = trendingList?.find(t => t.destination_id === destinationId);
   const trendingBadge = trendingData ? getTrendingBadge(trendingData.trend_direction) : null;
+
   if (!trendingBadge && !peakTimes) {
     return null;
   }

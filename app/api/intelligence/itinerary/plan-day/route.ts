@@ -103,7 +103,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     if (userContext.travelStyle) parts.push(`Travel style: ${userContext.travelStyle}`);
     if (userContext.favoriteCategories?.length) parts.push(`Prefers: ${userContext.favoriteCategories.join(', ')}`);
     if (userContext.highlyRatedVisits?.length) {
-      const liked = userContext.highlyRatedVisits.map((v: any) => v.slug).slice(0, 5).join(', ');
+      const liked = userContext.highlyRatedVisits.map((v: { slug: string }) => v.slug).slice(0, 5).join(', ');
       parts.push(`Previously enjoyed: ${liked}`);
     }
     if (parts.length > 0) {
@@ -239,7 +239,7 @@ Create a day itinerary matching the user's request. Use ONLY destinations from t
       success: true,
       itinerary,
     });
-  } catch (aiError: any) {
+  } catch (aiError: unknown) {
     console.error('AI generation error:', aiError);
     throw createValidationError('Failed to generate itinerary. Please try again.');
   }

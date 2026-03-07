@@ -523,6 +523,31 @@ export default function HomePageClient({
     [user?.id]
   );
 
+  const handleDestinationSelect = useCallback((destination: Destination, index?: number) => {
+    openIntelligentDestination(destination);
+    trackDestinationEngagement(
+      destination,
+      "grid",
+      index
+    );
+  }, [openIntelligentDestination, trackDestinationEngagement]);
+
+  const renderDestinationItem = useCallback((destination: Destination, index: number) => {
+    const globalIndex = (currentPage - 1) * itemsPerPage + index;
+    const isVisited = !!(user && visitedSlugs.has(destination.slug));
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onSelect={handleDestinationSelect}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [currentPage, itemsPerPage, user, visitedSlugs, handleDestinationSelect]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -3284,30 +3309,7 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                            renderItem={renderDestinationItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">

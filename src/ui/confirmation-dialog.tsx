@@ -154,17 +154,10 @@ export function ConfirmationDialog({
           <Button
             variant={confirmButtonVariant[variant]}
             onClick={handleConfirm}
-            disabled={isLoading}
+            isLoading={isLoading}
             className="flex-1"
           >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Processing...
-              </span>
-            ) : (
-              confirmText
-            )}
+            {isLoading ? "Processing..." : confirmText}
           </Button>
         </div>
       </div>

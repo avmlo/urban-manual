@@ -22,6 +22,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CARD_WRAPPER, CARD_MEDIA, CARD_TITLE } from '@/components/CardStyles';
 import { toast } from '@/lib/toast';
+import { sanitizeForIlike } from '@/lib/sanitize';
 
 interface List {
   id: string;
@@ -185,10 +186,11 @@ export default function ListDetailPage() {
     }
 
     setSearching(true);
+    const safeQuery = sanitizeForIlike(query);
     const { data, error } = await supabase
       .from('destinations')
       .select('*')
-      .or(`name.ilike.%${query}%,city.ilike.%${query}%,category.ilike.%${query}%`)
+      .or(`name.ilike.%${safeQuery}%,city.ilike.%${safeQuery}%,category.ilike.%${safeQuery}%`)
       .limit(20);
 
     if (!error && data) {

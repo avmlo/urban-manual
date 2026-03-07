@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { withErrorHandling } from '@/lib/errors';
+import { sanitizeForIlike } from '@/lib/sanitize';
 
 export const GET = withErrorHandling(async (req: NextRequest) => {
   const searchParams = req.nextUrl.searchParams;
@@ -32,7 +33,8 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
 
   // Search filter
   if (query.trim()) {
-    dbQuery = dbQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%`);
+    const safeQuery = sanitizeForIlike(query);
+    dbQuery = dbQuery.or(`name.ilike.%${safeQuery}%,description.ilike.%${safeQuery}%`);
   }
 
   // Sorting

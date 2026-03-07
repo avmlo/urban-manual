@@ -27,6 +27,7 @@ import {
 } from '@/lib/ai/cost-tracking';
 import { withErrorHandling } from '@/lib/errors';
 import { resolveCategory } from '@/lib/categories';
+import { sanitizeForIlike } from '@/lib/sanitize';
 
 // LRU Cache implementation with TTL support
 class LRUCache<T> {
@@ -1352,16 +1353,20 @@ async function processAIChatRequest(
 
         if (keywords.length > 0) {
           // Build OR conditions for each keyword across multiple fields
-          const conditions = keywords.flatMap((kw: string) => [
-            `name.ilike.%${kw}%`,
-            `description.ilike.%${kw}%`,
-            `search_text.ilike.%${kw}%`,
-            `category.ilike.%${kw}%`,
-          ]);
+          const conditions = keywords.flatMap((kw: string) => {
+            const safeKw = sanitizeForIlike(kw);
+            return [
+              `name.ilike.%${safeKw}%`,
+              `description.ilike.%${safeKw}%`,
+              `search_text.ilike.%${safeKw}%`,
+              `category.ilike.%${safeKw}%`,
+            ];
+          });
           keywordQuery = keywordQuery.or(conditions.join(','));
         } else {
           // If no meaningful keywords extracted, use the original query
-          keywordQuery = keywordQuery.or(`name.ilike.%${query}%,description.ilike.%${query}%,search_text.ilike.%${query}%`);
+          const safeQuery = sanitizeForIlike(query);
+          keywordQuery = keywordQuery.or(`name.ilike.%${safeQuery}%,description.ilike.%${safeQuery}%,search_text.ilike.%${safeQuery}%`);
         }
 
         const { data, error } = await keywordQuery;

@@ -29,7 +29,8 @@
       "@/features": ["./src/features"],
       "@/features/*": ["./src/features/*"],
       "@/domain": ["./src/domain"],
-      "@/domain/*": ["./src/domain/*"]
+      "@/domain/*": ["./src/domain/*"],
+      "@payload-config": ["./payload.config.ts"]
     }
   },
   "include": [

@@ -27,7 +27,7 @@ const TripEmptyState = memo(function TripEmptyState({
       </div>
 
       {/* Heading */}
-      <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
         Ready to explore {city}?
       </h3>
 

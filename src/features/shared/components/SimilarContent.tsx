@@ -87,7 +87,7 @@ const SimilarContent = memo(function SimilarContent({
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">
             Places like {destination.name}
           </h3>
         </div>

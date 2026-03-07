@@ -94,16 +94,16 @@ export const DRAWER_STYLES = {
  */
 export const EDITORIAL_TYPOGRAPHY = {
   // Headings - tighter tracking, warmer colors
-  h1: 'text-[26px] font-semibold tracking-tight text-[#3a3937] dark:text-[#f5f3ef] leading-tight',
-  h2: 'text-[20px] font-semibold tracking-tight text-[#3a3937] dark:text-[#f5f3ef] leading-tight',
-  h3: 'text-[16px] font-medium text-[#3a3937] dark:text-[#f5f3ef]',
+  h1: 'text-2xl font-semibold tracking-tight text-[#3a3937] dark:text-[#f5f3ef] leading-tight',
+  h2: 'text-xl font-semibold tracking-tight text-[#3a3937] dark:text-[#f5f3ef] leading-tight',
+  h3: 'text-base font-medium text-[#3a3937] dark:text-[#f5f3ef]',
 
   // Body text
-  body: 'text-[15px] text-[#5a5955] dark:text-[#c8c7c4] leading-relaxed',
-  bodySmall: 'text-[13px] text-[#706f6a] dark:text-[#a9a8a4]',
+  body: 'text-base text-[#5a5955] dark:text-[#c8c7c4] leading-relaxed',
+  bodySmall: 'text-xs text-[#706f6a] dark:text-[#a9a8a4]',
 
   // Labels - uppercase, editorial style
-  label: 'text-[11px] uppercase tracking-[0.12em] font-medium text-[#a9a8a4] dark:text-[#706f6a]',
+  label: 'text-xs uppercase tracking-[0.12em] font-medium text-[#a9a8a4] dark:text-[#706f6a]',
 
   // Links
   link: 'text-[#c4604b] hover:text-[#b54d3a] transition-colors',

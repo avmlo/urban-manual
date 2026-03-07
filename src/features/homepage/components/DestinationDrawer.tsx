@@ -148,7 +148,7 @@ export function DestinationDrawer() {
 
             {/* Title overlay on image */}
             <div className="absolute bottom-4 left-4 right-4">
-              <h2 className="text-[22px] font-semibold text-white tracking-tight mb-1">
+              <h2 className="text-2xl font-semibold text-white tracking-tight mb-1">
                 {selectedDestination.name}
               </h2>
               <p className="text-sm text-white/70">
@@ -163,7 +163,7 @@ export function DestinationDrawer() {
             {selectedDestination.rating && (
               <div className="flex items-center gap-2 mb-5">
                 <img src="/google-logo.svg" alt="Google" className="w-5 h-5" />
-                <span className="text-[17px] font-semibold text-white">
+                <span className="text-base font-semibold text-white">
                   {selectedDestination.rating.toFixed(1)}
                 </span>
                 {selectedDestination.user_ratings_total && (
@@ -335,7 +335,7 @@ export function DestinationDrawer() {
                          bg-white rounded-lg
                          hover:bg-gray-100 transition-colors"
             >
-              <span className="text-[17px] font-semibold text-gray-900">
+              <span className="text-base font-semibold text-gray-900">
                 View Full Details
               </span>
               <ArrowUpRight className="w-5 h-5 text-gray-900" />

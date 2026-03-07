@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { withErrorHandling } from '@/lib/errors';
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
@@ -16,13 +17,33 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 export const POST = withErrorHandling(async (request: NextRequest) => {
   try {
     const body = await request.json();
-    const { user_id, limit = 20, exclude_visited = true, exclude_saved = true } = body;
+    let { user_id } = body;
+    const { limit = 20, exclude_visited = true, exclude_saved = true } = body;
 
-    if (!user_id) {
+    // 1. Authenticate user
+    const authClient = await createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    if (!user) {
       return NextResponse.json(
-        { error: 'user_id is required' },
-        { status: 400 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
+    }
+
+    // 2. Authorize request
+    if (user_id && user_id !== user.id) {
+      // Check if admin
+      const isAdmin = user.app_metadata?.role === 'admin';
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Cannot request recommendations for another user' },
+          { status: 403 }
+        );
+      }
+    } else {
+      // Default to current user
+      user_id = user.id;
     }
 
     const supabase = createServiceRoleClient();
@@ -179,17 +200,13 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     const user_id = searchParams.get('user_id');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    if (!user_id) {
-      return NextResponse.json(
-        { error: 'user_id is required' },
-        { status: 400 }
-      );
-    }
+    // NOTE: Auth check is handled in POST
 
     return POST(
       new NextRequest(request.url, {
         method: 'POST',
         body: JSON.stringify({ user_id, limit }),
+        headers: request.headers, // Pass headers for auth
       })
     );
   } catch (error: any) {
@@ -199,4 +216,3 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     );
   }
 });
-

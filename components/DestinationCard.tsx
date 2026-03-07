@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, memo } from 'react';
 import Image from 'next/image';
 import { MapPin, Check } from 'lucide-react';
 import { Destination } from '@/types/destination';
 import { capitalizeCity } from '@/lib/utils';
-import { DestinationCardSkeleton } from '@/ui/DestinationCardSkeleton';
 import { DestinationBadges } from './DestinationBadges';
 import { QuickActions } from './QuickActions';
 
@@ -23,6 +22,12 @@ interface DestinationCardProps {
 /**
  * Enhanced Destination Card with hover interactions and progressive loading
  * Memoized to prevent unnecessary re-renders
+ *
+ * Performance Optimization (Bolt):
+ * - Removed manual IntersectionObserver; relies on Next.js native Image lazy loading.
+ * - Removed redundant LazyDestinationCard wrapper.
+ * - Converted outer <button> to <div> with role="button" to avoid invalid HTML (nested buttons)
+ *   and improve hydration performance/correctness.
  */
 export const DestinationCard = memo(function DestinationCard({
   destination,
@@ -35,48 +40,31 @@ export const DestinationCard = memo(function DestinationCard({
   onAddToTrip,
 }: DestinationCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const cardRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Intersection Observer for progressive loading
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px', // Start loading 50px before entering viewport
-        threshold: 0.1,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     // Simply call onClick - Drawer component handles scroll locking without layout shift
     onClick?.();
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick?.();
+    }
+  };
+
   return (
-    <button
+    <div
       ref={cardRef}
       onClick={handleClick}
-      type="button"
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
       className={`
         group relative w-full flex flex-col transition-all duration-300 ease-out
         cursor-pointer text-left focus-ring
@@ -97,12 +85,12 @@ export const DestinationCard = memo(function DestinationCard({
           `}
         >
         {/* Skeleton while loading */}
-        {!isLoaded && isInView && (
+        {!isLoaded && (
           <div className="absolute inset-0 animate-pulse bg-[var(--editorial-border)]" />
         )}
 
         {/* Actual Image - Use thumbnail for cards, fallback to full image */}
-        {isInView && (destination.image_thumbnail || destination.image) && !imageError ? (
+        {(destination.image_thumbnail || destination.image) && !imageError ? (
           <Image
             src={destination.image_thumbnail || destination.image!}
             alt={`${destination.name} in ${capitalizeCity(destination.city)}${destination.category ? ` - ${destination.category}` : ''}`}
@@ -241,50 +229,6 @@ export const DestinationCard = memo(function DestinationCard({
           pointer-events-none
         `}
       />
-    </button>
-  );
-});
-
-/**
- * Lazy-loaded version that shows skeleton until in viewport
- */
-export function LazyDestinationCard(props: DestinationCardProps) {
-  const [shouldRender, setShouldRender] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setShouldRender(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '100px', // Start loading 100px before entering viewport
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <div ref={cardRef}>
-      {shouldRender ? (
-        <DestinationCard {...props} />
-      ) : (
-        <DestinationCardSkeleton />
-      )}
     </div>
   );
-}
-
+});

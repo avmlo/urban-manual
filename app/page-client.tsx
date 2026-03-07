@@ -2347,6 +2347,34 @@ export default function HomePageClient({
   // Accepts current filter values to avoid closure issues
   // MOVED BEFORE fetchDestinations to fix "used before declaration" error
 
+  const handleDestinationSelect = useCallback((destination: Destination, index?: number) => {
+    openIntelligentDestination(destination);
+    trackDestinationEngagement(
+      destination,
+      "grid",
+      index
+    );
+  }, [openIntelligentDestination, trackDestinationEngagement]);
+
+  const renderDestinationItem = useCallback((destination: Destination, index: number) => {
+    const isVisited = !!(
+      user && visitedSlugs.has(destination.slug)
+    );
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const globalIndex = startIndex + index;
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onSelect={handleDestinationSelect}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [user, visitedSlugs, currentPage, itemsPerPage, handleDestinationSelect]);
+
   // OPTIMIZATION: Memoize filtered destinations to avoid recalculating on every render
   const filteredDestinationsMemo = useMemo(() => {
     return filterDestinationsWithData(destinations);
@@ -3284,30 +3312,7 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
+                            renderItem={renderDestinationItem}
                           emptyState={
                             displayDestinations.length === 0 ? (
                               <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">

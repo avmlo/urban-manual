@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import { Destination } from '@/types/destination';
 import { useHomepageData } from './HomepageDataProvider';
 import { InstantGridSkeleton } from './InstantGridSkeleton';
 import { DestinationCard } from '@/components/DestinationCard';
@@ -37,6 +38,10 @@ export function ClientDestinationGrid() {
     refetch,
     setSearchTerm,
   } = useHomepageData();
+
+  const handleDestinationSelect = useCallback((destination: Destination) => {
+    openDestination(destination);
+  }, [openDestination]);
 
   const hasFilters = selectedCity || selectedCategory || searchTerm || michelinOnly || crownOnly;
 
@@ -258,7 +263,7 @@ export function ClientDestinationGrid() {
             key={destination.slug}
             destination={destination}
             index={index}
-            onClick={() => openDestination(destination)}
+            onSelect={handleDestinationSelect}
             showQuickActions={true}
             showBadges={true}
           />

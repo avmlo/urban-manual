@@ -403,6 +403,16 @@ export default function HomepageClient({
     setFilteredDestinations(filtered);
   }, [destinations, filterDestinationsWithData]);
 
+  const handleDestinationSelect = useCallback((destination: Destination, index?: number) => {
+    openIntelligentDrawer(destination);
+    openDrawer("destination");
+    trackDestinationEngagement(
+      destination,
+      "grid",
+      (currentPage - 1) * itemsPerPage + (index || 0)
+    );
+  }, [openIntelligentDrawer, openDrawer, trackDestinationEngagement, currentPage, itemsPerPage]);
+
   // Track destination click
   const trackDestinationEngagement = useCallback(
     (
@@ -1234,15 +1244,7 @@ export default function HomepageClient({
                         destination={destination}
                         index={index}
                         isVisited={visitedSlugs.has(destination.slug)}
-                        onClick={() => {
-                          openIntelligentDrawer(destination);
-                          openDrawer("destination");
-                          trackDestinationEngagement(
-                            destination,
-                            "grid",
-                            (currentPage - 1) * itemsPerPage + index
-                          );
-                        }}
+                        onSelect={handleDestinationSelect}
                       />
                     ))}
                 </div>

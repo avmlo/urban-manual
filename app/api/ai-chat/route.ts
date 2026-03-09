@@ -864,7 +864,13 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   try {
     const supabase = await createServerClient();
     const body = await request.json();
-    const { query, userId, conversationHistory = [], stream: useStreaming = false } = body;
+    const { query, conversationHistory = [], stream: useStreaming = false } = body;
+
+    // Security: Verify user identity
+    // We strictly use the authenticated user ID for rate limiting and data access
+    // to prevent rate limit bypass and potential data leakage via spoofed userIds
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
 
     // Rate limiting: 5 requests per 10 seconds for AI chat (same as conversation endpoint)
     const identifier = getIdentifier(request, userId);

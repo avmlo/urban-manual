@@ -47,37 +47,48 @@ export const aiRouter = router({
       // Generate or use existing session ID
       const sessionId = input.sessionId || crypto.randomUUID();
       
-      // Upsert conversation session
+      // Upsert conversation session and save message (Chained to ensure FK constraint)
       const now = new Date().toISOString();
-      if (input.sessionId) {
-        await supabase.from('conversation_sessions').update({
-          last_activity: now,
-        }).eq('id', input.sessionId);
-      } else {
-        await supabase.from('conversation_sessions').insert({
-          id: sessionId,
-          user_id: userId,
-          started_at: now,
-          last_activity: now,
-        });
-      }
-      
-      // Save user message
-      await supabase.from('conversation_messages').insert({
-        session_id: sessionId,
-        user_id: userId,
-        message_text: input.message,
-        message_type: 'user',
-      });
+      const sessionAndMessagePromise = (async () => {
+        // 1. Ensure session exists
+        if (input.sessionId) {
+          await supabase.from('conversation_sessions').update({
+            last_activity: now,
+          }).eq('id', input.sessionId);
+        } else {
+          await supabase.from('conversation_sessions').insert({
+            id: sessionId,
+            user_id: userId,
+            started_at: now,
+            last_activity: now,
+          });
+        }
 
-      // Get user's saved places for context
-      let savedPlaces: { data: SavedPlaceData[] | null } = { data: null };
-      try {
-        const result = await supabase.rpc('get_user_saved_destinations', { target_user_id: userId });
-        savedPlaces = result as { data: SavedPlaceData[] | null };
-      } catch (error) {
-        console.error('Error fetching saved places:', error);
-      }
+        // 2. Insert message (depends on session)
+        await supabase.from('conversation_messages').insert({
+          session_id: sessionId,
+          user_id: userId,
+          message_text: input.message,
+          message_type: 'user',
+        });
+      })();
+
+      // Get user's saved places for context (Parallelized with session/message)
+      const savedPlacesPromise = (async () => {
+        try {
+          const result = await supabase.rpc('get_user_saved_destinations', { target_user_id: userId });
+          return result as { data: SavedPlaceData[] | null };
+        } catch (error) {
+          console.error('Error fetching saved places:', error);
+          return { data: null };
+        }
+      })();
+
+      // Await all initial operations
+      const [_, savedPlaces] = await Promise.all([
+        sessionAndMessagePromise,
+        savedPlacesPromise
+      ]);
 
       // Pre-process query for fuzzy matching
       const budgetInference = inferPriceFromBudgetPhrase(input.message);
@@ -115,8 +126,11 @@ export const aiRouter = router({
       // Use semantic query from intent if available, otherwise use original message
       const searchQuery = intent.interpretations?.[0]?.semanticQuery || input.message;
 
-      // Generate embedding for search
-      const embedding = await generateDestinationEmbedding({
+      // Apply filters from intent interpretation
+      const filters = intent.interpretations?.[0]?.filters || {};
+
+      // Start independent tasks: Embedding generation and Visited places fetch (Parallelized)
+      const embeddingPromise = generateDestinationEmbedding({
         name: searchQuery,
         city: intent.interpretations?.[0]?.filters?.city || '',
         category: intent.interpretations?.[0]?.filters?.category || '',
@@ -124,8 +138,19 @@ export const aiRouter = router({
         tags: intent.interpretations?.[0]?.filters?.tags || [],
       });
 
-      // Apply filters from intent interpretation
-      const filters = intent.interpretations?.[0]?.filters || {};
+      const visitedPlacesPromise = (async () => {
+        if (!filters.exclude_visited) return { data: null };
+        try {
+          const result = await supabase.rpc('get_user_visited_destinations', { target_user_id: userId });
+          return result as { data: VisitedPlaceData[] | null };
+        } catch (error) {
+          console.error('Error fetching visited places:', error);
+          return { data: null };
+        }
+      })();
+
+      // Await embedding for search
+      const embedding = await embeddingPromise;
       
       // Hybrid search using the new function
       // Note: This requires migration 024_hybrid_search_function.sql to be run
@@ -171,14 +196,7 @@ export const aiRouter = router({
 
       // Filter out visited places if requested
       if (filters.exclude_visited) {
-        let visitedPlaces: { data: VisitedPlaceData[] | null } = { data: null };
-        try {
-          const result = await supabase.rpc('get_user_visited_destinations', { target_user_id: userId });
-          visitedPlaces = result as { data: VisitedPlaceData[] | null };
-        } catch (error) {
-          console.error('Error fetching visited places:', error);
-        }
-
+        const visitedPlaces = await visitedPlacesPromise;
         const visitedSlugs = new Set((visitedPlaces?.data || []).map((vp: VisitedPlaceData) => vp.slug));
         results = results.filter((r: SearchResultItem) => !visitedSlugs.has(r.slug));
       }

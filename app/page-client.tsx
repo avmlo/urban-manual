@@ -2377,6 +2377,120 @@ export default function HomePageClient({
     ? [...featuredCities, ...remainingCities]
     : featuredCities;
 
+  // OPTIMIZATION: Memoize display destinations to prevent re-calculations
+  const displayDestinations = useMemo(() =>
+    advancedFilters.nearMe && nearbyDestinations.length > 0
+      ? nearbyDestinations
+      : filteredDestinations
+  , [advancedFilters.nearMe, nearbyDestinations, filteredDestinations]);
+
+  // OPTIMIZATION: Memoize pagination calculation
+  const paginatedDestinations = useMemo(() => {
+    // Only calculate for grid view
+    if (viewMode === 'map') return [];
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return displayDestinations.slice(startIndex, endIndex);
+  }, [displayDestinations, currentPage, itemsPerPage, viewMode]);
+
+  const totalPages = useMemo(() =>
+    Math.ceil(displayDestinations.length / itemsPerPage)
+  , [displayDestinations.length, itemsPerPage]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+
+  // OPTIMIZATION: Stable handler for destination selection
+  const handleDestinationSelect = useCallback((destination: Destination, index?: number) => {
+    openIntelligentDestination(destination);
+    trackDestinationEngagement(
+      destination,
+      "grid",
+      index
+    );
+  }, [openIntelligentDestination, trackDestinationEngagement]);
+
+  // OPTIMIZATION: Stable renderItem function for UniversalGrid
+  // Dependencies are minimal to prevent grid re-renders
+  const renderGridItem = useCallback((destination: Destination, index: number) => {
+    const isVisited = !!(user && visitedSlugs.has(destination.slug));
+    const globalIndex = startIndex + index;
+
+    return (
+      <DestinationCard
+        key={destination.slug}
+        destination={destination}
+        onSelect={handleDestinationSelect}
+        index={globalIndex}
+        isVisited={isVisited}
+        showBadges={true}
+      />
+    );
+  }, [user, visitedSlugs, startIndex, handleDestinationSelect]);
+
+  const gridSwipeState = useRef<{
+    startX: number;
+    startY: number;
+    isActive: boolean;
+    isHorizontal: boolean;
+  }>({
+    startX: 0,
+    startY: 0,
+    isActive: false,
+    isHorizontal: false,
+  });
+
+  const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (totalPages <= 1) return;
+    const touch = event.touches[0];
+    gridSwipeState.current.startX = touch.clientX;
+    gridSwipeState.current.startY = touch.clientY;
+    gridSwipeState.current.isActive = true;
+    gridSwipeState.current.isHorizontal = false;
+  }, [totalPages]);
+
+  const handleTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const state = gridSwipeState.current;
+    if (!state.isActive) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - state.startX;
+    const deltaY = touch.clientY - state.startY;
+
+    if (!state.isHorizontal) {
+      const absDeltaX = Math.abs(deltaX);
+      const absDeltaY = Math.abs(deltaY);
+
+      if (absDeltaX > 10 && absDeltaX > absDeltaY) {
+        state.isHorizontal = true;
+      } else if (absDeltaY > 10 && absDeltaY > absDeltaX) {
+        state.isActive = false;
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const state = gridSwipeState.current;
+    if (!state.isActive) return;
+
+    state.isActive = false;
+    if (!state.isHorizontal || totalPages <= 1) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - state.startX;
+    const threshold = 50;
+
+    if (Math.abs(deltaX) < threshold) {
+      return;
+    }
+
+    if (deltaX < 0) {
+      setCurrentPage(prev => Math.min(totalPages, prev + 1));
+    } else {
+      setCurrentPage(prev => Math.max(1, prev - 1));
+    }
+  }, [totalPages]);
+
   return (
     <ErrorBoundary>
       {/* Structured Data for SEO */}
@@ -3137,15 +3251,6 @@ export default function HomePageClient({
 
             {/* Destination Grid - Original design */}
             {(() => {
-              // Determine which destinations to show
-              const displayDestinations =
-                advancedFilters.nearMe && nearbyDestinations.length > 0
-                  ? nearbyDestinations
-                  : filteredDestinations;
-              const totalPages = Math.ceil(
-                displayDestinations.length / itemsPerPage
-              );
-
               // Always render the grid structure, even if empty (for instant page load)
               // Show empty state if no destinations
               if (displayDestinations.length === 0 && !advancedFilters.nearMe) {
@@ -3200,72 +3305,6 @@ export default function HomePageClient({
                       </div>
                     ) : null}
                     {viewMode !== "map" && (
-                    (() => {
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const endIndex = startIndex + itemsPerPage;
-                      const paginatedDestinations = displayDestinations.slice(startIndex, endIndex);
-
-                    const handleTouchStart = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      if (totalPages <= 1) return;
-                      const touch = event.touches[0];
-                      gridSwipeState.current.startX = touch.clientX;
-                      gridSwipeState.current.startY = touch.clientY;
-                      gridSwipeState.current.isActive = true;
-                      gridSwipeState.current.isHorizontal = false;
-                    };
-
-                    const handleTouchMove = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      const state = gridSwipeState.current;
-                      if (!state.isActive) return;
-                      const touch = event.touches[0];
-                      const deltaX = touch.clientX - state.startX;
-                      const deltaY = touch.clientY - state.startY;
-
-                      if (!state.isHorizontal) {
-                        const absDeltaX = Math.abs(deltaX);
-                        const absDeltaY = Math.abs(deltaY);
-
-                        if (absDeltaX > 10 && absDeltaX > absDeltaY) {
-                          state.isHorizontal = true;
-                        } else if (absDeltaY > 10 && absDeltaY > absDeltaX) {
-                          state.isActive = false;
-                        }
-                      }
-                    };
-
-                    const handleTouchEnd = (
-                      event: React.TouchEvent<HTMLDivElement>
-                    ) => {
-                      const state = gridSwipeState.current;
-                      if (!state.isActive) return;
-
-                      state.isActive = false;
-                      if (!state.isHorizontal || totalPages <= 1) {
-                        return;
-                      }
-
-                      const touch = event.changedTouches[0];
-                      const deltaX = touch.clientX - state.startX;
-                      const threshold = 50;
-
-                      if (Math.abs(deltaX) < threshold) {
-                        return;
-                      }
-
-                      if (deltaX < 0) {
-                        setCurrentPage(prev =>
-                          Math.min(totalPages, prev + 1)
-                        );
-                      } else {
-                        setCurrentPage(prev => Math.max(1, prev - 1));
-                      }
-                    };
-
-                    return (
                       <div
                         className="relative w-full touch-pan-y"
                         onTouchStart={handleTouchStart}
@@ -3284,48 +3323,23 @@ export default function HomePageClient({
                         ) : (
                           <UniversalGrid
                             items={paginatedDestinations}
-                            renderItem={(destination, index) => {
-                          const isVisited = !!(
-                            user && visitedSlugs.has(destination.slug)
-                          );
-                          const globalIndex = startIndex + index;
-
-                          return (
-                            <DestinationCard
-                              key={destination.slug}
-                              destination={destination}
-                              onClick={() => {
-                                openIntelligentDestination(destination);
-                                trackDestinationEngagement(
-                                  destination,
-                                  "grid",
-                                  globalIndex
-                                );
-                              }}
-                              index={globalIndex}
-                              isVisited={isVisited}
-                              showBadges={true}
-                            />
-                          );
-                        }}
-                          emptyState={
-                            displayDestinations.length === 0 ? (
-                              <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                                  No destinations found
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  Try adjusting your filters or search terms
-                                </p>
-                              </div>
-                            ) : undefined
-                          }
-                        />
+                            renderItem={renderGridItem}
+                            emptyState={
+                              displayDestinations.length === 0 ? (
+                                <div className="col-span-full flex flex-col items-center justify-center py-24 text-center">
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                                    No destinations found
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Try adjusting your filters or search terms
+                                  </p>
+                                </div>
+                              ) : undefined
+                            }
+                          />
                         )}
                       </div>
-                    );
-                  })()
-                )}
+                    )}
 
                   {/* Pagination - Only show in grid view */}
                   {viewMode === "grid" &&

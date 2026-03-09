@@ -1,0 +1,3 @@
+## 2024-02-27 - [UniversalGrid RenderItem Optimization]
+**Learning:** `UniversalGrid` (and similar list components using `React.memo`) requires stable `renderItem` props to be effective. Inline function props for `renderItem` (like `renderItem={(item) => <Card ... />}`) defeat memoization because a new function is created on every render.
+**Action:** Always wrap `renderItem` callbacks in `useCallback`. Ensure dependencies of `renderItem` are minimal. Additionally, item components (like `DestinationCard`) should accept stable event handlers (e.g., `onSelect`) rather than requiring inline wrappers (e.g., `onClick={() => onSelect(item)}`), which force the item to re-render.

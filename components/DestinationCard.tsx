@@ -18,6 +18,12 @@ interface DestinationCardProps {
   showQuickActions?: boolean;
   className?: string;
   onAddToTrip?: () => void;
+  /**
+   * Optional selection handler that passes the destination back.
+   * Use this instead of onClick to avoid creating inline functions in lists,
+   * which allows React.memo to work effectively.
+   */
+  onSelect?: (destination: Destination, index?: number) => void;
 }
 
 /**
@@ -33,6 +39,7 @@ export const DestinationCard = memo(function DestinationCard({
   showQuickActions = true,
   className = '',
   onAddToTrip,
+  onSelect,
 }: DestinationCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -69,7 +76,11 @@ export const DestinationCard = memo(function DestinationCard({
     e.preventDefault();
     e.stopPropagation();
     // Simply call onClick - Drawer component handles scroll locking without layout shift
-    onClick?.();
+    if (onSelect) {
+      onSelect(destination, index);
+    } else {
+      onClick?.();
+    }
   };
 
   return (
@@ -287,4 +298,3 @@ export function LazyDestinationCard(props: DestinationCardProps) {
     </div>
   );
 }
-

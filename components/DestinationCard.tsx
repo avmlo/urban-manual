@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, memo } from 'react';
 import Image from 'next/image';
 import { MapPin, Check } from 'lucide-react';
 import { Destination } from '@/types/destination';
@@ -8,6 +8,7 @@ import { capitalizeCity } from '@/lib/utils';
 import { DestinationCardSkeleton } from '@/ui/DestinationCardSkeleton';
 import { DestinationBadges } from './DestinationBadges';
 import { QuickActions } from './QuickActions';
+import { useInView } from '@/hooks/useInView';
 
 interface DestinationCardProps {
   destination: Destination;
@@ -35,35 +36,15 @@ export const DestinationCard = memo(function DestinationCard({
   onAddToTrip,
 }: DestinationCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const [imageError, setImageError] = useState(false);
   const cardRef = useRef<HTMLButtonElement>(null);
 
-  // Intersection Observer for progressive loading
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px', // Start loading 50px before entering viewport
-        threshold: 0.1,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  // Use shared intersection observer for progressive loading
+  const isInView = useInView(cardRef, {
+    rootMargin: '50px',
+    threshold: 0.1,
+    once: true,
+  });
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -249,33 +230,14 @@ export const DestinationCard = memo(function DestinationCard({
  * Lazy-loaded version that shows skeleton until in viewport
  */
 export function LazyDestinationCard(props: DestinationCardProps) {
-  const [shouldRender, setShouldRender] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setShouldRender(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '100px', // Start loading 100px before entering viewport
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(cardRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  // Use shared intersection observer
+  const shouldRender = useInView(cardRef, {
+    rootMargin: '100px',
+    threshold: 0.01,
+    once: true,
+  });
 
   return (
     <div ref={cardRef}>

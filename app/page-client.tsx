@@ -173,6 +173,65 @@ function getCategoryIcon(
   return getCategoryIconComponent(category);
 }
 
+// Map categories to relevant tag patterns
+const CATEGORY_TAG_MAP: Record<string, string[]> = {
+  dining: [
+    "restaurant",
+    "dining",
+    "fine-dining",
+    "italian_restaurant",
+    "mexican_restaurant",
+    "japanese_restaurant",
+    "french_restaurant",
+    "chinese_restaurant",
+    "thai_restaurant",
+    "indian_restaurant",
+    "seafood_restaurant",
+    "steak_house",
+    "pizza",
+    "food",
+  ],
+  cafe: ["cafe", "coffee_shop", "coffee", "bakery", "pastry"],
+  bar: [
+    "bar",
+    "pub",
+    "cocktail_bar",
+    "wine_bar",
+    "beer",
+    "nightclub",
+    "lounge",
+  ],
+  hotel: ["hotel", "lodging", "resort", "inn", "hostel"],
+  shopping: ["store", "shopping", "mall", "market", "boutique"],
+  attraction: [
+    "tourist_attraction",
+    "museum",
+    "park",
+    "landmark",
+    "monument",
+  ],
+  nightlife: ["nightclub", "bar", "pub", "lounge", "entertainment"],
+};
+
+// Pinterest-like recommendation algorithm
+const getRecommendationScore = (dest: Destination, index: number): number => {
+  let score = 0;
+
+  // Priority signals (like Pinterest's quality score)
+  if (dest.crown) score += 20; // Crown badge = featured (reduced from 50)
+  if (dest.image) score += 10; // Images get boost
+  // Michelin stars are displayed but don't affect ranking
+
+  // Category diversity bonus (ensures mixed content like Pinterest)
+  const categoryBonus = (index % 7) * 5; // Rotate through categories (increased from 2)
+  score += categoryBonus;
+
+  // Random discovery factor (increased for more serendipity)
+  score += Math.random() * 30;
+
+  return score;
+};
+
 // capitalizeCategory imported from @/lib/utils
 
 function slugify(value: string): string {
@@ -1419,48 +1478,8 @@ export default function HomePageClient({
             const tags = d.tags || [];
             const categoryLower = categoryFilter.toLowerCase().trim();
 
-            // Map categories to relevant tag patterns
-            const categoryTagMap: Record<string, string[]> = {
-              dining: [
-                "restaurant",
-                "dining",
-                "fine-dining",
-                "italian_restaurant",
-                "mexican_restaurant",
-                "japanese_restaurant",
-                "french_restaurant",
-                "chinese_restaurant",
-                "thai_restaurant",
-                "indian_restaurant",
-                "seafood_restaurant",
-                "steak_house",
-                "pizza",
-                "food",
-              ],
-              cafe: ["cafe", "coffee_shop", "coffee", "bakery", "pastry"],
-              bar: [
-                "bar",
-                "pub",
-                "cocktail_bar",
-                "wine_bar",
-                "beer",
-                "nightclub",
-                "lounge",
-              ],
-              hotel: ["hotel", "lodging", "resort", "inn", "hostel"],
-              shopping: ["store", "shopping", "mall", "market", "boutique"],
-              attraction: [
-                "tourist_attraction",
-                "museum",
-                "park",
-                "landmark",
-                "monument",
-              ],
-              nightlife: ["nightclub", "bar", "pub", "lounge", "entertainment"],
-            };
-
             // Get relevant tags for this category
-            const relevantTags = categoryTagMap[categoryLower] || [];
+            const relevantTags = CATEGORY_TAG_MAP[categoryLower] || [];
 
             // Check if any tags match
             const tagMatch = tags.some(tag => {
@@ -2305,25 +2324,6 @@ export default function HomePageClient({
       }
       setNearbyDestinations([]);
     }
-  };
-
-  // Pinterest-like recommendation algorithm
-  const getRecommendationScore = (dest: Destination, index: number): number => {
-    let score = 0;
-
-    // Priority signals (like Pinterest's quality score)
-    if (dest.crown) score += 20; // Crown badge = featured (reduced from 50)
-    if (dest.image) score += 10; // Images get boost
-    // Michelin stars are displayed but don't affect ranking
-
-    // Category diversity bonus (ensures mixed content like Pinterest)
-    const categoryBonus = (index % 7) * 5; // Rotate through categories (increased from 2)
-    score += categoryBonus;
-
-    // Random discovery factor (increased for more serendipity)
-    score += Math.random() * 30;
-
-    return score;
   };
 
   // Helper function to check if Supabase error should be ignored (common pattern)

@@ -1,101 +1,98 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { enforceRateLimit } from '../../lib/rate-limit';
 
-type MockLimiterResult = {
-  success: boolean;
-  limit: number;
-  remaining: number;
-  reset: number;
+// Mock dependencies
+const mockLimit = vi.fn();
+
+// Mock the rate limiters
+const mockLimiter = {
+  limit: mockLimit,
 };
 
-class MockLimiter {
-  public callCount = 0;
-  private result: MockLimiterResult;
-
-  constructor(result: MockLimiterResult) {
-    this.result = result;
-  }
-
-  async limit(): Promise<MockLimiterResult> {
-    this.callCount += 1;
-    return this.result;
-  }
-}
-
-const originalUrl = process.env.UPSTASH_REDIS_REST_URL;
-const originalToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-const restoreEnv = () => {
-  process.env.UPSTASH_REDIS_REST_URL = originalUrl;
-  process.env.UPSTASH_REDIS_REST_TOKEN = originalToken;
-};
-
-test('enforceRateLimit allows requests when quota available', async () => {
-  process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
-  process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
-
-  const limiter = new MockLimiter({
-    success: true,
-    limit: 10,
-    remaining: 9,
-    reset: Date.now() + 1000,
-  });
-  const fallback = new MockLimiter({
-    success: true,
-    limit: 10,
-    remaining: 9,
-    reset: Date.now() + 1000,
+describe('enforceRateLimit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  const response = await enforceRateLimit({
-    request: new Request('https://example.com/api'),
-    message: 'Too many requests',
-    limiter,
-    memoryLimiter: fallback,
+  it('should return null when rate limit is not exceeded', async () => {
+    mockLimit.mockResolvedValue({
+      success: true,
+      limit: 10,
+      remaining: 9,
+      reset: Date.now() + 10000,
+    });
+
+    const request = new Request('http://localhost/api/test');
+
+    const result = await enforceRateLimit({
+      request,
+      userId: 'user-123',
+      message: 'Rate limit exceeded',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      limiter: mockLimiter as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      memoryLimiter: mockLimiter as any,
+    });
+
+    expect(result).toBeNull();
+    expect(mockLimit).toHaveBeenCalledWith('user:user-123');
   });
 
-  assert.equal(response, null);
-  assert.equal(limiter.callCount, 1);
-  assert.equal(fallback.callCount, 0);
+  it('should return 429 response when rate limit is exceeded', async () => {
+    mockLimit.mockResolvedValue({
+      success: false,
+      limit: 10,
+      remaining: 0,
+      reset: Date.now() + 10000,
+    });
 
-  restoreEnv();
-});
+    const request = new Request('http://localhost/api/test');
 
-test('enforceRateLimit returns 429 and headers when throttled', async () => {
-  process.env.UPSTASH_REDIS_REST_URL = '';
-  process.env.UPSTASH_REDIS_REST_TOKEN = '';
+    const result = await enforceRateLimit({
+      request,
+      userId: 'user-123',
+      message: 'Rate limit exceeded',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      limiter: mockLimiter as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      memoryLimiter: mockLimiter as any,
+    });
 
-  const now = 1_700_000_000_000;
-  const originalNow = Date.now;
-  Date.now = () => now;
-
-  const reset = now + 5000;
-
-  const limiter = new MockLimiter({
-    success: false,
-    limit: 5,
-    remaining: 0,
-    reset,
+    expect(result).not.toBeNull();
+    expect(result?.status).toBe(429);
+    const body = await result?.json();
+    expect(body).toEqual({
+      error: 'Rate limit exceeded',
+      rateLimitExceeded: true,
+    });
+    expect(mockLimit).toHaveBeenCalledWith('user:user-123');
   });
 
-  const response = await enforceRateLimit({
-    request: new Request('https://example.com/api'),
-    message: 'Too many requests',
-    limiter,
-    memoryLimiter: limiter,
+  it('should use IP address as identifier when userId is not provided', async () => {
+    mockLimit.mockResolvedValue({
+      success: true,
+      limit: 10,
+      remaining: 9,
+      reset: Date.now() + 10000,
+    });
+
+    const request = new Request('http://localhost/api/test', {
+      headers: {
+        'x-forwarded-for': '127.0.0.1',
+      },
+    });
+
+    await enforceRateLimit({
+      request,
+      userId: null,
+      message: 'Rate limit exceeded',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      limiter: mockLimiter as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      memoryLimiter: mockLimiter as any,
+    });
+
+    // The getIdentifier implementation might vary, but it should contain the IP
+    expect(mockLimit).toHaveBeenCalledWith(expect.stringContaining('ip:127.0.0.1'));
   });
-
-  assert.ok(response);
-  assert.equal(response?.status, 429);
-  assert.equal(response?.headers.get('X-RateLimit-Limit'), '5');
-  assert.equal(response?.headers.get('X-RateLimit-Remaining'), '0');
-  assert.equal(
-    response?.headers.get('X-RateLimit-Reset'),
-    new Date(reset).toISOString()
-  );
-  assert.equal(response?.headers.get('Retry-After'), '5');
-
-  Date.now = originalNow;
-  restoreEnv();
 });

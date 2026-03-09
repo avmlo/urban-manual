@@ -7,6 +7,11 @@ import { Plus, X, Edit2, Trash2, Folder, FolderOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/ui/sonner';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/ui/tooltip';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -221,16 +226,24 @@ export function CollectionsManager({ destinationId, onCollectionSelect, onClose 
         <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-medium">Create Collection</h4>
-            <button
-              onClick={() => {
-                setShowCreateForm(false);
-                setNewCollectionName('');
-                setNewCollectionDescription('');
-              }}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setNewCollectionName('');
+                    setNewCollectionDescription('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label="Close create form"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Close</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           <div>
@@ -327,13 +340,20 @@ export function CollectionsManager({ destinationId, onCollectionSelect, onClose 
                 </div>
               )}
             </div>
-            <button
-              onClick={(e) => handleDeleteClick(collection.id, e)}
-              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-all"
-              aria-label={`Delete ${collection.name} collection`}
-            >
-              <Trash2 className="h-4 w-4 text-gray-500" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => handleDeleteClick(collection.id, e)}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-all"
+                  aria-label={`Delete ${collection.name} collection`}
+                >
+                  <Trash2 className="h-4 w-4 text-gray-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete collection</p>
+              </TooltipContent>
+            </Tooltip>
           </button>
         ))}
 
